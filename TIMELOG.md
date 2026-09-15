@@ -195,7 +195,8 @@ RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 
 
 - 2026-09-15：建立本機 Git repository。
 - 第一個提交應包含目前可用的程式、假資料、研究決策與時間日誌。
-- 尚未設定遠端 repository，因此目前只有本機版本紀錄，沒有上傳到 GitHub。
+- 2026-09-15：已建立私有 GitHub repository：`https://github.com/anbychang/science_project`。
+- `master` 已連到 `origin/master`，目前提交已推送至 GitHub。
 
 ## 14. 下一步，尚未做
 
