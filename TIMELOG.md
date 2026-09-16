@@ -22,7 +22,7 @@
 
 - 不把「檢查用、驗證用、一次性實驗用」程式混進主程式。真的需要時再另外寫。
 - 不要靠很多層資料夾假裝整理。應刪掉不必要的東西；保留的檔名要能直接說用途。
-- 檔名前綴：`data_` 是讀取、清理、對齊資料；`calc_` 是物理或數學計算。
+- 檔名前綴：`calculate_` 是計算、`download_` 是下載、`load_` 是讀取本機檔案。
 
 ## 2. 目前研究目標
 
@@ -155,12 +155,11 @@ a_drag = -0.5 * Cd * A / m * rho * |v_rel| * v_rel
 
 ```text
 satellite_orbit/
-  data_swarm_download.py   下載 Swarm-A POD 原始檔
-  data_orbit.py             讀取軌道 CSV
-  data_space_weather.py     讀取太空天氣 CSV、和軌道反應對齊
-  calc_forces.py            二體重力與狀態導數
-  calc_integrator.py        fourth-order Runge-Kutta（RK4）傳播
-  calc_orbital_response.py  計算 a、滑動一圈平均、a_dot
+  download_swarm_pod.py             下載 Swarm-A POD 原始檔
+  load_swarm_pod.py                 讀取本機 Swarm-A POD ZIP
+  calculate_forces.py               二體重力與狀態導數
+  calculate_integrator.py           fourth-order Runge-Kutta（RK4）傳播
+  calculate_orbital_response.py     計算 a、滑動一圈平均、a_dot
 data/
   synthetic_iss_orbit.csv
   synthetic_space_weather.csv
@@ -183,9 +182,8 @@ RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 
 
 ## 12. 目前需要注意的檔案
 
-- `satellite_orbit/data_space_weather.py` 是目前應使用的太空天氣資料模組。
-- 根目錄舊版重複的 `space_weather.py` 已於 2026-09-15 刪除；只保留套件內的 `data_space_weather.py`。
-- 舊的 ISS OEM 與 reboost 讀取程式已移除。
+- 太空天氣 loader 尚未用到，已移除；加入大氣阻力模型時再重新設計。
+- 舊的 CSV、ISS OEM 與 reboost 讀取程式已移除。
 
 ## 13. Git
 

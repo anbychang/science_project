@@ -5,12 +5,11 @@ gravity only.
 
 ## Layout
 
-- `satellite_orbit/data_swarm_download.py`: Swarm-A file download.
-- `satellite_orbit/data_orbit.py`: orbit-data loading.
-- `satellite_orbit/data_space_weather.py`: space-weather loading and time alignment.
-- `satellite_orbit/calc_forces.py`: gravity and orbital state derivative.
-- `satellite_orbit/calc_integrator.py`: RK4 state propagation.
-- `satellite_orbit/calc_orbital_response.py`: semi-major axis and orbit-decay signals.
+- `satellite_orbit/download_swarm_pod.py`: get Swarm-A POD files from ESA.
+- `satellite_orbit/load_swarm_pod.py`: read a local Swarm-A POD ZIP file.
+- `satellite_orbit/calculate_forces.py`: gravity and orbital state derivative.
+- `satellite_orbit/calculate_integrator.py`: RK4 state propagation.
+- `satellite_orbit/calculate_orbital_response.py`: semi-major axis and orbit-decay signals.
 - `data/`: source orbit files. They remain unchanged.
 
 ## Orbit-data convention

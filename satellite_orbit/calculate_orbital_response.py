@@ -2,7 +2,7 @@
 
 from math import pi, sqrt
 
-from satellite_orbit.calc_forces import MU
+from satellite_orbit.calculate_forces import MU
 
 
 def calculate_semi_major_axis(point):
