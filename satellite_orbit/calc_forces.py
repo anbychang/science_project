@@ -6,17 +6,22 @@ function uses ITRF, where the z-axis follows the Earth's north pole.
 
 import numpy as np
 
+from satellite_orbit.calc_coordinates import (
+    gcrf_vector_to_itrf,
+    itrf_vector_to_gcrf,
+)
+
 
 MU = 398600.4418
 R_EARTH = 6378.137
 J2 = 1.08262668e-3
 
 
-def two_body_acceleration(time, position, velocity):
-    """Input: {time_s, position_km, velocity_km_s}
+def two_body_acceleration(position_gcrf_km):
+    """Input: position_gcrf_km = [x, y, z]
     Output: [ax, ay, az]"""
-    distance = np.linalg.norm(position)
-    return -MU * position / distance**3
+    distance_km = np.linalg.norm(position_gcrf_km)
+    return -MU * position_gcrf_km / distance_km**3
 
 
 def j2_acceleration(position_itrf_km):
@@ -39,9 +44,21 @@ def j2_acceleration(position_itrf_km):
     return np.array([ax_km_s2, ay_km_s2, az_km_s2])
 
 
-def state_derivative(time, state):
-    """Input: [x, y, z, vx, vy, vz]
+def gravity_acceleration(time_utc, position_gcrf_km):
+    """Input: {time_utc, position_gcrf_km}
+    Output: acceleration_gcrf_km_s2 = [ax, ay, az]"""
+    two_body_gcrf = two_body_acceleration(position_gcrf_km)
+
+    position_itrf_km = gcrf_vector_to_itrf(time_utc, position_gcrf_km)
+    j2_itrf_km_s2 = j2_acceleration(position_itrf_km)
+    j2_gcrf_km_s2 = itrf_vector_to_gcrf(time_utc, j2_itrf_km_s2)
+
+    return two_body_gcrf + j2_gcrf_km_s2
+
+
+def state_derivative(time_utc, state):
+    """Input: {time_utc, [x, y, z, vx, vy, vz]}
     Output: [vx, vy, vz, ax, ay, az]"""
     position, velocity = state[:3], state[3:]
-    acceleration = two_body_acceleration(time, position, velocity)
+    acceleration = gravity_acceleration(time_utc, position)
     return np.concatenate([velocity, acceleration])

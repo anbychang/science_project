@@ -39,7 +39,7 @@
 3. 以官方精密軌道作為答案，檢查我們的傳播結果誤差。
 4. 逐步加入 J2、大氣阻力與太空天氣資料，改善較長時間預測。
 
-現在已有一日 Swarm-A 官方 POD、POD 讀取程式、GCRF／ITRF 轉換、二體重力、J2 公式與 RK4。J2 尚未接進 RK4，因為 RK4 還沒有傳入絕對 UTC。大氣阻力與 POD 誤差比較也尚未完成。
+現在已有 Swarm-A 官方 POD、POD 讀取程式、GPS／UTC 與 GCRF／ITRF 轉換、二體重力、J2、RK4 與位置誤差計算。大氣阻力尚未加入。
 
 ## 3. 資料來源：已確認的事實
 
@@ -162,25 +162,37 @@ satellite_orbit/
   down_swarm_pod.py                 下載 Swarm-A POD 原始檔
   load_swarm_pod.py                 讀取本機 Swarm-A POD ZIP
   calc_coordinates.py              GCRF／ITRF 狀態與向量轉換
-  calc_forces.py                    二體重力、J2 公式與狀態導數
+  calc_time.py                     GPS time 轉 UTC
+  calc_forces.py                   二體重力、J2 與狀態導數
   calc_integrator.py                fourth-order Runge-Kutta（RK4）傳播
+  calc_position_error.py            計算預測位置與官方位置的距離
   calc_orbital_response.py          計算 a、滑動一圈平均、a_dot
 data/
-  synthetic_iss_orbit.csv
-  synthetic_space_weather.csv
+  swarm_a_pod/                      Swarm-A 官方 POD
+  old/                              舊假資料，不作為研究結果
 README.md
 AGENTS.md
 TIMELOG.md
 ```
 
-目前最小流程已用假資料跑通：
+目前最小正式流程已用官方 POD 跑通：
 
 ```text
-讀取 synthetic orbit
--> calculate_orbital_response
--> 讀取 synthetic space weather
--> align_orbit_and_weather
--> 2497 個具有 a_mean 的對齊資料列
+讀取第一筆官方 POD
+-> GPS time 轉 UTC
+-> ITRF 狀態轉 GCRF
+-> 二體重力 + J2 + RK4
+-> 與未來官方 POD 比較位置誤差
+```
+
+2025-01-01、RK4 步長 10 秒的第一組結果：
+
+```text
+預測時間    二體重力誤差    二體重力 + J2 誤差
+10 分鐘       1814.660 m          30.444 m
+30 分鐘       5628.871 m         309.027 m
+60 分鐘      21430.026 m        1301.124 m
+90 分鐘      27618.103 m        1110.449 m
 ```
 
 RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 與 Euler 而存在，現在已移除。也已移除 `make_derivative` 這類函式內函式的寫法。
@@ -199,10 +211,10 @@ RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 
 
 ## 14. 下一步，尚未做
 
-1. 將 Swarm-A 原始資料的 GPS time 轉成 UTC，再呼叫 ITRF／GCRF 轉換。
-2. 讓 RK4 使用絕對 UTC，把 J2 加速度接進狀態導數。
-3. 用官方 POD 當答案，測量目前傳播器的 XYZ 與 RTN 誤差。
-4. 再加入大氣阻力與太空天氣資料。
+1. 將位置總誤差拆成 RTN 三個方向。
+2. 檢查不同起始時間與預測長度的誤差。
+3. 逐步加入更完整的地球重力項。
+4. 之後再加入大氣阻力與太空天氣資料。
 
 官方 POD 只作為起始狀態與答案；不能把未來 POD 偷放進傳播器修正預測。
 
