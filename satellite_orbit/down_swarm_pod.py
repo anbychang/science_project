@@ -1,5 +1,6 @@
 """Download raw Swarm-A orbit files from ESA."""
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 from urllib.parse import quote
@@ -133,24 +134,35 @@ def download_swarm_a_pod(day_utc, data_folder="data"):
 def download_swarm_a_pod_since(
     first_day_utc,
     data_folder="data/swarm_a_pod",
+    worker_count=4,
 ):
-    """Input: {first_day_utc: "YYYY-MM-DD", data_folder}
+    """Input: {first_day_utc: "YYYY-MM-DD", data_folder, worker_count}
     Output: [downloaded ZIP paths, ...]"""
     source_files = list_swarm_a_pod_files()
     selected_files = select_latest_files(source_files, first_day_utc)
     downloaded_paths = []
+    download_jobs = []
 
-    total_files = len(selected_files)
-    for index, source_file in enumerate(selected_files, start=1):
+    for source_file in selected_files:
         day = get_file_day(source_file)
         year_folder = Path(data_folder) / day[:4]
-        output_path, downloaded = download_source_file(
-            source_file,
-            year_folder,
-        )
+        download_jobs.append((source_file, year_folder))
 
-        status = "downloaded" if downloaded else "exists"
-        print(f"[{index}/{total_files}] {status}: {output_path}")
-        downloaded_paths.append(output_path)
+    futures = []
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        for source_file, year_folder in download_jobs:
+            future = executor.submit(
+                download_source_file,
+                source_file,
+                year_folder,
+            )
+            futures.append(future)
+
+        total_files = len(futures)
+        for index, future in enumerate(futures, start=1):
+            output_path, downloaded = future.result()
+            status = "downloaded" if downloaded else "exists"
+            print(f"[{index}/{total_files}] {status}: {output_path}")
+            downloaded_paths.append(output_path)
 
     return downloaded_paths
