@@ -1,6 +1,6 @@
 """Forces used by the satellite orbit model.
 
-The current model contains only two-body gravity. Coordinates use the EME2000
+The current model contains only two-body gravity. Coordinates use the GCRF
 frame; distance is kilometres and time is seconds.
 """
 

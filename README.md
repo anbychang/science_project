@@ -14,12 +14,15 @@ gravity only.
 
 ## Orbit-data convention
 
-- Coordinate frame: EME2000
+- Main coordinate frame: GCRF
+- POD source frame: ITRF
 - Time system: UTC
 - Position: km
 - Velocity: km/s
 
 The active source is Swarm-A precise orbit data.
+
+Swarm-A POD points must be changed from ITRF to GCRF before propagation.
 
 ## Model limits
 
