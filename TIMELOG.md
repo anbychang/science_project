@@ -22,7 +22,7 @@
 
 - 不把「檢查用、驗證用、一次性實驗用」程式混進主程式。真的需要時再另外寫。
 - 不要靠很多層資料夾假裝整理。應刪掉不必要的東西；保留的檔名要能直接說用途。
-- 檔名前綴：`calculate_` 是計算、`download_` 是下載、`load_` 是讀取本機檔案。
+- 檔名前綴統一為四個字母：`calc_` 是計算、`down_` 是下載、`load_` 是讀取本機檔案。
 
 ## 2. 目前研究目標
 
@@ -155,11 +155,11 @@ a_drag = -0.5 * Cd * A / m * rho * |v_rel| * v_rel
 
 ```text
 satellite_orbit/
-  download_swarm_pod.py             下載 Swarm-A POD 原始檔
+  down_swarm_pod.py                 下載 Swarm-A POD 原始檔
   load_swarm_pod.py                 讀取本機 Swarm-A POD ZIP
-  calculate_forces.py               二體重力與狀態導數
-  calculate_integrator.py           fourth-order Runge-Kutta（RK4）傳播
-  calculate_orbital_response.py     計算 a、滑動一圈平均、a_dot
+  calc_forces.py                    二體重力與狀態導數
+  calc_integrator.py                fourth-order Runge-Kutta（RK4）傳播
+  calc_orbital_response.py          計算 a、滑動一圈平均、a_dot
 data/
   synthetic_iss_orbit.csv
   synthetic_space_weather.csv

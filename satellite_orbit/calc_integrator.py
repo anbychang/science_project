@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from satellite_orbit.calculate_forces import state_derivative
+from satellite_orbit.calc_forces import state_derivative
 
 
 def rk4_step(time, state, dt):
