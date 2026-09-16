@@ -7,6 +7,7 @@ gravity only.
 
 - `satellite_orbit/down_swarm_pod.py`: get Swarm-A POD files from ESA.
 - `satellite_orbit/load_swarm_pod.py`: read a local Swarm-A POD ZIP file.
+- `satellite_orbit/calc_coordinates.py`: change states between GCRF and ITRF.
 - `satellite_orbit/calc_forces.py`: gravity and orbital state derivative.
 - `satellite_orbit/calc_integrator.py`: RK4 state propagation.
 - `satellite_orbit/calc_orbital_response.py`: semi-major axis and orbit-decay signals.
@@ -23,6 +24,9 @@ gravity only.
 The active source is Swarm-A precise orbit data.
 
 Swarm-A POD points must be changed from ITRF to GCRF before propagation.
+
+Coordinate changes use Astropy and IERS Earth orientation data. Install the
+packages in `requirements.txt` before running the project.
 
 ## Model limits
 
