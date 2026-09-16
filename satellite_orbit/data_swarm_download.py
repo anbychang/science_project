@@ -1,4 +1,4 @@
-"""下載 ESA Swarm-A 的原始精密軌道檔。"""
+"""Download raw Swarm-A orbit files from ESA."""
 
 import json
 from pathlib import Path
@@ -11,8 +11,8 @@ SWARM_A_POD_FOLDER = "swarm/Level2daily/Latest_baselines/POD/RD/Sat_A"
 
 
 def find_swarm_a_pod_file(day_utc):
-    """輸入：{"day_utc": "YYYY-MM-DD"}
-    輸出：{name, path, size, ...}"""
+    """Input: {day_utc: "YYYY-MM-DD"}
+    Output: {name, path, size, ...}"""
     day_code = day_utc.replace("-", "")
     position = 0
 
@@ -29,7 +29,7 @@ def find_swarm_a_pod_file(day_utc):
             name = source_file["name"]
             time_range = name.split("__")[1].split("_")
 
-            # ESA 檔名的第二個時間是這份檔案主要覆蓋的日期。
+            # The second time in the name is the main file date.
             if time_range[1].startswith(day_code):
                 return source_file
 
@@ -38,12 +38,12 @@ def find_swarm_a_pod_file(day_utc):
 
         position += len(file_list)
 
-    raise ValueError(f"找不到 {day_utc} 的 Swarm-A POD 檔。")
+    raise ValueError(f"No Swarm-A POD file found for {day_utc}.")
 
 
 def download_swarm_a_pod(day_utc, data_folder="data"):
-    """輸入：{"day_utc": "YYYY-MM-DD"}
-    輸出：data/SW_OPER_SP3ACOM_2__....ZIP"""
+    """Input: {day_utc: "YYYY-MM-DD", data_folder}
+    Output: data/SW_OPER_SP3ACOM_2__....ZIP"""
     source_file = find_swarm_a_pod_file(day_utc)
 
     output_path = Path(data_folder) / source_file["name"]

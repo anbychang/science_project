@@ -2,12 +2,12 @@
 
 import numpy as np
 
-from iss_orbit.calc_forces import state_derivative
+from satellite_orbit.calc_forces import state_derivative
 
 
 def rk4_step(time, state, dt):
-    """輸入：{time_s, [x, y, z, vx, vy, vz], dt_s}
-    輸出：[x, y, z, vx, vy, vz]"""
+    """Input: {time_s, [x, y, z, vx, vy, vz], dt_s}
+    Output: [x, y, z, vx, vy, vz]"""
     k1 = state_derivative(time, state)
     k2 = state_derivative(time + 0.5 * dt, state + 0.5 * dt * k1)
     k3 = state_derivative(time + 0.5 * dt, state + 0.5 * dt * k2)
@@ -16,8 +16,8 @@ def rk4_step(time, state, dt):
 
 
 def propagate(initial_state, dt, n_steps, start_time=0.0):
-    """輸入：{initial_state, dt_s, n_steps}
-    輸出：{times_s, states}"""
+    """Input: {initial_state, dt_s, n_steps}
+    Output: {times_s, states}"""
     times = start_time + dt * np.arange(n_steps + 1)
     states = np.empty((n_steps + 1, initial_state.size))
     states[0] = initial_state

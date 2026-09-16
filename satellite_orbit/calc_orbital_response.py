@@ -2,12 +2,12 @@
 
 from math import pi, sqrt
 
-from iss_orbit.calc_forces import MU
+from satellite_orbit.calc_forces import MU
 
 
 def calculate_semi_major_axis(point):
-    """輸入：{position_km, velocity_km_s}
-    輸出：semi_major_axis_km"""
+    """Input: {position_km, velocity_km_s}
+    Output: semi_major_axis_km"""
     x_km, y_km, z_km = point["position_km"]
     vx_km_s, vy_km_s, vz_km_s = point["velocity_km_s"]
 
@@ -17,8 +17,8 @@ def calculate_semi_major_axis(point):
 
 
 def calculate_orbital_response(orbit_points):
-    """輸入：[{time, position_km, velocity_km_s}, ...]
-    輸出：{time, instantaneous_a_km, a_mean_km, a_dot_km_s}"""
+    """Input: [{time, position_km, velocity_km_s}, ...]
+    Output: {time, instantaneous_a_km, a_mean_km, a_dot_km_s}"""
     if len(orbit_points) < 2:
         raise ValueError("At least two orbit points are required.")
 

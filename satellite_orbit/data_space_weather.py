@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 def load_space_weather_csv(file_path):
-    """輸入：CSV 太空天氣資料
-    輸出：[{time, sym_h_nT, ae_nT, f10_7_sfu, f10_7a_sfu}, ...]"""
+    """Input: space weather CSV
+    Output: [{time, sym_h_nT, ae_nT, f10_7_sfu, f10_7a_sfu}, ...]"""
     weather_points = []
 
     with Path(file_path).open(encoding="utf-8", newline="") as file:
@@ -28,8 +28,8 @@ def load_space_weather_csv(file_path):
 
 
 def align_orbit_and_weather(orbital_response, weather_points):
-    """輸入：{orbital_response, weather_points}
-    輸出：[{time, a_mean_km, a_dot_km_s, sym_h_nT, ...}, ...]"""
+    """Input: {orbital_response, weather_points}
+    Output: [{time, a_mean_km, a_dot_km_s, sym_h_nT, ...}, ...]"""
     weather_by_time = {}
     for weather_point in weather_points:
         weather_by_time[weather_point["time"]] = weather_point

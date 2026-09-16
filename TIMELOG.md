@@ -1,6 +1,6 @@
-# ISS Orbit Project - Time Log
+# Swarm-A Orbit Project - Time Log
 
-最後更新：2026-09-15
+最後更新：2026-09-16
 
 這份檔案是本專案的共同外部記憶。它記錄已確認的決策、已做過的事情、刻意不做的事情，避免之後重複討論或把測試資料誤當研究資料。
 
@@ -11,11 +11,13 @@
 - 程式碼不是只要能跑，還要讓人一眼看懂。
 - 不用壓縮寫法：不用 list comprehension、generator expression、巢狀函式、過度抽象的 class 或工具層。
 - 函式名稱要說清楚物理意義與單位，例如 `position_km`、`velocity_km_s`、`a_dot_km_s`。
-- 註解／docstring 用短格式即可，例如：
+- 程式註解盡量使用簡單英文；真的無法說清楚時才使用中文。
+- 英文使用常見單字與短句，重點是容易理解，不追求複雜文法。
+- docstring 用短格式與括號表示資料，例如：
 
   ```python
-  """輸入：{orbital_response, weather_points}
-  輸出：[{time, a_mean_km, a_dot_km_s, sym_h_nT, ...}, ...]"""
+  """Input: {orbital_response, weather_points}
+  Output: [{time, a_mean_km, a_dot_km_s, sym_h_nT, ...}, ...]"""
   ```
 
 - 不把「檢查用、驗證用、一次性實驗用」程式混進主程式。真的需要時再另外寫。
@@ -24,20 +26,20 @@
 
 ## 2. 目前研究目標
 
-研究主題：地磁暴期間，大氣密度延遲變化是否能改善 LEO 衛星的軌道傳播。
+研究主題：盡量準確預測 Swarm-A 在指定時間的 XYZ 座標。
 
-目前衛星：ISS。
+目前衛星：Swarm-A。
+
+通訊系統不是本專案範圍。本專案只提供有座標系與時間標記的衛星位置；其他系統自行使用該位置指向衛星。
 
 長期研究流程：
 
-1. 取得公開軌道與太空天氣資料。
-2. 排除 reboost 等機動事件。
-3. 從位置與速度得到軌道下降訊號。
-4. 比較 SYM-H、AE 與軌道反應的時間延遲。
-5. 以 GPR 學習相對於 NRLMSIS 2.0 的大氣密度修正倍率。
-6. 用另一場未參與訓練的地磁暴驗證。
+1. 取得公開 Swarm-A 精密軌道資料。
+2. 讀取官方位置、速度與品質資訊。
+3. 以官方精密軌道作為答案，檢查我們的傳播結果誤差。
+4. 逐步加入 J2、大氣阻力與太空天氣資料，改善較長時間預測。
 
-現在只完成最前面的資料格式、軌道反應計算骨架與假資料測試。尚未開始 GPR、NRLMSIS、J2 或大氣阻力傳播。
+現在只完成前期的資料格式、軌道反應計算骨架與假資料測試。尚未取得 Swarm-A 原始資料，也尚未開始 J2 或大氣阻力傳播。
 
 ## 3. 資料來源：已確認的事實
 
@@ -48,14 +50,13 @@
 - `POD`：由實際量測資料重建的高品質位置與速度序列，才適合當本研究的「觀測軌道」。
 - 更原始的 GNSS／測距量測也可以用，但必須自己做軌道決定；目前不走這條路。
 
-### ISS 的限制
+### Swarm-A 的正式資料
 
-- NASA TOPO 公開的 ISS OEM 是操作／規劃用的即時最佳估計軌跡，並非可直接下載的長期歷史 POD 真值。
-- ISS 的歷史 as-flown 軌跡產品叫 BET（Best Estimated Trajectory）。它不是目前可直接公開下載的資料。
-- 正式 ISS 研究資料的合理路徑：由使用者向 NASA/JSC TOPO 申請歷史 BET／POD；需要 UTC 時間、位置、速度、座標系、機動紀錄，以及可取得的質量／迎風面積／彈道係數資訊。
-- Space-Track 的 GP／GP_HISTORY 與 Heavens-Above 顯示的仍是 TLE 類資料，不是 POD。
-
-若拿不到 ISS BET／POD，之後要明確決定是否改用 Swarm 或 GRACE-FO；不能悄悄把研究對象換掉。
+- 主資料：ESA `SP3ACOM_2_` reduced-dynamic POD。
+- 每 10 秒一筆位置與速度，官方另有品質報告。
+- 原始座標系是 ITRF，原始時間是 GPS time。
+- Kinematic 軌道只做後續比較；主資料不用它，因為主資料已直接提供速度。
+- Swarm-A 有可協助理解非重力加速度與大氣阻力的公開科學資料；這是選它的主要優勢。
 
 ## 4. 座標、時間與單位：已定案
 
@@ -63,7 +64,8 @@
 - 主要時間：`UTC`。
 - 位置：`km`。
 - 速度：`km/s`。
-- 之後軌道傳播、ISS 狀態、太陽方向都先放在 EME2000。
+- 之後軌道傳播、Swarm-A 狀態、太陽方向都先放在 EME2000。
+- Swarm-A 原始 POD 讀入時，必須先處理 GPS time 與 ITRF；不要假裝它原本就是 UTC／EME2000。
 - 大氣模型需要經緯度高度時，才暫時由 EME2000 加 UTC／EOP 轉到 ITRF，再轉地理座標。
 - 未來阻力公式中的 `v_rel` 是相對大氣速度，必須扣掉地球自轉造成的大氣速度；不能直接拿 `vx, vy, vz`。
 
@@ -79,7 +81,7 @@ speed_km_s = sqrt(vx*vx + vy*vy + vz*vz)
 a_km = 1 / (2 / distance_km - speed_km_s*speed_km_s / MU)
 ```
 
-不使用近日點、遠日點或「第幾圈」切分。ISS 接近圓形，這些切點不穩定。
+不使用近日點、遠日點或「第幾圈」切分。Swarm-A 軌道接近圓形，這些切點不穩定。
 
 正式做法是「往回看一整圈」的滑動平均：
 
@@ -124,7 +126,7 @@ a_drag = -0.5 * Cd * A / m * rho * |v_rel| * v_rel
 
 - 114 小時平滑窗口遠大於想找的 1 到 6 小時延遲，會抹掉訊號，也可能製造假的時間偏移；不可用。
 - 本專案目前採用約 90 分鐘的一圈 trailing 平均，不是 114 小時。
-- 若未來改研究 ESA Swarm：官方 Kinematic 解常只有位置，對位置微分會放大雜訊；Reduced-dynamic 解同時有位置與速度，較適合用來算半長軸。
+- Swarm-A 的主資料採用 Reduced-dynamic 解；它同時有位置與速度，較適合用來算半長軸。
 - 高頻取樣不代表導數一定較準；必須比較平滑窗口，例如 30、60、90、150 分鐘，看結果是否穩定。
 - 2.5 小時雖比 114 小時合理，仍可能削弱一小時尺度的訊號。
 
@@ -138,29 +140,23 @@ a_drag = -0.5 * Cd * A / m * rho * |v_rel| * v_rel
 
 目前 `data/` 只有假資料：
 
-- `synthetic_iss_orbit.csv`：2024-05-10 至 2024-05-16，每四分鐘一筆，共 2520 筆六維 ISS 狀態。約第 30 小時起刻意加快軌道下降。
+- `synthetic_iss_orbit.csv`：舊的假軌道測試資料。檔名暫時不改，避免改動前期程式；它不是 Swarm-A 資料。
 - `synthetic_space_weather.csv`：同一時間軸、每四分鐘一筆，共 2520 筆。第 24 小時起為假地磁暴，約第 30 到 36 小時最強；故意做成約六小時後才出現假的軌道反應。
 
-這兩檔只驗證資料流程，不代表 ISS 真實歷史，不可做科學結論。
+這兩檔只驗證資料流程，不代表 Swarm-A 真實歷史，不可做科學結論。
 
 ## 10. 已刪除或刻意不保留的資料
 
-下列檔案／資料夾已刪除，原因是它們是 TLE 或暫時操作軌跡，不能當本研究正式 POD 資料：
-
-- `data/iss_oem_j2k_current.txt`
-- `data/iss_tle.txt`
-- `data/iss_tle_history_1998_2004.txt`
-- `data/tle/current/`
-- `data/tle/history/`
-- `data/tle/`
+舊的 ISS TLE 與暫時操作軌跡已移除；它們不屬於 Swarm-A 的正式 POD 資料。
 
 也不保留主套件內的驗證腳本與 Python cache。
 
 ## 11. 現有程式結構
 
 ```text
-iss_orbit/
-  data_orbit.py             讀取軌道 CSV／OEM、排除 reboost 時段
+satellite_orbit/
+  data_swarm_download.py   下載 Swarm-A POD 原始檔
+  data_orbit.py             讀取軌道 CSV
   data_space_weather.py     讀取太空天氣 CSV、和軌道反應對齊
   calc_forces.py            二體重力與狀態導數
   calc_integrator.py        fourth-order Runge-Kutta（RK4）傳播
@@ -187,9 +183,9 @@ RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 
 
 ## 12. 目前需要注意的檔案
 
-- `iss_orbit/data_space_weather.py` 是目前應使用的太空天氣資料模組。
-- 根目錄舊版重複的 `space_weather.py` 已於 2026-09-15 刪除；只保留 `iss_orbit/data_space_weather.py`，避免兩份同功能程式混淆。
-- `load_iss_oem()` 仍留在 `data_orbit.py`，但現在沒有正式 OEM/POD 原始檔可讀。拿到 NASA BET/POD 後再確認格式；若不需要 OEM 讀取器，應刪掉它，不要保留死程式。
+- `satellite_orbit/data_space_weather.py` 是目前應使用的太空天氣資料模組。
+- 根目錄舊版重複的 `space_weather.py` 已於 2026-09-15 刪除；只保留套件內的 `data_space_weather.py`。
+- 舊的 ISS OEM 與 reboost 讀取程式已移除。
 
 ## 13. Git
 
@@ -200,11 +196,27 @@ RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 
 
 ## 14. 下一步，尚未做
 
-1. 使用者決定是否向 NASA/JSC TOPO 申請 ISS 歷史 BET／POD。
-2. 拿到真實資料後，確認欄位、座標系、時間系統、取樣頻率、機動紀錄與 ISS 物理參數。
-3. 對真實 POD 做 reboost 排除與不規則時間間隔處理。
-4. 取得真實 SYM-H、AE、F10.7、F10.7A 原始資料並保存原檔。
-5. 先用真實資料檢查不同滑動窗口對延遲的影響。
-6. 才開始 MSIS、相對大氣速度、阻力、POD 配適與 GPR。
+1. 下載一日 Swarm-A `SP3ACOM_2_` 原始檔，先只看資料長相。
+2. 確認 GPS time、ITRF、位置、速度與品質資訊如何讀取。
+3. 將原始資料轉成我們固定的 UTC／EME2000 輸出格式。
+4. 用官方 POD 當答案，測量目前二體 RK4 的 XYZ 誤差。
+5. 再逐步加入 J2、大氣阻力與太空天氣資料。
 
-沒有真實 POD／BET 前，不應把假資料結果寫成研究結果。
+沒有真實 Swarm-A POD 前，不應把假資料結果寫成研究結果。
+
+## 多 chat 協作規則
+
+當同一件工作由多個 chat 同時處理時：
+
+```text
+主 chat：討論方向、做最後決策
+工作 chat：執行一個明確的小任務
+TIMELOG.md：共同的決策與目前事實
+Git：每次完成後保存版本
+```
+
+- 只能有一個主 chat 負責最後決策。
+- 不同 chat 不可同時修改同一個檔案。
+- 重要決策只寫進 `TIMELOG.md`，不要只留在聊天裡。
+- 完成一件事就 commit；下一個 chat 開始前先讀 `TIMELOG.md` 與最新 Git 狀態。
+- 需要交接時，只傳「做了什麼、改了什麼、下一步是什麼」的短摘要，不轉貼整段聊天。
