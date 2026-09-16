@@ -39,7 +39,7 @@
 3. 以官方精密軌道作為答案，檢查我們的傳播結果誤差。
 4. 逐步加入 J2、大氣阻力與太空天氣資料，改善較長時間預測。
 
-現在已有一日 Swarm-A 官方 POD、POD 讀取程式、二體重力與 RK4。尚未完成座標轉換、J2、大氣阻力與 POD 誤差比較。
+現在已有一日 Swarm-A 官方 POD、POD 讀取程式、二體重力、J2 公式與 RK4。J2 尚未接進 RK4，因為 GCRF／ITRF 轉換仍未完成。大氣阻力與 POD 誤差比較也尚未完成。
 
 ## 3. 資料來源：已確認的事實
 
@@ -159,7 +159,7 @@ a_drag = -0.5 * Cd * A / m * rho * |v_rel| * v_rel
 satellite_orbit/
   down_swarm_pod.py                 下載 Swarm-A POD 原始檔
   load_swarm_pod.py                 讀取本機 Swarm-A POD ZIP
-  calc_forces.py                    二體重力與狀態導數
+  calc_forces.py                    二體重力、J2 公式與狀態導數
   calc_integrator.py                fourth-order Runge-Kutta（RK4）傳播
   calc_orbital_response.py          計算 a、滑動一圈平均、a_dot
 data/
@@ -197,7 +197,7 @@ RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 
 ## 14. 下一步，尚未做
 
 1. 將 Swarm-A 原始資料由 GPS time／ITRF 轉成 UTC／GCRF。
-2. 研究並加入 J2。
+2. 把 J2 加速度由 ITRF 轉回 GCRF，再接進狀態導數。
 3. 用官方 POD 當答案，測量目前傳播器的 XYZ 與 RTN 誤差。
 4. 再加入大氣阻力與太空天氣資料。
 
