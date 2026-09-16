@@ -3,13 +3,17 @@
 from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
+import sys
 from urllib.parse import quote
 from urllib.request import urlopen
+from zipfile import BadZipFile, ZipFile
 
 
 ESA_SERVER = "https://swarm-diss.eo.esa.int/"
 SWARM_A_POD_FOLDER = "swarm/Level2daily/Latest_baselines/POD/RD/Sat_A"
 FILES_PER_PAGE = 10000
+DEFAULT_FIRST_DAY = "2025-01-01"
+DOWNLOAD_ATTEMPTS = 3
 
 
 def list_swarm_a_pod_files():
@@ -97,9 +101,11 @@ def download_source_file(source_file, output_folder):
     output_path = Path(output_folder) / source_file["name"]
 
     if output_path.exists():
-        if output_path.stat().st_size != source_file["size"]:
-            raise ValueError(f"Wrong file size: {output_path}")
-        return output_path, False
+        correct_size = output_path.stat().st_size == source_file["size"]
+        if correct_size and is_valid_swarm_zip(output_path):
+            return output_path, False
+
+        output_path.unlink()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     partial_path = Path(f"{output_path}.part")
@@ -107,19 +113,47 @@ def download_source_file(source_file, output_folder):
     download_url = (
         f"{ESA_SERVER}?do=download&file={quote(source_file['path'])}"
     )
-    with urlopen(download_url) as response:
-        with partial_path.open("wb") as output_file:
-            while True:
-                chunk = response.read(1024 * 1024)
-                if not chunk:
-                    break
-                output_file.write(chunk)
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        try:
+            with urlopen(download_url, timeout=120) as response:
+                with partial_path.open("wb") as output_file:
+                    while True:
+                        chunk = response.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        output_file.write(chunk)
 
-    if partial_path.stat().st_size != source_file["size"]:
-        raise ValueError(f"Incomplete download: {partial_path}")
+            correct_size = partial_path.stat().st_size == source_file["size"]
+            if not correct_size:
+                raise ValueError(f"Incomplete download: {partial_path}")
+
+            if not is_valid_swarm_zip(partial_path):
+                raise ValueError(f"Invalid ZIP file: {partial_path}")
+
+            break
+        except Exception:
+            if attempt == DOWNLOAD_ATTEMPTS:
+                raise
 
     partial_path.replace(output_path)
     return output_path, True
+
+
+def is_valid_swarm_zip(file_path):
+    """Input: ESA ZIP path
+    Output: True if the ZIP is readable and contains SP3 data"""
+    try:
+        with ZipFile(file_path) as zip_file:
+            if zip_file.testzip() is not None:
+                return False
+
+            for name in zip_file.namelist():
+                if name.lower().endswith(".sp3"):
+                    return True
+    except (BadZipFile, OSError):
+        return False
+
+    return False
 
 
 def download_swarm_a_pod(day_utc, data_folder="data"):
@@ -166,3 +200,18 @@ def download_swarm_a_pod_since(
             downloaded_paths.append(output_path)
 
     return downloaded_paths
+
+
+def main():
+    """Input: python down_swarm_pod.py [first day]
+    Output: complete, verified raw POD collection"""
+    first_day = DEFAULT_FIRST_DAY
+    if len(sys.argv) >= 2:
+        first_day = sys.argv[1]
+
+    file_paths = download_swarm_a_pod_since(first_day)
+    print(f"Complete: {len(file_paths)} verified files since {first_day}.")
+
+
+if __name__ == "__main__":
+    main()
