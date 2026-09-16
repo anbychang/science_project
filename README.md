@@ -30,6 +30,20 @@ Swarm-A POD points must be changed from ITRF to GCRF before propagation.
 Coordinate changes use Astropy and IERS Earth orientation data. Install the
 packages in `requirements.txt` before running the project.
 
+## Run one POD error test
+
+Use the default start point and predict 10 minutes:
+
+```powershell
+python main_pod_error.py
+```
+
+Choose another GPS start time and prediction length:
+
+```powershell
+python main_pod_error.py --day 2025-01-01 --start 01:30:00 --minutes 60
+```
+
 ## Model limits
 
 The current model is useful for short tests. It does not yet include atmospheric

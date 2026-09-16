@@ -170,6 +170,7 @@ satellite_orbit/
 data/
   swarm_a_pod/                      Swarm-A 官方 POD
   old/                              舊假資料，不作為研究結果
+main_pod_error.py                   執行一次 POD 位置誤差測試
 README.md
 AGENTS.md
 TIMELOG.md
