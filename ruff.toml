@@ -1,0 +1,18 @@
+# Keep code easy to read.
+line-length = 100
+target-version = "py310"
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[lint]
+select = [
+    "E4",  # Import and spacing errors
+    "E7",  # Statement errors
+    "E9",  # Serious syntax errors
+    "F",   # Common Python errors
+    "I",   # Import order
+]

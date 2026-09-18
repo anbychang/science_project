@@ -30,7 +30,7 @@ def calculate_orbital_response(orbit_points):
         instantaneous_a_km.append(calculate_semi_major_axis(point))
 
     sample_interval_s = (times[1] - times[0]).total_seconds()
-    orbit_period_s = 2.0 * pi * sqrt(instantaneous_a_km[0]**3 / MU)
+    orbit_period_s = 2.0 * pi * sqrt(instantaneous_a_km[0] ** 3 / MU)
     points_per_orbit = round(orbit_period_s / sample_interval_s) + 1
 
     a_mean_km = [None] * len(orbit_points)

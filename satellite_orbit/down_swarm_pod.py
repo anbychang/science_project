@@ -1,13 +1,12 @@
 """Download raw Swarm-A orbit files from ESA."""
 
-from concurrent.futures import ThreadPoolExecutor
 import json
-from pathlib import Path
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from urllib.parse import quote
 from urllib.request import urlopen
 from zipfile import BadZipFile, ZipFile
-
 
 ESA_SERVER = "https://swarm-diss.eo.esa.int/"
 SWARM_A_POD_FOLDER = "swarm/Level2daily/Latest_baselines/POD/RD/Sat_A"

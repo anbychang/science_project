@@ -7,10 +7,10 @@ reference frames.
 import astropy.units as u
 import numpy as np
 from astropy.coordinates import (
-    CartesianDifferential,
-    CartesianRepresentation,
     GCRS,
     ITRS,
+    CartesianDifferential,
+    CartesianRepresentation,
 )
 from astropy.time import Time
 
