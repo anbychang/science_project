@@ -52,6 +52,9 @@ The raw POD uses km and dm/s. The loader changes these values to SI once.
 NRLMSIS requires degrees and km, so only its adapter changes rad to degrees and
 `altitude_m` to km. F10.7 and Ap keep the units required by NRLMSIS.
 
+`SW-All.csv` is downloaded only when the local file is missing. Space-weather
+rows are prepared once for each day and then reused from memory.
+
 The active source is Swarm-A precise orbit data.
 
 Swarm-A POD points must be changed from ITRF to GCRF before propagation.

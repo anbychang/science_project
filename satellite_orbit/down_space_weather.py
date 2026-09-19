@@ -10,7 +10,7 @@ DEFAULT_FILE = Path("data/space_weather/SW-All.csv")
 
 def download_space_weather(file_path=DEFAULT_FILE):
     """Input: file path
-    Output: saved raw CSV path"""
+    Output: existing or newly downloaded raw CSV path"""
     file_path = Path(file_path)
 
     if file_path.exists():

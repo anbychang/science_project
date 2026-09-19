@@ -68,6 +68,7 @@
 - 原始 F10.7 與 Ap 使用 CelesTrak `SW-All.csv`，保存於 `data/space_weather/`，不修改內容。
 - `load_space_weather(state)` 會加入 `f107_sfu`、`f107a_sfu`、7 個 `ap_values` 與 `f107_data_type`。
 - NRLMSIS 的 F10.7 使用前一天觀測值；F10.7A 使用當天為中心的 81 日平均。
+- 太空天氣下載器只在原始檔不存在時下載。loader 第一次讀取某一天時建立快取，之後同一天的 state 直接重用，不重掃 CSV，也不重新下載。
 - 一段軌道資料是 `[state, state, ...]`，不使用 `{times: [...], states: [...]}`。
 - `position_m = [x, y, z]`，`velocity_m_s = [vx, vy, vz]`；不用難讀的六維 `values[0]`。
 - 半長軸等衍生時間序列仍使用一個時間一列的 row-based 格式。

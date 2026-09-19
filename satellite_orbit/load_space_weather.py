@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 DEFAULT_FILE = Path("data/space_weather/SW-All.csv")
+_weather_cache = {}
 
 
 def _read_needed_days(state_time, file_path):
@@ -42,6 +43,22 @@ def _make_ap_timeline(rows):
     return ap_by_time
 
 
+def _load_day_data(state_time, file_path):
+    file_path = Path(file_path).resolve()
+    cache_key = (file_path, state_time.date())
+
+    if cache_key in _weather_cache:
+        return _weather_cache[cache_key]
+
+    rows = _read_needed_days(state_time, file_path)
+    day_data = {
+        "rows": rows,
+        "ap_by_time": _make_ap_timeline(rows),
+    }
+    _weather_cache[cache_key] = day_data
+    return day_data
+
+
 def _three_hour_start(state_time):
     start_hour = state_time.hour - state_time.hour % 3
     return state_time.replace(
@@ -73,7 +90,8 @@ def load_space_weather(state, file_path=DEFAULT_FILE):
     ap_values = [daily, now, -3h, -6h, -9h, avg_12_to_33h, avg_36_to_57h]
     """
     state_time = state["time"].astimezone(timezone.utc)
-    rows = _read_needed_days(state_time, file_path)
+    day_data = _load_day_data(state_time, file_path)
+    rows = day_data["rows"]
 
     current_day = state_time.date()
     previous_day = current_day - timedelta(days=1)
@@ -83,7 +101,7 @@ def load_space_weather(state, file_path=DEFAULT_FILE):
 
     current_row = rows[current_day]
     previous_row = rows[previous_day]
-    ap_by_time = _make_ap_timeline(rows)
+    ap_by_time = day_data["ap_by_time"]
     current_ap_time = _three_hour_start(state_time)
 
     ap_values = [
