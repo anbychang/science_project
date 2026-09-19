@@ -6,7 +6,9 @@ gravity and J2.
 ## Layout
 
 - `satellite_orbit/down_swarm_pod.py`: get Swarm-A POD files from ESA.
+- `satellite_orbit/down_space_weather.py`: get raw F10.7 and Ap data.
 - `satellite_orbit/load_swarm_pod.py`: read a local Swarm-A POD ZIP file.
+- `satellite_orbit/load_space_weather.py`: add F10.7 and Ap to one state.
 - `satellite_orbit/calc_coordinates.py`: change states between GCRF and ITRF.
 - `satellite_orbit/calc_atmosphere.py`: calculate NRLMSIS 2.0 mass density.
 - `satellite_orbit/calc_time.py`: change GPS time to UTC.
@@ -24,6 +26,13 @@ state = {
     frame,
     position_m: [x, y, z],
     velocity_m_s: [vx, vy, vz],
+
+    # Added when the atmosphere is needed:
+    f107_sfu,
+    f107a_sfu,
+    ap_values,
+    f107_data_type,
+    density_kg_m3,
 }
 ```
 

@@ -65,6 +65,9 @@
 - 二體重力與 J2 也接收完整 state；一致性比少傳幾個未使用欄位更重要。
 - state 代表一個時間點的完整快照。F10.7、Ap 與大氣密度等會隨時間改變的資料可以直接加入 state；地球常數與衛星固定參數不放入。
 - 大氣函式接收 GCRF state，內部計算衛星的地理位置，再回傳加入 `density_kg_m3` 的同一種 state。
+- 原始 F10.7 與 Ap 使用 CelesTrak `SW-All.csv`，保存於 `data/space_weather/`，不修改內容。
+- `load_space_weather(state)` 會加入 `f107_sfu`、`f107a_sfu`、7 個 `ap_values` 與 `f107_data_type`。
+- NRLMSIS 的 F10.7 使用前一天觀測值；F10.7A 使用當天為中心的 81 日平均。
 - 一段軌道資料是 `[state, state, ...]`，不使用 `{times: [...], states: [...]}`。
 - `position_m = [x, y, z]`，`velocity_m_s = [vx, vy, vz]`；不用難讀的六維 `values[0]`。
 - 半長軸等衍生時間序列仍使用一個時間一列的 row-based 格式。
