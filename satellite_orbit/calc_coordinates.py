@@ -52,30 +52,7 @@ def gcrf_to_itrf(state):
 def itrf_to_gcrf(state):
     """Input: ITRF state
     Output: GCRF state"""
-    if state["frame"] != "ITRF":
-        raise ValueError("Input state must use ITRF.")
-
-    time = Time(state["time"], scale="utc")
-    position = np.asarray(state["position_m"]) * u.m
-    velocity = np.asarray(state["velocity_m_s"]) * u.m / u.s
-
-    cartesian_state = CartesianRepresentation(
-        position,
-        differentials=CartesianDifferential(velocity),
-    )
-    itrf_state = ITRS(cartesian_state, obstime=time)
-    gcrf_state = itrf_state.transform_to(GCRS(obstime=time))
-
-    position_m = gcrf_state.cartesian.xyz.to_value(u.m)
-    velocity_gcrf = gcrf_state.cartesian.differentials["s"].d_xyz
-    velocity_m_s = velocity_gcrf.to_value(u.m / u.s)
-
-    return {
-        "time": state["time"],
-        "frame": "GCRF",
-        "position_m": position_m,
-        "velocity_m_s": velocity_m_s,
-    }
+    return itrf_states_to_gcrf([state])[0]
 
 
 def itrf_states_to_gcrf(states):

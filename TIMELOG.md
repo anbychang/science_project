@@ -68,7 +68,7 @@
 - 原始 F10.7 與 Ap 使用 CelesTrak `SW-All.csv`，保存於 `data/space_weather/`，不修改內容。
 - `load_space_weather(state)` 會加入 `f107_sfu`、`f107a_sfu`、7 個 `ap_values` 與 `f107_data_type`。
 - NRLMSIS 的 F10.7 使用前一天觀測值；F10.7A 使用當天為中心的 81 日平均。
-- 太空天氣下載器只在原始檔不存在時下載。loader 第一次讀取某一天時建立快取，之後同一天的 state 直接重用，不重掃 CSV，也不重新下載。
+- 太空天氣下載器只在原始檔不存在時下載。loader 第一次使用時建立本機資料索引，之後所有 state 直接重用，不重掃 CSV，也不重新下載。
 - 每個函式都必須用短 docstring 寫出 Input 與 Output；資料形狀優先用 `[]`、`{}` 與 `...` 畫出來，不用長句解釋。
 - prepared state 採用可直接查看的 CSV，一列代表一個 `{POD GCRF state + F10.7 + F10.7A + Ap}`。
 - `prep_month_states.py` 只整理本機原始資料；缺少 POD 時直接報錯，不由 loader 暗中下載。
@@ -135,7 +135,7 @@ a_m = 1 / (2 / distance_m - speed_m_s*speed_m_s / MU_M3_S2)
 - `F10.7A(t)`：F10.7 的 81 日平均；不是 `F81`。
 - Dst 可作為較長時間尺度的輔助資料，非主訊號。
 
-軌道反應和太空天氣資料需要對到相同 UTC 時間點；目前假資料剛好都是四分鐘一筆，所以用精確時間對齊。
+軌道反應和太空天氣資料需要對到相同 UTC 時間點。官方 POD 為每 10 秒一筆；F10.7 為每日資料，Ap 為每三小時資料。
 
 ## 7. 大氣阻力與 GPR
 
@@ -179,20 +179,21 @@ ITRF [x, y, z]
 
 原則：
 
-- 真實來源資料只保存原始檔，不在 `data/` 覆寫或混入清理後結果。
-- 清理、對齊、平均等衍生結果先在記憶體中算；正式要輸出時另行決定格式與位置。
-- 假資料可保存，但檔名必須以 `synthetic_` 開頭，並永遠不可作為研究證據。
+- 真實來源資料保存原始檔，不覆寫內容。
+- 整理後的月資料另存為 `prepared_swarm_a_YYYY-MM.csv`，可以隨時由原始資料重建。
+- prepared CSV 保存在 SSD，但不提交 Git。
 
-目前 `data/` 只有假資料：
+目前 `data/` 包含：
 
-- `synthetic_iss_orbit.csv`：舊的假軌道測試資料。檔名暫時不改，避免改動前期程式；它不是 Swarm-A 資料。
-- `synthetic_space_weather.csv`：同一時間軸、每四分鐘一筆，共 2520 筆。第 24 小時起為假地磁暴，約第 30 到 36 小時最強；故意做成約六小時後才出現假的軌道反應。
-
-這兩檔只驗證資料流程，不代表 Swarm-A 真實歷史，不可做科學結論。
+- `swarm_a_pod/`：ESA 原始 POD ZIP。
+- `space_weather/SW-All.csv`：原始 F10.7 與 Ap。
+- `prepared_swarm_a_2025-01.csv`：可直接查看的整理結果。
 
 ## 10. 已刪除或刻意不保留的資料
 
 舊的 ISS TLE 與暫時操作軌跡已移除；它們不屬於 Swarm-A 的正式 POD 資料。
+
+舊的 ISS 假軌道與假太空天氣 CSV 也已移除；正式流程只保留官方原始資料與可重新產生的 prepared CSV。
 
 也不保留主套件內的驗證腳本與 Python cache。
 
@@ -201,19 +202,22 @@ ITRF [x, y, z]
 ```text
 satellite_orbit/
   down_swarm_pod.py                 下載 Swarm-A POD 原始檔
+  down_space_weather.py             下載原始 F10.7 與 Ap
   prep_month_states.py              產生可直接查看的月資料 CSV
   load_swarm_pod.py                 讀取本機 Swarm-A POD ZIP
+  load_space_weather.py             從本機原始檔取得 F10.7 與 Ap
   load_prepared_states.py           將月資料 CSV 還原成 states
-  calc_coordinates.py              GCRF／ITRF 狀態與向量轉換
-  calc_atmosphere.py               NRLMSIS 2.0 大氣密度
-  calc_time.py                     GPS time 轉 UTC
-  calc_forces.py                   二體重力、J2 與狀態導數
+  calc_coordinates.py               GCRF／ITRF 狀態與向量轉換
+  calc_atmosphere.py                NRLMSIS 2.0 大氣密度
+  calc_time.py                      GPS time 轉 UTC
+  calc_forces.py                    二體重力、J2 與狀態導數
   calc_integrator.py                fourth-order Runge-Kutta（RK4）傳播
   calc_position_error.py            計算預測位置與官方位置的距離
   calc_orbital_response.py          計算 a、滑動一圈平均、a_dot
 data/
   swarm_a_pod/                      Swarm-A 官方 POD
-  old/                              舊假資料，不作為研究結果
+  space_weather/                    原始 F10.7 與 Ap
+  prepared_swarm_a_YYYY-MM.csv      整理後的月資料，不提交 Git
 main_pod_error.py                   執行一次 POD 位置誤差測試
 README.md
 AGENTS.md
@@ -223,43 +227,41 @@ TIMELOG.md
 目前最小正式流程已用官方 POD 跑通：
 
 ```text
-讀取第一筆官方 POD
--> GPS time 轉 UTC
--> ITRF 狀態轉 GCRF
+讀取 prepared GCRF states
+-> 取出起點與未來官方位置
 -> 二體重力 + J2 + RK4
 -> 與未來官方 POD 比較位置誤差
 ```
 
-2025-01-01、RK4 步長 10 秒的第一組結果：
+目前預設測試：
 
 ```text
-預測時間    二體重力誤差    二體重力 + J2 誤差
-10 分鐘       1814.660 m          30.444 m
-30 分鐘       5628.871 m         309.027 m
-60 分鐘      21430.026 m        1301.124 m
-90 分鐘      27618.103 m        1110.449 m
+起點：2025-01-01 00:00:02 UTC
+模型：二體重力 + J2 + RK4
+步長：10 秒
+預測：10 分鐘
+位置誤差：29.295 m
 ```
 
 RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 與 Euler 而存在，現在已移除。也已移除 `make_derivative` 這類函式內函式的寫法。
 
 ## 12. 目前需要注意的檔案
 
-- 太空天氣 loader 尚未用到，已移除；加入大氣阻力模型時再重新設計。
+- `main_pod_error.py` 直接讀取 prepared CSV，不再重複解析 POD、轉 GPS time 或轉 GCRF。
 - 舊的 CSV、ISS OEM 與 reboost 讀取程式已移除。
 
 ## 13. Git
 
 - 2026-09-15：建立本機 Git repository。
-- 第一個提交應包含目前可用的程式、假資料、研究決策與時間日誌。
 - 2026-09-15：已建立私有 GitHub repository：`https://github.com/anbychang/science_project`。
-- `master` 已連到 `origin/master`，目前提交已推送至 GitHub。
+- `master` 已連到 `origin/master`；目前本機有尚未推送的提交。
 
 ## 14. 下一步，尚未做
 
 1. 將位置總誤差拆成 RTN 三個方向。
 2. 檢查不同起始時間與預測長度的誤差。
 3. 逐步加入更完整的地球重力項。
-4. 取得並保存 F10.7、F10.7A 與 Ap 原始資料。
+4. 取得並保存 SYM-H 與 AE 原始資料。
 5. 將 NRLMSIS 密度與大氣阻力接進 RK4。
 
 官方 POD 只作為起始狀態與答案；不能把未來 POD 偷放進傳播器修正預測。

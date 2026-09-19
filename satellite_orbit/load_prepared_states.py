@@ -38,13 +38,20 @@ def _row_to_state(row):
     }
 
 
-def load_prepared_states(file_path):
-    """Input: prepared CSV path
+def load_prepared_states(file_path, start_time=None, end_time=None):
+    """Input: {prepared CSV path, start_time=None, end_time=None}
     Output: [state_1, state_2, state_3, ...]"""
     states = []
 
     with Path(file_path).open(encoding="utf-8", newline="") as file:
         for row in csv.DictReader(file):
-            states.append(_row_to_state(row))
+            state = _row_to_state(row)
+
+            if start_time is not None and state["time"] < start_time:
+                continue
+            if end_time is not None and state["time"] > end_time:
+                break
+
+            states.append(state)
 
     return states

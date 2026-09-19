@@ -54,8 +54,8 @@ The raw POD uses km and dm/s. The loader changes these values to SI once.
 NRLMSIS requires degrees and km, so only its adapter changes rad to degrees and
 `altitude_m` to km. F10.7 and Ap keep the units required by NRLMSIS.
 
-`SW-All.csv` is downloaded only when the local file is missing. Space-weather
-rows are prepared once for each day and then reused from memory.
+`SW-All.csv` is downloaded only when the local file is missing. The local file
+is indexed once when first used, then reused from memory.
 
 The active source is Swarm-A precise orbit data.
 
@@ -72,10 +72,10 @@ Use the default start point and predict 10 minutes:
 python main_pod_error.py
 ```
 
-Choose another GPS start time and prediction length:
+Choose another UTC start time and prediction length:
 
 ```powershell
-python main_pod_error.py --day 2025-01-01 --start 01:30:00 --minutes 60
+python main_pod_error.py --day 2025-01-01 --start 01:30:02 --minutes 60
 ```
 
 Prepare one UTC month for repeated experiments:
@@ -86,6 +86,8 @@ python -m satellite_orbit.prep_month_states 2025-01
 
 The output is `data/prepared_swarm_a_2025-01.csv`. It is generated data and is
 not committed to Git.
+
+`main_pod_error.py` reads this prepared CSV. `--day` and `--start` use UTC.
 
 ## Model limits
 
