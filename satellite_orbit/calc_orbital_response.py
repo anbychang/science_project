@@ -6,10 +6,14 @@ from satellite_orbit.calc_forces import MU
 
 
 def calculate_semi_major_axis(point):
-    """Input: {position_km, velocity_km_s}
+    """Input: {time, x_gcrf_km, ..., vz_gcrf_km_s}
     Output: semi_major_axis_km"""
-    x_km, y_km, z_km = point["position_km"]
-    vx_km_s, vy_km_s, vz_km_s = point["velocity_km_s"]
+    x_km = point["x_gcrf_km"]
+    y_km = point["y_gcrf_km"]
+    z_km = point["z_gcrf_km"]
+    vx_km_s = point["vx_gcrf_km_s"]
+    vy_km_s = point["vy_gcrf_km_s"]
+    vz_km_s = point["vz_gcrf_km_s"]
 
     distance_km = sqrt(x_km**2 + y_km**2 + z_km**2)
     speed_km_s = sqrt(vx_km_s**2 + vy_km_s**2 + vz_km_s**2)
@@ -17,8 +21,8 @@ def calculate_semi_major_axis(point):
 
 
 def calculate_orbital_response(orbit_points):
-    """Input: [{time, position_km, velocity_km_s}, ...]
-    Output: {time, instantaneous_a_km, a_mean_km, a_dot_km_s}"""
+    """Input: [{time, x_gcrf_km, ..., vz_gcrf_km_s}, ...]
+    Output: [{time, instantaneous_a_km, a_mean_km, a_dot_km_s}, ...]"""
     if len(orbit_points) < 2:
         raise ValueError("At least two orbit points are required.")
 
@@ -44,9 +48,16 @@ def calculate_orbital_response(orbit_points):
         if previous_mean is not None:
             a_dot_km_s[index] = (a_mean_km[index] - previous_mean) / sample_interval_s
 
-    return {
-        "time": times,
-        "instantaneous_a_km": instantaneous_a_km,
-        "a_mean_km": a_mean_km,
-        "a_dot_km_s": a_dot_km_s,
-    }
+    response_points = []
+
+    for index in range(len(orbit_points)):
+        response_points.append(
+            {
+                "time": times[index],
+                "instantaneous_a_km": instantaneous_a_km[index],
+                "a_mean_km": a_mean_km[index],
+                "a_dot_km_s": a_dot_km_s[index],
+            }
+        )
+
+    return response_points

@@ -18,6 +18,9 @@ gravity and J2.
 
 ## Orbit-data convention
 
+- One time-series point is `{time, named_value_1, ..., named_value_n}`.
+- One time series is `[point, point, ...]`.
+- Do not store time and values in separate arrays.
 - Main coordinate frame: GCRF
 - POD source frame: ITRF
 - Time system: UTC

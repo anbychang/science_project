@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from zipfile import ZipFile
 
+from .calc_time import gps_time_to_utc, gps_times_to_utc
 from .down_swarm_pod import download_swarm_a_pod
 
 DM_S_TO_KM_S = 0.0001
@@ -54,7 +55,7 @@ def _make_orbit_point(time_gps, position, velocity):
     vx, vy, vz = velocity
 
     return {
-        "time_gps": time_gps,
+        "time": time_gps,
         "x_itrf_km": x,
         "y_itrf_km": y,
         "z_itrf_km": z,
@@ -66,7 +67,7 @@ def _make_orbit_point(time_gps, position, velocity):
 
 def load_swarm_pod(zip_path):
     """Input: Swarm-A POD ZIP
-    Output: [{time_gps, x, y, z, vx, vy, vz}, ...]"""
+    Output: [{time, x_itrf_km, ..., vz_itrf_km_s}, ...]"""
     orbit_points = []
 
     with ZipFile(zip_path) as zip_file:
@@ -84,6 +85,14 @@ def load_swarm_pod(zip_path):
                     velocity = _read_velocity(line)
                     point = _make_orbit_point(time_gps, position, velocity)
                     orbit_points.append(point)
+
+    times_gps = []
+    for point in orbit_points:
+        times_gps.append(point["time"])
+
+    times_utc = gps_times_to_utc(times_gps)
+    for index in range(len(orbit_points)):
+        orbit_points[index]["time"] = times_utc[index]
 
     return orbit_points
 
@@ -115,20 +124,23 @@ def load_swarm_pod_period(
     data_folder=DEFAULT_POD_FOLDER,
 ):
     """Input: {day_gps, start_time_gps, end_time_gps}
-    Output: [{time_gps, x, y, z, vx, vy, vz}, ...]"""
-    start = datetime.fromisoformat(f"{day_gps}T{start_time_gps}")
-    end = datetime.fromisoformat(f"{day_gps}T{end_time_gps}")
+    Output: [{time, x_itrf_km, ..., vz_itrf_km_s}, ...]"""
+    start_gps = datetime.fromisoformat(f"{day_gps}T{start_time_gps}")
+    end_gps = datetime.fromisoformat(f"{day_gps}T{end_time_gps}")
 
-    if end <= start:
+    if end_gps <= start_gps:
         raise ValueError("End time must be later than start time.")
+
+    start_utc = gps_time_to_utc(start_gps)
+    end_utc = gps_time_to_utc(end_gps)
 
     zip_path = _find_swarm_pod_zip(day_gps, data_folder)
     all_points = load_swarm_pod(zip_path)
     selected_points = []
 
     for point in all_points:
-        time_gps = point["time_gps"]
-        if time_gps < start or time_gps >= end:
+        time_utc = point["time"]
+        if time_utc < start_utc or time_utc >= end_utc:
             continue
 
         selected_points.append(point)

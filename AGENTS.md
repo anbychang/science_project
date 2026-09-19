@@ -15,3 +15,8 @@ Use four-letter file prefixes to show purpose: `calc_` for math and physics,
 Use short, simple English in code comments. Use Chinese only when simple English
 cannot explain the idea. Show data shapes with `[]` and `{}` when that is easier
 to read than a full sentence.
+
+Store every time series in row form: one point is
+`{time, named_value_1, ..., named_value_n}` and one series is `[point, ...]`.
+Do not store time and values in separate arrays. RK4 may still use a temporary
+`[x, y, z, vx, vy, vz]` vector during calculation.
