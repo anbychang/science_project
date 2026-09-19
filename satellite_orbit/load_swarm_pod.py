@@ -106,10 +106,9 @@ def _find_swarm_pod_zip(day_gps, data_folder):
     """Input: {day_gps: "YYYY-MM-DD", data_folder}
     Output: ZIP path for that GPS day"""
     day_text = day_gps.replace("-", "")
-    year_folder = Path(data_folder) / day_text[:4]
     zip_paths = []
 
-    for zip_path in year_folder.glob("*.ZIP"):
+    for zip_path in Path(data_folder).glob("*.ZIP"):
         file_day = zip_path.name.split("_")[-2][:8]
 
         if file_day == day_text:

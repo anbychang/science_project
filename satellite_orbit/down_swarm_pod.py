@@ -61,9 +61,8 @@ def select_latest_files(source_files, first_day):
 
 def download_file(source_file, data_folder):
     """Output: local ZIP path."""
-    day = get_file_day(source_file)
-    year_folder = Path(data_folder) / day[:4]
-    output_path = year_folder / source_file["name"]
+    data_folder = Path(data_folder)
+    output_path = data_folder / source_file["name"]
 
     correct_size = (
         output_path.exists()
@@ -72,7 +71,7 @@ def download_file(source_file, data_folder):
     if correct_size:
         return output_path
 
-    year_folder.mkdir(parents=True, exist_ok=True)
+    data_folder.mkdir(parents=True, exist_ok=True)
     download_url = f"{ESA_SERVER}?do=download&file={quote(source_file['path'])}"
     urlretrieve(download_url, output_path)
     return output_path
