@@ -19,7 +19,8 @@ to read than a full sentence.
 Use one orbit-state shape everywhere in the pipeline:
 `{time, frame, position_m, velocity_m_s}`. Pass this single state between the
 loader, coordinate changes, forces, RK4, and error calculation. One orbit series
-is `[state, ...]`. Do not split time, position, and velocity into separate inputs.
+is `[state, ...]`. Force functions, including two-body and J2, also receive the
+whole state. Do not split time, position, and velocity into separate inputs.
 
 Use SI units inside the project: m, m/s, m/s^2, s, rad, kg, m^2, and kg/m^3.
 Convert source units once in the loader. Convert again only when an external

@@ -16,19 +16,25 @@ R_EARTH_M = 6378137.0
 J2 = 1.08262668e-3
 
 
-def two_body_acceleration(position_gcrf_m):
-    """Input: position_gcrf_m = [x, y, z]
+def two_body_acceleration(state):
+    """Input: GCRF state
     Output: [ax, ay, az]"""
-    distance_m = np.linalg.norm(position_gcrf_m)
-    return -MU_M3_S2 * position_gcrf_m / distance_m**3
+    if state["frame"] != "GCRF":
+        raise ValueError("Two-body state must use GCRF.")
+
+    position_m = state["position_m"]
+    distance_m = np.linalg.norm(position_m)
+    return -MU_M3_S2 * position_m / distance_m**3
 
 
-def j2_acceleration(position_itrf_m):
-    """Input: position_itrf_m = [x, y, z]
+def j2_acceleration(state):
+    """Input: ITRF state
     Output: acceleration_itrf_m_s2 = [ax, ay, az]"""
-    x_m, y_m, z_m = position_itrf_m
+    if state["frame"] != "ITRF":
+        raise ValueError("J2 state must use ITRF.")
 
-    distance_m = np.linalg.norm(position_itrf_m)
+    x_m, y_m, z_m = state["position_m"]
+    distance_m = np.linalg.norm(state["position_m"])
     distance_squared_m2 = distance_m * distance_m
     z_ratio_squared = z_m * z_m / distance_squared_m2
 
@@ -46,10 +52,10 @@ def j2_acceleration(position_itrf_m):
 def gravity_acceleration(state):
     """Input: GCRF state
     Output: acceleration_gcrf_m_s2 = [ax, ay, az]"""
-    two_body_gcrf = two_body_acceleration(state["position_m"])
+    two_body_gcrf = two_body_acceleration(state)
 
     state_itrf = gcrf_to_itrf(state)
-    j2_itrf_m_s2 = j2_acceleration(state_itrf["position_m"])
+    j2_itrf_m_s2 = j2_acceleration(state_itrf)
     j2_gcrf_m_s2 = itrf_vector_to_gcrf(state["time"], j2_itrf_m_s2)
 
     return two_body_gcrf + j2_gcrf_m_s2

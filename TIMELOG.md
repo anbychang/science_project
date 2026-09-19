@@ -62,6 +62,7 @@
 
 - 軌道流程只使用一種 state：`{time, frame, position_m, velocity_m_s}`。
 - loader、座標轉換、力模型、RK4 與誤差計算之間只傳一個 state，不再分開傳 time、position、velocity。
+- 二體重力與 J2 也接收完整 state；一致性比少傳幾個未使用欄位更重要。
 - 一段軌道資料是 `[state, state, ...]`，不使用 `{times: [...], states: [...]}`。
 - `position_m = [x, y, z]`，`velocity_m_s = [vx, vy, vz]`；不用難讀的六維 `values[0]`。
 - 半長軸等衍生時間序列仍使用一個時間一列的 row-based 格式。
