@@ -16,10 +16,10 @@ Use short, simple English in code comments. Use Chinese only when simple English
 cannot explain the idea. Show data shapes with `[]` and `{}` when that is easier
 to read than a full sentence.
 
-Store every time series in row form: one point is
-`{time, named_value_1, ..., named_value_n}` and one series is `[point, ...]`.
-Do not store time and values in separate arrays. RK4 may still use a temporary
-`[x, y, z, vx, vy, vz]` vector during calculation.
+Use one orbit-state shape everywhere in the pipeline:
+`{time, frame, position_m, velocity_m_s}`. Pass this single state between the
+loader, coordinate changes, forces, RK4, and error calculation. One orbit series
+is `[state, ...]`. Do not split time, position, and velocity into separate inputs.
 
 Use SI units inside the project: m, m/s, m/s^2, s, rad, kg, m^2, and kg/m^3.
 Convert source units once in the loader. Convert again only when an external

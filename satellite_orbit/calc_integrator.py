@@ -2,51 +2,62 @@
 
 from datetime import timedelta
 
-import numpy as np
-
 from satellite_orbit.calc_forces import state_derivative
 
 
-def rk4_step(time_utc, state, dt_s):
-    """Input: {time_utc, [x, y, z, vx, vy, vz], dt_s}
-    Output: [x, y, z, vx, vy, vz]"""
-    half_time_utc = time_utc + timedelta(seconds=0.5 * dt_s)
-    end_time_utc = time_utc + timedelta(seconds=dt_s)
-
-    k1 = state_derivative(time_utc, state)
-    k2 = state_derivative(half_time_utc, state + 0.5 * dt_s * k1)
-    k3 = state_derivative(half_time_utc, state + 0.5 * dt_s * k2)
-    k4 = state_derivative(end_time_utc, state + dt_s * k3)
-
-    return state + (dt_s / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
-
-
-def make_gcrf_orbit_point(time_utc, state):
-    """Input: {time_utc, [x, y, z, vx, vy, vz]}
-    Output: {time, x_gcrf_m, ..., vz_gcrf_m_s}"""
+def shifted_state(state, derivative, shift_s):
+    """Input: {state, derivative, shift_s}
+    Output: shifted GCRF state"""
     return {
-        "time": time_utc,
-        "x_gcrf_m": state[0],
-        "y_gcrf_m": state[1],
-        "z_gcrf_m": state[2],
-        "vx_gcrf_m_s": state[3],
-        "vy_gcrf_m_s": state[4],
-        "vz_gcrf_m_s": state[5],
+        "time": state["time"] + timedelta(seconds=shift_s),
+        "frame": state["frame"],
+        "position_m": state["position_m"] + shift_s * derivative["position_rate_m_s"],
+        "velocity_m_s": (
+            state["velocity_m_s"] + shift_s * derivative["velocity_rate_m_s2"]
+        ),
     }
 
 
-def propagate(initial_state, dt_s, n_steps, start_time_utc):
-    """Input: {initial_state, dt_s, n_steps, start_time_utc}
-    Output: [{time, x_gcrf_m, ..., vz_gcrf_m_s}, ...]"""
-    state = np.asarray(initial_state, dtype=float)
-    orbit_points = []
+def rk4_step(state, dt_s):
+    """Input: {GCRF state, dt_s}
+    Output: GCRF state after dt_s"""
+    if state["frame"] != "GCRF":
+        raise ValueError("RK4 state must use GCRF.")
 
-    time_utc = start_time_utc
-    orbit_points.append(make_gcrf_orbit_point(time_utc, state))
+    k1 = state_derivative(state)
+    k2 = state_derivative(shifted_state(state, k1, 0.5 * dt_s))
+    k3 = state_derivative(shifted_state(state, k2, 0.5 * dt_s))
+    k4 = state_derivative(shifted_state(state, k3, dt_s))
+
+    position_change_m = (dt_s / 6.0) * (
+        k1["position_rate_m_s"]
+        + 2.0 * k2["position_rate_m_s"]
+        + 2.0 * k3["position_rate_m_s"]
+        + k4["position_rate_m_s"]
+    )
+    velocity_change_m_s = (dt_s / 6.0) * (
+        k1["velocity_rate_m_s2"]
+        + 2.0 * k2["velocity_rate_m_s2"]
+        + 2.0 * k3["velocity_rate_m_s2"]
+        + k4["velocity_rate_m_s2"]
+    )
+
+    return {
+        "time": state["time"] + timedelta(seconds=dt_s),
+        "frame": "GCRF",
+        "position_m": state["position_m"] + position_change_m,
+        "velocity_m_s": state["velocity_m_s"] + velocity_change_m_s,
+    }
+
+
+def propagate(initial_state, dt_s, n_steps):
+    """Input: {initial_state, dt_s, n_steps}
+    Output: [GCRF state, ...]"""
+    orbit_states = [initial_state]
+    state = initial_state
 
     for _ in range(n_steps):
-        state = rk4_step(time_utc, state, dt_s)
-        time_utc = time_utc + timedelta(seconds=dt_s)
-        orbit_points.append(make_gcrf_orbit_point(time_utc, state))
+        state = rk4_step(state, dt_s)
+        orbit_states.append(state)
 
-    return orbit_points
+    return orbit_states

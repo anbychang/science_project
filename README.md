@@ -16,11 +16,20 @@ gravity and J2.
 - `satellite_orbit/calc_orbital_response.py`: semi-major axis and orbit-decay signals.
 - `data/`: source orbit files. They remain unchanged.
 
-## Orbit-data convention
+## Orbit-state convention
 
-- One time-series point is `{time, named_value_1, ..., named_value_n}`.
-- One time series is `[point, point, ...]`.
-- Do not store time and values in separate arrays.
+```text
+state = {
+    time,
+    frame,
+    position_m: [x, y, z],
+    velocity_m_s: [vx, vy, vz],
+}
+```
+
+- Functions pass one `state` instead of separate time, position, and velocity.
+- One orbit series is `[state, state, ...]`.
+- Derived time series still use one row for each time.
 - Main coordinate frame: GCRF
 - POD source frame: ITRF
 - Time system: UTC

@@ -3,7 +3,6 @@
 import argparse
 from datetime import datetime, timedelta
 
-import numpy as np
 from astropy.utils import iers
 
 from satellite_orbit.calc_coordinates import itrf_to_gcrf
@@ -16,44 +15,19 @@ from satellite_orbit.load_swarm_pod import load_swarm_pod_period
 RK4_STEP_SECONDS = 10
 
 
-def find_point(orbit_points, target_time):
-    """Input: {orbit_points, target_time}
-    Output: one orbit point"""
-    for point in orbit_points:
-        if point["time"] == target_time:
-            return point
+def find_state(orbit_states, target_time):
+    """Input: {orbit_states, target_time}
+    Output: one orbit state"""
+    for state in orbit_states:
+        if state["time"] == target_time:
+            return state
 
     raise ValueError(f"No POD point at UTC time {target_time}.")
 
 
-def point_to_gcrf(point):
-    """Input: one ITRF POD point
-    Output: {time, x_gcrf_m, ..., vz_gcrf_m_s}"""
-    position_itrf_m = np.array(
-        [point["x_itrf_m"], point["y_itrf_m"], point["z_itrf_m"]]
-    )
-    velocity_itrf_m_s = np.array(
-        [point["vx_itrf_m_s"], point["vy_itrf_m_s"], point["vz_itrf_m_s"]]
-    )
-    time_utc = point["time"]
-    state_gcrf = itrf_to_gcrf(time_utc, position_itrf_m, velocity_itrf_m_s)
-    position_gcrf_m = state_gcrf["position_gcrf_m"]
-    velocity_gcrf_m_s = state_gcrf["velocity_gcrf_m_s"]
-
-    return {
-        "time": time_utc,
-        "x_gcrf_m": position_gcrf_m[0],
-        "y_gcrf_m": position_gcrf_m[1],
-        "z_gcrf_m": position_gcrf_m[2],
-        "vx_gcrf_m_s": velocity_gcrf_m_s[0],
-        "vy_gcrf_m_s": velocity_gcrf_m_s[1],
-        "vz_gcrf_m_s": velocity_gcrf_m_s[2],
-    }
-
-
 def calculate_error(day_gps, start_time_gps, prediction_minutes):
     """Input: {day_gps, start_time_gps, prediction_minutes}
-    Output: {start_time_utc, target_time_utc, error_m}"""
+    Output: {initial_state, predicted_state, official_state, error_m}"""
     start_gps = datetime.fromisoformat(f"{day_gps}T{start_time_gps}")
     target_gps = start_gps + timedelta(minutes=prediction_minutes)
 
@@ -63,61 +37,31 @@ def calculate_error(day_gps, start_time_gps, prediction_minutes):
     start_utc = gps_time_to_utc(start_gps)
     target_utc = gps_time_to_utc(target_gps)
 
-    orbit_points = load_swarm_pod_period(
+    orbit_states = load_swarm_pod_period(
         day_gps,
         "00:00:00",
         "23:59:59.999999",
     )
-    start_point = find_point(orbit_points, start_utc)
-    target_point = find_point(orbit_points, target_utc)
+    start_state = find_state(orbit_states, start_utc)
+    target_state = find_state(orbit_states, target_utc)
 
-    initial = point_to_gcrf(start_point)
-    official = point_to_gcrf(target_point)
-
-    initial_state = np.array(
-        [
-            initial["x_gcrf_m"],
-            initial["y_gcrf_m"],
-            initial["z_gcrf_m"],
-            initial["vx_gcrf_m_s"],
-            initial["vy_gcrf_m_s"],
-            initial["vz_gcrf_m_s"],
-        ]
-    )
+    initial_state = itrf_to_gcrf(start_state)
+    official_state = itrf_to_gcrf(target_state)
     duration_seconds = prediction_minutes * 60
     n_steps = duration_seconds // RK4_STEP_SECONDS
 
-    predicted_points = propagate(
+    predicted_states = propagate(
         initial_state,
         RK4_STEP_SECONDS,
         n_steps,
-        initial["time"],
     )
-    predicted_point = predicted_points[-1]
-    predicted_position_gcrf_m = np.array(
-        [
-            predicted_point["x_gcrf_m"],
-            predicted_point["y_gcrf_m"],
-            predicted_point["z_gcrf_m"],
-        ]
-    )
-    official_position_gcrf_m = np.array(
-        [
-            official["x_gcrf_m"],
-            official["y_gcrf_m"],
-            official["z_gcrf_m"],
-        ]
-    )
-    error_m = position_error_m(
-        predicted_position_gcrf_m,
-        official_position_gcrf_m,
-    )
+    predicted_state = predicted_states[-1]
+    error_m = position_error_m(predicted_state, official_state)
 
     return {
-        "start_time_utc": predicted_points[0]["time"],
-        "target_time_utc": predicted_point["time"],
-        "predicted_position_gcrf_m": predicted_position_gcrf_m,
-        "official_position_gcrf_m": official_position_gcrf_m,
+        "initial_state": initial_state,
+        "predicted_state": predicted_state,
+        "official_state": official_state,
         "error_m": error_m,
     }
 
@@ -134,12 +78,15 @@ def main():
     iers.conf.auto_download = False
     arguments = read_arguments()
     result = calculate_error(arguments.day, arguments.start, arguments.minutes)
+    initial_state = result["initial_state"]
+    predicted_state = result["predicted_state"]
+    official_state = result["official_state"]
 
     print("Model: two-body gravity + J2 + RK4")
-    print(f"Start UTC:  {result['start_time_utc']}")
-    print(f"Target UTC: {result['target_time_utc']}")
-    print(f"Predicted GCRF m: {result['predicted_position_gcrf_m']}")
-    print(f"Official GCRF m:  {result['official_position_gcrf_m']}")
+    print(f"Start UTC:  {initial_state['time']}")
+    print(f"Target UTC: {predicted_state['time']}")
+    print(f"Predicted GCRF m: {predicted_state['position_m']}")
+    print(f"Official GCRF m:  {official_state['position_m']}")
     print(f"Position error: {result['error_m']:.3f} m")
 
 

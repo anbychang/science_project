@@ -60,10 +60,11 @@
 
 ## 4. 座標、時間與單位：已定案
 
-- 所有時間序列統一為 row-based 格式：一筆資料是 `{time, value_1, ..., value_n}`，一段資料是 `[point, point, ...]`。
-- 不再使用 `{times: [...], states: [...]}` 這種把時間和值拆開的格式。
-- 數值必須使用有物理意義與單位的名稱，不使用難讀的 `values[0]`、`values[1]`。
-- RK4 內部的 `[x, y, z, vx, vy, vz]` 只是暫時計算向量，不是保存格式，因此可以保留。
+- 軌道流程只使用一種 state：`{time, frame, position_m, velocity_m_s}`。
+- loader、座標轉換、力模型、RK4 與誤差計算之間只傳一個 state，不再分開傳 time、position、velocity。
+- 一段軌道資料是 `[state, state, ...]`，不使用 `{times: [...], states: [...]}`。
+- `position_m = [x, y, z]`，`velocity_m_s = [vx, vy, vz]`；不用難讀的六維 `values[0]`。
+- 半長軸等衍生時間序列仍使用一個時間一列的 row-based 格式。
 - 主要座標系：`GCRF`。
 - 主要時間：`UTC`。
 - 位置與距離：`m`。

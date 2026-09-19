@@ -7,7 +7,7 @@ function uses ITRF, where the z-axis follows the Earth's north pole.
 import numpy as np
 
 from satellite_orbit.calc_coordinates import (
-    gcrf_vector_to_itrf,
+    gcrf_to_itrf,
     itrf_vector_to_gcrf,
 )
 
@@ -43,21 +43,24 @@ def j2_acceleration(position_itrf_m):
     return np.array([ax_m_s2, ay_m_s2, az_m_s2])
 
 
-def gravity_acceleration(time_utc, position_gcrf_m):
-    """Input: {time_utc, position_gcrf_m}
+def gravity_acceleration(state):
+    """Input: GCRF state
     Output: acceleration_gcrf_m_s2 = [ax, ay, az]"""
-    two_body_gcrf = two_body_acceleration(position_gcrf_m)
+    two_body_gcrf = two_body_acceleration(state["position_m"])
 
-    position_itrf_m = gcrf_vector_to_itrf(time_utc, position_gcrf_m)
-    j2_itrf_m_s2 = j2_acceleration(position_itrf_m)
-    j2_gcrf_m_s2 = itrf_vector_to_gcrf(time_utc, j2_itrf_m_s2)
+    state_itrf = gcrf_to_itrf(state)
+    j2_itrf_m_s2 = j2_acceleration(state_itrf["position_m"])
+    j2_gcrf_m_s2 = itrf_vector_to_gcrf(state["time"], j2_itrf_m_s2)
 
     return two_body_gcrf + j2_gcrf_m_s2
 
 
-def state_derivative(time_utc, state):
-    """Input: {time_utc, [x, y, z, vx, vy, vz]}
-    Output: [vx, vy, vz, ax, ay, az]"""
-    position, velocity = state[:3], state[3:]
-    acceleration = gravity_acceleration(time_utc, position)
-    return np.concatenate([velocity, acceleration])
+def state_derivative(state):
+    """Input: GCRF state
+    Output: {position_rate_m_s, velocity_rate_m_s2}"""
+    acceleration_m_s2 = gravity_acceleration(state)
+
+    return {
+        "position_rate_m_s": state["velocity_m_s"],
+        "velocity_rate_m_s2": acceleration_m_s2,
+    }

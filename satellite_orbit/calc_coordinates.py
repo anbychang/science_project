@@ -20,51 +20,61 @@ from astropy.utils import iers
 iers.conf.auto_download = False
 
 
-def gcrf_to_itrf(time_utc, position_gcrf_m, velocity_gcrf_m_s):
-    """Input: {time_utc, position_gcrf_m, velocity_gcrf_m_s}
-    Output: {position_itrf_m, velocity_itrf_m_s}"""
-    time = Time(time_utc, scale="utc")
-    position = np.asarray(position_gcrf_m) * u.m
-    velocity = np.asarray(velocity_gcrf_m_s) * u.m / u.s
+def gcrf_to_itrf(state):
+    """Input: GCRF state
+    Output: ITRF state"""
+    if state["frame"] != "GCRF":
+        raise ValueError("Input state must use GCRF.")
 
-    state = CartesianRepresentation(
+    time = Time(state["time"], scale="utc")
+    position = np.asarray(state["position_m"]) * u.m
+    velocity = np.asarray(state["velocity_m_s"]) * u.m / u.s
+
+    cartesian_state = CartesianRepresentation(
         position,
         differentials=CartesianDifferential(velocity),
     )
-    gcrf_state = GCRS(state, obstime=time)
+    gcrf_state = GCRS(cartesian_state, obstime=time)
     itrf_state = gcrf_state.transform_to(ITRS(obstime=time))
 
-    position_itrf_m = itrf_state.cartesian.xyz.to_value(u.m)
+    position_m = itrf_state.cartesian.xyz.to_value(u.m)
     velocity_itrf = itrf_state.cartesian.differentials["s"].d_xyz
-    velocity_itrf_m_s = velocity_itrf.to_value(u.m / u.s)
+    velocity_m_s = velocity_itrf.to_value(u.m / u.s)
 
     return {
-        "position_itrf_m": position_itrf_m,
-        "velocity_itrf_m_s": velocity_itrf_m_s,
+        "time": state["time"],
+        "frame": "ITRF",
+        "position_m": position_m,
+        "velocity_m_s": velocity_m_s,
     }
 
 
-def itrf_to_gcrf(time_utc, position_itrf_m, velocity_itrf_m_s):
-    """Input: {time_utc, position_itrf_m, velocity_itrf_m_s}
-    Output: {position_gcrf_m, velocity_gcrf_m_s}"""
-    time = Time(time_utc, scale="utc")
-    position = np.asarray(position_itrf_m) * u.m
-    velocity = np.asarray(velocity_itrf_m_s) * u.m / u.s
+def itrf_to_gcrf(state):
+    """Input: ITRF state
+    Output: GCRF state"""
+    if state["frame"] != "ITRF":
+        raise ValueError("Input state must use ITRF.")
 
-    state = CartesianRepresentation(
+    time = Time(state["time"], scale="utc")
+    position = np.asarray(state["position_m"]) * u.m
+    velocity = np.asarray(state["velocity_m_s"]) * u.m / u.s
+
+    cartesian_state = CartesianRepresentation(
         position,
         differentials=CartesianDifferential(velocity),
     )
-    itrf_state = ITRS(state, obstime=time)
+    itrf_state = ITRS(cartesian_state, obstime=time)
     gcrf_state = itrf_state.transform_to(GCRS(obstime=time))
 
-    position_gcrf_m = gcrf_state.cartesian.xyz.to_value(u.m)
+    position_m = gcrf_state.cartesian.xyz.to_value(u.m)
     velocity_gcrf = gcrf_state.cartesian.differentials["s"].d_xyz
-    velocity_gcrf_m_s = velocity_gcrf.to_value(u.m / u.s)
+    velocity_m_s = velocity_gcrf.to_value(u.m / u.s)
 
     return {
-        "position_gcrf_m": position_gcrf_m,
-        "velocity_gcrf_m_s": velocity_gcrf_m_s,
+        "time": state["time"],
+        "frame": "GCRF",
+        "position_m": position_m,
+        "velocity_m_s": velocity_m_s,
     }
 
 
@@ -88,10 +98,13 @@ def itrf_vector_to_gcrf(time_utc, vector_itrf):
     return gcrf_vector.cartesian.xyz.to_value(u.m)
 
 
-def itrf_to_geodetic(position_itrf_m):
-    """Input: position_itrf_m = [x, y, z]
-    Output: {longitude_rad, latitude_rad, altitude_m}"""
-    x_m, y_m, z_m = position_itrf_m
+def itrf_to_geodetic(state):
+    """Input: ITRF state
+    Output: {time, longitude_rad, latitude_rad, altitude_m}"""
+    if state["frame"] != "ITRF":
+        raise ValueError("Input state must use ITRF.")
+
+    x_m, y_m, z_m = state["position_m"]
     location = EarthLocation.from_geocentric(
         x_m * u.m,
         y_m * u.m,
@@ -99,6 +112,8 @@ def itrf_to_geodetic(position_itrf_m):
     )
 
     return {
+        "time": state["time"],
+        "frame": "GEODETIC",
         "longitude_rad": float(location.lon.to_value(u.rad)),
         "latitude_rad": float(location.lat.to_value(u.rad)),
         "altitude_m": float(location.height.to_value(u.m)),
