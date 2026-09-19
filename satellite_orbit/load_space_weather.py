@@ -10,6 +10,8 @@ _weather_cache = {}
 
 
 def _read_needed_days(state_time, file_path):
+    """Input: {state_time, file_path}
+    Output: {date_1: raw_row_1, date_2: raw_row_2, ...}"""
     first_day = state_time.date() - timedelta(days=3)
     last_day = state_time.date()
     rows = {}
@@ -31,6 +33,8 @@ def _read_needed_days(state_time, file_path):
 
 
 def _make_ap_timeline(rows):
+    """Input: {date_1: raw_row_1, ...}
+    Output: {time_1: ap_1, time_2: ap_2, ...}"""
     ap_by_time = {}
 
     for row_day, row in rows.items():
@@ -44,6 +48,8 @@ def _make_ap_timeline(rows):
 
 
 def _load_day_data(state_time, file_path):
+    """Input: {state_time, file_path}
+    Output: {rows: {...}, ap_by_time: {...}}"""
     file_path = Path(file_path).resolve()
     cache_key = (file_path, state_time.date())
 
@@ -60,6 +66,8 @@ def _load_day_data(state_time, file_path):
 
 
 def _three_hour_start(state_time):
+    """Input: state_time
+    Output: start time of its 3-hour block"""
     start_hour = state_time.hour - state_time.hour % 3
     return state_time.replace(
         hour=start_hour,
@@ -70,11 +78,15 @@ def _three_hour_start(state_time):
 
 
 def _past_ap(ap_by_time, current_time, hours_before):
+    """Input: {ap_by_time, current_time, hours_before}
+    Output: one Ap value"""
     wanted_time = current_time - timedelta(hours=hours_before)
     return ap_by_time[wanted_time]
 
 
 def _average_past_ap(ap_by_time, current_time, first_hour, last_hour):
+    """Input: {ap_by_time, current_time, first_hour, last_hour}
+    Output: average Ap value"""
     values = []
 
     for hours_before in range(first_hour, last_hour + 1, 3):

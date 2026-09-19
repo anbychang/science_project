@@ -67,6 +67,8 @@ def calculate_error(day_gps, start_time_gps, prediction_minutes):
 
 
 def read_arguments():
+    """Input: command-line text
+    Output: {day, start, minutes}"""
     parser = argparse.ArgumentParser(description="Compare an orbit prediction with Swarm-A POD.")
     parser.add_argument("--day", default="2025-01-01", help="GPS day: YYYY-MM-DD")
     parser.add_argument("--start", default="00:00:00", help="GPS start time: HH:MM:SS")
@@ -75,6 +77,8 @@ def read_arguments():
 
 
 def main():
+    """Input: command-line text
+    Output: printed {predicted_position, official_position, error_m}"""
     iers.conf.auto_download = False
     arguments = read_arguments()
     result = calculate_error(arguments.day, arguments.start, arguments.minutes)

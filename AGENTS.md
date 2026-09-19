@@ -16,6 +16,10 @@ Use short, simple English in code comments. Use Chinese only when simple English
 cannot explain the idea. Show data shapes with `[]` and `{}` when that is easier
 to read than a full sentence.
 
+Every function must show its input and output in a short docstring. Prefer visual
+shapes such as `Input: [state_1, state_2, ...]` and
+`Output: {time, frame, position_m, velocity_m_s}` over long prose.
+
 Use one orbit-state shape everywhere in the pipeline:
 `{time, frame, position_m, velocity_m_s}`. Pass this single state between the
 loader, coordinate changes, forces, RK4, and error calculation. One orbit series

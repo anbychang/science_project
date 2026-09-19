@@ -15,6 +15,8 @@ DEFAULT_POD_FOLDER = "data/swarm_a_pod"
 
 
 def _find_sp3_name(zip_file):
+    """Input: POD ZIP
+    Output: "path/to/orbit.sp3"""
     for file_name in zip_file.namelist():
         if file_name.lower().endswith(".sp3"):
             return file_name
@@ -23,6 +25,8 @@ def _find_sp3_name(zip_file):
 
 
 def _read_time(line):
+    """Input: SP3 time line
+    Output: GPS datetime"""
     fields = line[1:].split()
     second = float(fields[5])
     whole_second = int(second)
@@ -40,6 +44,8 @@ def _read_time(line):
 
 
 def _read_position(line):
+    """Input: SP3 position line
+    Output: [x_m, y_m, z_m]"""
     x = float(line[4:18]) * KM_TO_M
     y = float(line[18:32]) * KM_TO_M
     z = float(line[32:46]) * KM_TO_M
@@ -47,6 +53,8 @@ def _read_position(line):
 
 
 def _read_velocity(line):
+    """Input: SP3 velocity line
+    Output: [vx_m_s, vy_m_s, vz_m_s]"""
     vx = float(line[4:18]) * DM_S_TO_M_S
     vy = float(line[18:32]) * DM_S_TO_M_S
     vz = float(line[32:46]) * DM_S_TO_M_S
@@ -54,6 +62,8 @@ def _read_velocity(line):
 
 
 def _make_orbit_state(time_gps, position, velocity):
+    """Input: {time_gps, position, velocity}
+    Output: {time, frame, position_m, velocity_m_s}"""
     return {
         "time": time_gps,
         "frame": "ITRF",
