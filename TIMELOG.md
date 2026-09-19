@@ -70,6 +70,10 @@
 - NRLMSIS 的 F10.7 使用前一天觀測值；F10.7A 使用當天為中心的 81 日平均。
 - 太空天氣下載器只在原始檔不存在時下載。loader 第一次讀取某一天時建立快取，之後同一天的 state 直接重用，不重掃 CSV，也不重新下載。
 - 每個函式都必須用短 docstring 寫出 Input 與 Output；資料形狀優先用 `[]`、`{}` 與 `...` 畫出來，不用長句解釋。
+- prepared state 採用可直接查看的 CSV，一列代表一個 `{POD GCRF state + F10.7 + F10.7A + Ap}`。
+- `prep_month_states.py` 只整理本機原始資料；缺少 POD 時直接報錯，不由 loader 暗中下載。
+- prepared CSV 是可重新產生的本機資料，不提交 Git。`load_prepared_states()` 只負責將它還原成 `[state_1, state_2, ...]`。
+- 已產生 `prepared_swarm_a_2025-01.csv`：UTC 2025-01、每 10 秒一筆、267,840 個 state、約 50.8 MB；完整讀回約 4 秒。
 - 一段軌道資料是 `[state, state, ...]`，不使用 `{times: [...], states: [...]}`。
 - `position_m = [x, y, z]`，`velocity_m_s = [vx, vy, vz]`；不用難讀的六維 `values[0]`。
 - 半長軸等衍生時間序列仍使用一個時間一列的 row-based 格式。
@@ -197,7 +201,9 @@ ITRF [x, y, z]
 ```text
 satellite_orbit/
   down_swarm_pod.py                 下載 Swarm-A POD 原始檔
+  prep_month_states.py              產生可直接查看的月資料 CSV
   load_swarm_pod.py                 讀取本機 Swarm-A POD ZIP
+  load_prepared_states.py           將月資料 CSV 還原成 states
   calc_coordinates.py              GCRF／ITRF 狀態與向量轉換
   calc_atmosphere.py               NRLMSIS 2.0 大氣密度
   calc_time.py                     GPS time 轉 UTC

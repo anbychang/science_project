@@ -155,12 +155,13 @@ def is_valid_swarm_zip(file_path):
     return False
 
 
-def download_swarm_a_pod(day_utc, data_folder="data"):
+def download_swarm_a_pod(day_utc, data_folder="data/swarm_a_pod"):
     """Input: {day_utc: "YYYY-MM-DD", data_folder}
-    Output: data/SW_OPER_SP3ACOM_2__....ZIP"""
+    Output: data/swarm_a_pod/YYYY/SW_OPER_SP3ACOM_2__....ZIP"""
     source_file = find_swarm_a_pod_file(day_utc)
+    year_folder = Path(data_folder) / day_utc[:4]
 
-    output_path, downloaded = download_source_file(source_file, data_folder)
+    output_path, downloaded = download_source_file(source_file, year_folder)
     return output_path
 
 

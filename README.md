@@ -9,6 +9,8 @@ gravity and J2.
 - `satellite_orbit/down_space_weather.py`: get raw F10.7 and Ap data.
 - `satellite_orbit/load_swarm_pod.py`: read a local Swarm-A POD ZIP file.
 - `satellite_orbit/load_space_weather.py`: add F10.7 and Ap to one state.
+- `satellite_orbit/prep_month_states.py`: make one readable prepared monthly CSV.
+- `satellite_orbit/load_prepared_states.py`: read prepared CSV into states.
 - `satellite_orbit/calc_coordinates.py`: change states between GCRF and ITRF.
 - `satellite_orbit/calc_atmosphere.py`: calculate NRLMSIS 2.0 mass density.
 - `satellite_orbit/calc_time.py`: change GPS time to UTC.
@@ -75,6 +77,15 @@ Choose another GPS start time and prediction length:
 ```powershell
 python main_pod_error.py --day 2025-01-01 --start 01:30:00 --minutes 60
 ```
+
+Prepare one UTC month for repeated experiments:
+
+```powershell
+python -m satellite_orbit.prep_month_states 2025-01
+```
+
+The output is `data/prepared_swarm_a_2025-01.csv`. It is generated data and is
+not committed to Git.
 
 ## Model limits
 

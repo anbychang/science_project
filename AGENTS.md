@@ -10,7 +10,8 @@ assumptions rather than obvious syntax. Do not retain verification scripts in
 the main package unless the user explicitly asks for them.
 
 Use four-letter file prefixes to show purpose: `calc_` for math and physics,
-`down_` for internet downloads, and `load_` for local file reading.
+`down_` for internet downloads, `prep_` for making prepared data files, and
+`load_` for local file reading.
 
 Use short, simple English in code comments. Use Chinese only when simple English
 cannot explain the idea. Show data shapes with `[]` and `{}` when that is easier

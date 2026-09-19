@@ -1,3 +1,4 @@
 __pycache__/
 *.py[cod]
 data/swarm_a_pod/
+data/prepared_*.csv
