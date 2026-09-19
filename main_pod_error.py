@@ -28,26 +28,26 @@ def find_point(orbit_points, target_time):
 
 def point_to_gcrf(point):
     """Input: one ITRF POD point
-    Output: {time, x_gcrf_km, ..., vz_gcrf_km_s}"""
-    position_itrf_km = np.array(
-        [point["x_itrf_km"], point["y_itrf_km"], point["z_itrf_km"]]
+    Output: {time, x_gcrf_m, ..., vz_gcrf_m_s}"""
+    position_itrf_m = np.array(
+        [point["x_itrf_m"], point["y_itrf_m"], point["z_itrf_m"]]
     )
-    velocity_itrf_km_s = np.array(
-        [point["vx_itrf_km_s"], point["vy_itrf_km_s"], point["vz_itrf_km_s"]]
+    velocity_itrf_m_s = np.array(
+        [point["vx_itrf_m_s"], point["vy_itrf_m_s"], point["vz_itrf_m_s"]]
     )
     time_utc = point["time"]
-    state_gcrf = itrf_to_gcrf(time_utc, position_itrf_km, velocity_itrf_km_s)
-    position_gcrf_km = state_gcrf["position_gcrf_km"]
-    velocity_gcrf_km_s = state_gcrf["velocity_gcrf_km_s"]
+    state_gcrf = itrf_to_gcrf(time_utc, position_itrf_m, velocity_itrf_m_s)
+    position_gcrf_m = state_gcrf["position_gcrf_m"]
+    velocity_gcrf_m_s = state_gcrf["velocity_gcrf_m_s"]
 
     return {
         "time": time_utc,
-        "x_gcrf_km": position_gcrf_km[0],
-        "y_gcrf_km": position_gcrf_km[1],
-        "z_gcrf_km": position_gcrf_km[2],
-        "vx_gcrf_km_s": velocity_gcrf_km_s[0],
-        "vy_gcrf_km_s": velocity_gcrf_km_s[1],
-        "vz_gcrf_km_s": velocity_gcrf_km_s[2],
+        "x_gcrf_m": position_gcrf_m[0],
+        "y_gcrf_m": position_gcrf_m[1],
+        "z_gcrf_m": position_gcrf_m[2],
+        "vx_gcrf_m_s": velocity_gcrf_m_s[0],
+        "vy_gcrf_m_s": velocity_gcrf_m_s[1],
+        "vz_gcrf_m_s": velocity_gcrf_m_s[2],
     }
 
 
@@ -76,12 +76,12 @@ def calculate_error(day_gps, start_time_gps, prediction_minutes):
 
     initial_state = np.array(
         [
-            initial["x_gcrf_km"],
-            initial["y_gcrf_km"],
-            initial["z_gcrf_km"],
-            initial["vx_gcrf_km_s"],
-            initial["vy_gcrf_km_s"],
-            initial["vz_gcrf_km_s"],
+            initial["x_gcrf_m"],
+            initial["y_gcrf_m"],
+            initial["z_gcrf_m"],
+            initial["vx_gcrf_m_s"],
+            initial["vy_gcrf_m_s"],
+            initial["vz_gcrf_m_s"],
         ]
     )
     duration_seconds = prediction_minutes * 60
@@ -94,30 +94,30 @@ def calculate_error(day_gps, start_time_gps, prediction_minutes):
         initial["time"],
     )
     predicted_point = predicted_points[-1]
-    predicted_position_gcrf_km = np.array(
+    predicted_position_gcrf_m = np.array(
         [
-            predicted_point["x_gcrf_km"],
-            predicted_point["y_gcrf_km"],
-            predicted_point["z_gcrf_km"],
+            predicted_point["x_gcrf_m"],
+            predicted_point["y_gcrf_m"],
+            predicted_point["z_gcrf_m"],
         ]
     )
-    official_position_gcrf_km = np.array(
+    official_position_gcrf_m = np.array(
         [
-            official["x_gcrf_km"],
-            official["y_gcrf_km"],
-            official["z_gcrf_km"],
+            official["x_gcrf_m"],
+            official["y_gcrf_m"],
+            official["z_gcrf_m"],
         ]
     )
     error_m = position_error_m(
-        predicted_position_gcrf_km,
-        official_position_gcrf_km,
+        predicted_position_gcrf_m,
+        official_position_gcrf_m,
     )
 
     return {
         "start_time_utc": predicted_points[0]["time"],
         "target_time_utc": predicted_point["time"],
-        "predicted_position_gcrf_km": predicted_position_gcrf_km,
-        "official_position_gcrf_km": official_position_gcrf_km,
+        "predicted_position_gcrf_m": predicted_position_gcrf_m,
+        "official_position_gcrf_m": official_position_gcrf_m,
         "error_m": error_m,
     }
 
@@ -138,8 +138,8 @@ def main():
     print("Model: two-body gravity + J2 + RK4")
     print(f"Start UTC:  {result['start_time_utc']}")
     print(f"Target UTC: {result['target_time_utc']}")
-    print(f"Predicted GCRF km: {result['predicted_position_gcrf_km']}")
-    print(f"Official GCRF km:  {result['official_position_gcrf_km']}")
+    print(f"Predicted GCRF m: {result['predicted_position_gcrf_m']}")
+    print(f"Official GCRF m:  {result['official_position_gcrf_m']}")
     print(f"Position error: {result['error_m']:.3f} m")
 
 

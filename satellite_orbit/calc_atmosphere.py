@@ -8,14 +8,14 @@ from pymsis import Variable, calculate
 
 def nrlmsis_density_kg_m3(
     time_utc,
-    longitude_deg,
-    latitude_deg,
-    altitude_km,
+    longitude_rad,
+    latitude_rad,
+    altitude_m,
     f107_sfu,
     f107a_sfu,
     ap_values,
 ):
-    """Input: {time_utc, longitude_deg, latitude_deg, altitude_km,
+    """Input: {time_utc, longitude_rad, latitude_rad, altitude_m,
     f107_sfu, f107a_sfu, ap_values}
     Output: density_kg_m3
 
@@ -27,6 +27,11 @@ def nrlmsis_density_kg_m3(
     model_time_utc = time_utc
     if time_utc.tzinfo is not None:
         model_time_utc = time_utc.astimezone(timezone.utc).replace(tzinfo=None)
+
+    # pymsis requires degrees and kilometres.
+    longitude_deg = np.degrees(longitude_rad)
+    latitude_deg = np.degrees(latitude_rad)
+    altitude_km = altitude_m / 1000.0
 
     result = calculate(
         dates=np.array([model_time_utc]),

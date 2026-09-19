@@ -10,14 +10,14 @@
 - 解釋要非常白話；一次只處理一個觀念。
 - 程式碼不是只要能跑，還要讓人一眼看懂。
 - 不用壓縮寫法：不用 list comprehension、generator expression、巢狀函式、過度抽象的 class 或工具層。
-- 函式名稱要說清楚物理意義與單位，例如 `position_km`、`velocity_km_s`、`a_dot_km_s`。
+- 函式名稱要說清楚物理意義與單位，例如 `position_m`、`velocity_m_s`、`a_dot_m_s`。
 - 程式註解盡量使用簡單英文；真的無法說清楚時才使用中文。
 - 英文使用常見單字與短句，重點是容易理解，不追求複雜文法。
 - docstring 用短格式與括號表示資料，例如：
 
   ```python
   """Input: {orbital_response, weather_points}
-  Output: [{time, a_mean_km, a_dot_km_s, sym_h_nT, ...}, ...]"""
+  Output: [{time, a_mean_m, a_dot_m_s, sym_h_nT, ...}, ...]"""
   ```
 
 - 不把「檢查用、驗證用、一次性實驗用」程式混進主程式。真的需要時再另外寫。
@@ -66,8 +66,16 @@
 - RK4 內部的 `[x, y, z, vx, vy, vz]` 只是暫時計算向量，不是保存格式，因此可以保留。
 - 主要座標系：`GCRF`。
 - 主要時間：`UTC`。
-- 位置：`km`。
-- 速度：`km/s`。
+- 位置與距離：`m`。
+- 速度：`m/s`。
+- 加速度：`m/s^2`。
+- 角度：`rad`。
+- 質量：`kg`。
+- 面積：`m^2`。
+- 大氣密度：`kg/m^3`。
+- 原始 POD 的 `km` 與 `dm/s` 只在 loader 轉換一次；內部不再來回換單位。
+- NRLMSIS 的接口要求角度使用 `deg`、高度使用 `km`，因此只在呼叫 pymsis 前由 `rad` 與 `altitude_m` 轉一次。
+- F10.7 與 Ap 沒有一般 SI 替代，保留 NRLMSIS 規定的原生單位。
 - 軌道狀態與 RK4 傳播使用 GCRF。
 - Swarm-A 原始 POD 讀入時，必須先處理 GPS time 與 ITRF；不要假裝它原本就是 UTC／GCRF。
 - J2、大氣阻力、POD 比較或地面位置需要時，暫時轉到 ITRF；算完加速度後再轉回 GCRF。
@@ -84,24 +92,24 @@
 每個時間點先從狀態計算瞬時半長軸：
 
 ```text
-distance_km = sqrt(x*x + y*y + z*z)
-speed_km_s = sqrt(vx*vx + vy*vy + vz*vz)
-a_km = 1 / (2 / distance_km - speed_km_s*speed_km_s / MU)
+distance_m = sqrt(x*x + y*y + z*z)
+speed_m_s = sqrt(vx*vx + vy*vy + vz*vz)
+a_m = 1 / (2 / distance_m - speed_m_s*speed_m_s / MU_M3_S2)
 ```
 
 不使用近日點、遠日點或「第幾圈」切分。Swarm-A 軌道接近圓形，這些切點不穩定。
 
 正式做法是「往回看一整圈」的滑動平均：
 
-- `instantaneous_a_km[t]`：當下六維狀態算出的半長軸。
-- `a_mean_km[t]`：從 `t - 約 90 分鐘` 到 `t` 的半長軸平均。
-- `a_dot_km_s[t]`：`a_mean_km` 隨時間的變化率。
+- `instantaneous_a_m[t]`：當下六維狀態算出的半長軸。
+- `a_mean_m[t]`：從 `t - 約 90 分鐘` 到 `t` 的半長軸平均。
+- `a_dot_m_s[t]`：`a_mean_m` 隨時間的變化率。
 
 選擇往回平均而不是前後各半圈，因為置中平均會用到未來資料，會讓後續延遲分析看起來比真實反應更早。
 
 最前面不足一整圈的點沒有平均值與導數，應保留為 `None`，不要硬補數字。
 
-`a_dot_km_s < 0` 代表軌道正在縮小。軌道能量變化率可作為數學一致性檢查，但目前不是主分析量，暫不保存。
+`a_dot_m_s < 0` 代表軌道正在縮小。軌道能量變化率可作為數學一致性檢查，但目前不是主分析量，暫不保存。
 
 目前程式假設資料固定間隔；真實 POD 若不規則，之後要改成按時間權重平均，不能直接照目前的「點數平均」。
 

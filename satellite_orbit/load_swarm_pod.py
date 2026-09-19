@@ -7,7 +7,8 @@ from zipfile import ZipFile
 from .calc_time import gps_time_to_utc, gps_times_to_utc
 from .down_swarm_pod import download_swarm_a_pod
 
-DM_S_TO_KM_S = 0.0001
+KM_TO_M = 1000.0
+DM_S_TO_M_S = 0.1
 DEFAULT_POD_FOLDER = "data/swarm_a_pod"
 
 
@@ -37,16 +38,16 @@ def _read_time(line):
 
 
 def _read_position(line):
-    x = float(line[4:18])
-    y = float(line[18:32])
-    z = float(line[32:46])
+    x = float(line[4:18]) * KM_TO_M
+    y = float(line[18:32]) * KM_TO_M
+    z = float(line[32:46]) * KM_TO_M
     return x, y, z
 
 
 def _read_velocity(line):
-    vx = float(line[4:18]) * DM_S_TO_KM_S
-    vy = float(line[18:32]) * DM_S_TO_KM_S
-    vz = float(line[32:46]) * DM_S_TO_KM_S
+    vx = float(line[4:18]) * DM_S_TO_M_S
+    vy = float(line[18:32]) * DM_S_TO_M_S
+    vz = float(line[32:46]) * DM_S_TO_M_S
     return vx, vy, vz
 
 
@@ -56,18 +57,18 @@ def _make_orbit_point(time_gps, position, velocity):
 
     return {
         "time": time_gps,
-        "x_itrf_km": x,
-        "y_itrf_km": y,
-        "z_itrf_km": z,
-        "vx_itrf_km_s": vx,
-        "vy_itrf_km_s": vy,
-        "vz_itrf_km_s": vz,
+        "x_itrf_m": x,
+        "y_itrf_m": y,
+        "z_itrf_m": z,
+        "vx_itrf_m_s": vx,
+        "vy_itrf_m_s": vy,
+        "vz_itrf_m_s": vz,
     }
 
 
 def load_swarm_pod(zip_path):
     """Input: Swarm-A POD ZIP
-    Output: [{time, x_itrf_km, ..., vz_itrf_km_s}, ...]"""
+    Output: [{time, x_itrf_m, ..., vz_itrf_m_s}, ...]"""
     orbit_points = []
 
     with ZipFile(zip_path) as zip_file:
@@ -124,7 +125,7 @@ def load_swarm_pod_period(
     data_folder=DEFAULT_POD_FOLDER,
 ):
     """Input: {day_gps, start_time_gps, end_time_gps}
-    Output: [{time, x_itrf_km, ..., vz_itrf_km_s}, ...]"""
+    Output: [{time, x_itrf_m, ..., vz_itrf_m_s}, ...]"""
     start_gps = datetime.fromisoformat(f"{day_gps}T{start_time_gps}")
     end_gps = datetime.fromisoformat(f"{day_gps}T{end_time_gps}")
 

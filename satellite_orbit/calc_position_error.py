@@ -3,13 +3,10 @@
 import numpy as np
 
 
-KM_TO_M = 1000.0
-
-
-def position_error_m(predicted_position_km, official_position_km):
-    """Input: {predicted_position_km, official_position_km}
+def position_error_m(predicted_position_m, official_position_m):
+    """Input: {predicted_position_m, official_position_m}
     Output: error_m"""
-    predicted = np.asarray(predicted_position_km)
-    official = np.asarray(official_position_km)
-    difference_km = predicted - official
-    return np.linalg.norm(difference_km) * KM_TO_M
+    predicted = np.asarray(predicted_position_m)
+    official = np.asarray(official_position_m)
+    difference_m = predicted - official
+    return np.linalg.norm(difference_m)

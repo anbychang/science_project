@@ -24,8 +24,15 @@ gravity and J2.
 - Main coordinate frame: GCRF
 - POD source frame: ITRF
 - Time system: UTC
-- Position: km
-- Velocity: km/s
+- Position: m
+- Velocity: m/s
+- Acceleration: m/s^2
+- Angle: rad
+- Density: kg/m^3
+
+The raw POD uses km and dm/s. The loader changes these values to SI once.
+NRLMSIS requires degrees and km, so only its adapter changes rad to degrees and
+`altitude_m` to km. F10.7 and Ap keep the units required by NRLMSIS.
 
 The active source is Swarm-A precise orbit data.
 

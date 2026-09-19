@@ -23,21 +23,21 @@ def rk4_step(time_utc, state, dt_s):
 
 def make_gcrf_orbit_point(time_utc, state):
     """Input: {time_utc, [x, y, z, vx, vy, vz]}
-    Output: {time, x_gcrf_km, ..., vz_gcrf_km_s}"""
+    Output: {time, x_gcrf_m, ..., vz_gcrf_m_s}"""
     return {
         "time": time_utc,
-        "x_gcrf_km": state[0],
-        "y_gcrf_km": state[1],
-        "z_gcrf_km": state[2],
-        "vx_gcrf_km_s": state[3],
-        "vy_gcrf_km_s": state[4],
-        "vz_gcrf_km_s": state[5],
+        "x_gcrf_m": state[0],
+        "y_gcrf_m": state[1],
+        "z_gcrf_m": state[2],
+        "vx_gcrf_m_s": state[3],
+        "vy_gcrf_m_s": state[4],
+        "vz_gcrf_m_s": state[5],
     }
 
 
 def propagate(initial_state, dt_s, n_steps, start_time_utc):
     """Input: {initial_state, dt_s, n_steps, start_time_utc}
-    Output: [{time, x_gcrf_km, ..., vz_gcrf_km_s}, ...]"""
+    Output: [{time, x_gcrf_m, ..., vz_gcrf_m_s}, ...]"""
     state = np.asarray(initial_state, dtype=float)
     orbit_points = []
 

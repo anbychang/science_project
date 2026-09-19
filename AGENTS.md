@@ -20,3 +20,7 @@ Store every time series in row form: one point is
 `{time, named_value_1, ..., named_value_n}` and one series is `[point, ...]`.
 Do not store time and values in separate arrays. RK4 may still use a temporary
 `[x, y, z, vx, vy, vz]` vector during calculation.
+
+Use SI units inside the project: m, m/s, m/s^2, s, rad, kg, m^2, and kg/m^3.
+Convert source units once in the loader. Convert again only when an external
+library requires another unit, and keep that conversion at the library call.
