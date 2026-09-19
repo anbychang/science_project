@@ -1,6 +1,6 @@
 # Swarm-A Orbit Project - Time Log
 
-最後更新：2026-09-16
+最後更新：2026-09-19
 
 這份檔案是本專案的共同外部記憶。它記錄已確認的決策、已做過的事情、刻意不做的事情，避免之後重複討論或把測試資料誤當研究資料。
 
@@ -112,7 +112,7 @@ a_km = 1 / (2 / distance_km - speed_km_s*speed_km_s / MU)
 
 軌道反應和太空天氣資料需要對到相同 UTC 時間點；目前假資料剛好都是四分鐘一筆，所以用精確時間對齊。
 
-## 7. 大氣阻力與 GPR：概念已確認，尚未實作
+## 7. 大氣阻力與 GPR
 
 阻力加速度：
 
@@ -125,6 +125,22 @@ a_drag = -0.5 * Cd * A / m * rho * |v_rel| * v_rel
 - 為了保證倍率是正的，GPR 預測 `y = log(C_rho)`，再取 `C_rho = exp(y)`。
 
 關鍵限制：POD 只告訴我們軌道如何掉，不會直接告訴我們真正密度。因此 `C_rho` 必須先透過「以物理傳播結果配對 POD」反推，之後才是 GPR 的訓練標籤。
+
+2026-09-19 已完成第一段大氣程式：
+
+```text
+ITRF [x, y, z]
+-> WGS84 [longitude, latitude, altitude]
+-> NRLMSIS 2.0
+-> density_kg_m3
+```
+
+- 使用 `pymsis 0.12` 呼叫 NRLMSIS 2.0；程式明確指定 `version=2.0`，不使用預設的 2.1。
+- NRLMSIS 輸入為 UTC、經度、緯度、高度、前一天 F10.7、81 日 F10.7A 與 Ap。
+- 地磁暴模式使用 7 個 Ap 值：`[daily, now, -3h, -6h, -9h, avg_12_to_33h, avg_36_to_57h]`。
+- `SYM-H` 與 `AE` 不直接輸入 NRLMSIS；它們留給後續密度修正與 GPR。
+- 目前只完成密度計算，尚未把阻力加速度接進 `calc_forces.py` 或 RK4。
+- 單點測試：2025-01-01、赤道、450 km、F10.7 = 150、F10.7A = 150、Ap = 4，得到約 `9.58e-13 kg/m^3`。這只是程式測試，不是真實研究資料。
 
 ## 8. 高頻資料與平滑窗口的討論
 
@@ -162,6 +178,7 @@ satellite_orbit/
   down_swarm_pod.py                 下載 Swarm-A POD 原始檔
   load_swarm_pod.py                 讀取本機 Swarm-A POD ZIP
   calc_coordinates.py              GCRF／ITRF 狀態與向量轉換
+  calc_atmosphere.py               NRLMSIS 2.0 大氣密度
   calc_time.py                     GPS time 轉 UTC
   calc_forces.py                   二體重力、J2 與狀態導數
   calc_integrator.py                fourth-order Runge-Kutta（RK4）傳播
@@ -215,7 +232,8 @@ RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 
 1. 將位置總誤差拆成 RTN 三個方向。
 2. 檢查不同起始時間與預測長度的誤差。
 3. 逐步加入更完整的地球重力項。
-4. 之後再加入大氣阻力與太空天氣資料。
+4. 取得並保存 F10.7、F10.7A 與 Ap 原始資料。
+5. 將 NRLMSIS 密度與大氣阻力接進 RK4。
 
 官方 POD 只作為起始狀態與答案；不能把未來 POD 偷放進傳播器修正預測。
 

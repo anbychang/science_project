@@ -8,6 +8,7 @@ gravity and J2.
 - `satellite_orbit/down_swarm_pod.py`: get Swarm-A POD files from ESA.
 - `satellite_orbit/load_swarm_pod.py`: read a local Swarm-A POD ZIP file.
 - `satellite_orbit/calc_coordinates.py`: change states between GCRF and ITRF.
+- `satellite_orbit/calc_atmosphere.py`: calculate NRLMSIS 2.0 mass density.
 - `satellite_orbit/calc_time.py`: change GPS time to UTC.
 - `satellite_orbit/calc_forces.py`: gravity and orbital state derivative.
 - `satellite_orbit/calc_integrator.py`: RK4 state propagation.
@@ -46,5 +47,6 @@ python main_pod_error.py --day 2025-01-01 --start 01:30:00 --minutes 60
 
 ## Model limits
 
-The current model is useful for short tests. It does not yet include atmospheric
-drag or a full Earth gravity model, so it is not a complete long-term predictor.
+The current model is useful for short tests. It can calculate NRLMSIS 2.0 mass
+density, but atmospheric drag is not connected to RK4 yet. It also does not use
+a full Earth gravity model, so it is not a complete long-term predictor.

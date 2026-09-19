@@ -7,6 +7,7 @@ reference frames.
 import astropy.units as u
 import numpy as np
 from astropy.coordinates import (
+    EarthLocation,
     GCRS,
     ITRS,
     CartesianDifferential,
@@ -81,3 +82,20 @@ def itrf_vector_to_gcrf(time_utc, vector_itrf):
     itrf_vector = ITRS(vector, obstime=time)
     gcrf_vector = itrf_vector.transform_to(GCRS(obstime=time))
     return gcrf_vector.cartesian.xyz.to_value(u.km)
+
+
+def itrf_to_geodetic(position_itrf_km):
+    """Input: position_itrf_km = [x, y, z]
+    Output: {longitude_deg, latitude_deg, altitude_km}"""
+    x_km, y_km, z_km = position_itrf_km
+    location = EarthLocation.from_geocentric(
+        x_km * u.km,
+        y_km * u.km,
+        z_km * u.km,
+    )
+
+    return {
+        "longitude_deg": float(location.lon.to_value(u.deg)),
+        "latitude_deg": float(location.lat.to_value(u.deg)),
+        "altitude_km": float(location.height.to_value(u.km)),
+    }

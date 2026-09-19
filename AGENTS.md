@@ -1,8 +1,8 @@
 # Swarm-A Orbit Project
 
 The active scope is a Swarm-A orbit propagator. The current implementation has
-two-body gravity and RK4 integration. It does not yet include J2 or atmospheric
-drag.
+two-body gravity, J2, and RK4 integration. NRLMSIS 2.0 density calculation is
+available, but atmospheric drag is not connected to the propagator yet.
 
 Keep code readable: separate physics, numerical methods, data I/O, and command
 entry points; name physical quantities by meaning and unit; document model
