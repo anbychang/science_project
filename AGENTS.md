@@ -22,6 +22,11 @@ loader, coordinate changes, forces, RK4, and error calculation. One orbit series
 is `[state, ...]`. Force functions, including two-body and J2, also receive the
 whole state. Do not split time, position, and velocity into separate inputs.
 
+A state is one time-point snapshot. Time-varying space weather and atmosphere
+values may be added to it, such as `{f107_sfu, f107a_sfu, ap_values,
+density_kg_m3}`. Fixed constants such as Earth gravity and satellite mass stay
+outside the state.
+
 Use SI units inside the project: m, m/s, m/s^2, s, rad, kg, m^2, and kg/m^3.
 Convert source units once in the loader. Convert again only when an external
 library requires another unit, and keep that conversion at the library call.

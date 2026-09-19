@@ -5,29 +5,33 @@ from datetime import timezone
 import numpy as np
 from pymsis import Variable, calculate
 
+from satellite_orbit.calc_coordinates import gcrf_to_itrf, itrf_to_geodetic
 
-def nrlmsis_density_kg_m3(state):
-    """Input: {time, frame, longitude_rad, latitude_rad, altitude_m,
-    f107_sfu, f107a_sfu, ap_values}
-    Output: density_kg_m3
+
+def add_atmospheric_density(state):
+    """Input: GCRF state + {f107_sfu, f107a_sfu, ap_values}
+    Output: same state + {density_kg_m3}
 
     ap_values = [daily, now, -3h, -6h, -9h, avg_12_to_33h, avg_36_to_57h]
     """
-    if state["frame"] != "GEODETIC":
-        raise ValueError("Atmosphere state must use GEODETIC.")
+    if state["frame"] != "GCRF":
+        raise ValueError("Atmosphere state must use GCRF.")
 
     ap_values = state["ap_values"]
     if len(ap_values) != 7:
         raise ValueError("ap_values must contain 7 values.")
+
+    state_itrf = gcrf_to_itrf(state)
+    location = itrf_to_geodetic(state_itrf)
 
     model_time_utc = state["time"]
     if model_time_utc.tzinfo is not None:
         model_time_utc = model_time_utc.astimezone(timezone.utc).replace(tzinfo=None)
 
     # pymsis requires degrees and kilometres.
-    longitude_deg = np.degrees(state["longitude_rad"])
-    latitude_deg = np.degrees(state["latitude_rad"])
-    altitude_km = state["altitude_m"] / 1000.0
+    longitude_deg = np.degrees(location["longitude_rad"])
+    latitude_deg = np.degrees(location["latitude_rad"])
+    altitude_km = location["altitude_m"] / 1000.0
 
     result = calculate(
         dates=np.array([model_time_utc]),
@@ -41,4 +45,8 @@ def nrlmsis_density_kg_m3(state):
         geomagnetic_activity=-1,
     )
 
-    return float(result[0, Variable.MASS_DENSITY])
+    state_with_density = state.copy()
+    state_with_density["density_kg_m3"] = float(
+        result[0, Variable.MASS_DENSITY]
+    )
+    return state_with_density
