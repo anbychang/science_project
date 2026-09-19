@@ -1,65 +1,46 @@
-"""Download raw Swarm-A orbit files from ESA."""
+"""Download raw Swarm-A POD files from ESA."""
 
 import json
 import sys
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import quote
-from urllib.request import urlopen
-from zipfile import BadZipFile, ZipFile
+from urllib.request import urlopen, urlretrieve
 
 ESA_SERVER = "https://swarm-diss.eo.esa.int/"
-SWARM_A_POD_FOLDER = "swarm/Level2daily/Latest_baselines/POD/RD/Sat_A"
-FILES_PER_PAGE = 10000
-DEFAULT_FIRST_DAY = "2025-01-01"
-DOWNLOAD_ATTEMPTS = 3
+ESA_POD_FOLDER = "swarm/Level2daily/Latest_baselines/POD/RD/Sat_A"
+DEFAULT_FIRST_DAY = "2022-01-01"
+DEFAULT_DATA_FOLDER = "data/swarm_a_pod"
 
 
-def list_swarm_a_pod_files():
-    """Input: {}
-    Output: [{name, path, size, ...}, ...]"""
-    source_files = []
-    position = 0
+def list_swarm_pod_files():
+    """Output: every Swarm-A POD file listed by ESA."""
+    list_url = (
+        f"{ESA_SERVER}?do=list&maxfiles=10000"
+        f"&file={quote(ESA_POD_FOLDER)}"
+    )
 
-    while True:
-        list_url = (
-            f"{ESA_SERVER}?do=list&maxfiles={FILES_PER_PAGE}&pos={position}"
-            f"&file={quote(SWARM_A_POD_FOLDER)}"
-        )
-
-        with urlopen(list_url) as response:
-            file_list = json.load(response)["results"]
-
-        source_files.extend(file_list)
-
-        if len(file_list) < FILES_PER_PAGE:
-            break
-
-        position += len(file_list)
-
-    return source_files
+    with urlopen(list_url) as response:
+        return json.load(response)["results"]
 
 
 def get_file_day(source_file):
-    """Input: {name, path, size, ...}
-    Output: "YYYYMMDD"""
+    """Output: data day as YYYYMMDD."""
     name = source_file["name"]
-    time_range = name.split("__")[1].split("_")
-    return time_range[1][:8]
+    end_time = name.split("__")[1].split("_")[1]
+    return end_time[:8]
 
 
 def get_file_version(source_file):
-    """Input: {name, path, size, ...}
-    Output: version number"""
+    """Output: ESA product version as an integer."""
     name = source_file["name"]
-    version_text = name.rsplit("_", 1)[1].split(".")[0]
-    return int(version_text)
+    version = name.rsplit("_", 1)[1].split(".")[0]
+    return int(version)
 
 
-def select_latest_files(source_files, first_day_utc):
-    """Input: {source_files, first_day_utc: "YYYY-MM-DD"}
-    Output: one latest file per day"""
-    first_day = first_day_utc.replace("-", "")
+def select_latest_files(source_files, first_day):
+    """Input: all files and first YYYY-MM-DD
+    Output: one latest-version file per day"""
+    first_day = first_day.replace("-", "")
     latest_by_day = {}
 
     for source_file in source_files:
@@ -67,12 +48,10 @@ def select_latest_files(source_files, first_day_utc):
         if day < first_day:
             continue
 
-        current_file = latest_by_day.get(day)
-        if current_file is None:
+        old_file = latest_by_day.get(day)
+        if old_file is None:
             latest_by_day[day] = source_file
-            continue
-
-        if get_file_version(source_file) > get_file_version(current_file):
+        elif get_file_version(source_file) > get_file_version(old_file):
             latest_by_day[day] = source_file
 
     selected_files = list(latest_by_day.values())
@@ -80,137 +59,64 @@ def select_latest_files(source_files, first_day_utc):
     return selected_files
 
 
-def find_swarm_a_pod_file(day_utc):
-    """Input: {day_utc: "YYYY-MM-DD"}
-    Output: latest {name, path, size, ...}"""
-    source_files = list_swarm_a_pod_files()
-    selected_files = select_latest_files(source_files, day_utc)
-    requested_day = day_utc.replace("-", "")
+def download_file(source_file, data_folder):
+    """Output: local ZIP path."""
+    day = get_file_day(source_file)
+    year_folder = Path(data_folder) / day[:4]
+    output_path = year_folder / source_file["name"]
 
-    for source_file in selected_files:
-        if get_file_day(source_file) == requested_day:
-            return source_file
-
-    raise ValueError(f"No Swarm-A POD file found for {day_utc}.")
-
-
-def download_source_file(source_file, output_folder):
-    """Input: {source_file, output_folder}
-    Output: {path, downloaded}"""
-    output_path = Path(output_folder) / source_file["name"]
-
-    if output_path.exists():
-        correct_size = output_path.stat().st_size == source_file["size"]
-        if correct_size and is_valid_swarm_zip(output_path):
-            return output_path, False
-
-        output_path.unlink()
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    partial_path = Path(f"{output_path}.part")
-
-    download_url = (
-        f"{ESA_SERVER}?do=download&file={quote(source_file['path'])}"
+    correct_size = (
+        output_path.exists()
+        and output_path.stat().st_size == source_file["size"]
     )
-    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
-        try:
-            with urlopen(download_url, timeout=120) as response:
-                with partial_path.open("wb") as output_file:
-                    while True:
-                        chunk = response.read(1024 * 1024)
-                        if not chunk:
-                            break
-                        output_file.write(chunk)
+    if correct_size:
+        return output_path
 
-            correct_size = partial_path.stat().st_size == source_file["size"]
-            if not correct_size:
-                raise ValueError(f"Incomplete download: {partial_path}")
-
-            if not is_valid_swarm_zip(partial_path):
-                raise ValueError(f"Invalid ZIP file: {partial_path}")
-
-            break
-        except Exception:
-            if attempt == DOWNLOAD_ATTEMPTS:
-                raise
-
-    partial_path.replace(output_path)
-    return output_path, True
-
-
-def is_valid_swarm_zip(file_path):
-    """Input: ESA ZIP path
-    Output: True if the ZIP is readable and contains SP3 data"""
-    try:
-        with ZipFile(file_path) as zip_file:
-            if zip_file.testzip() is not None:
-                return False
-
-            for name in zip_file.namelist():
-                if name.lower().endswith(".sp3"):
-                    return True
-    except (BadZipFile, OSError):
-        return False
-
-    return False
-
-
-def download_swarm_a_pod(day_utc, data_folder="data/swarm_a_pod"):
-    """Input: {day_utc: "YYYY-MM-DD", data_folder}
-    Output: data/swarm_a_pod/YYYY/SW_OPER_SP3ACOM_2__....ZIP"""
-    source_file = find_swarm_a_pod_file(day_utc)
-    year_folder = Path(data_folder) / day_utc[:4]
-
-    output_path, downloaded = download_source_file(source_file, year_folder)
+    year_folder.mkdir(parents=True, exist_ok=True)
+    download_url = f"{ESA_SERVER}?do=download&file={quote(source_file['path'])}"
+    urlretrieve(download_url, output_path)
     return output_path
 
 
-def download_swarm_a_pod_since(
-    first_day_utc,
-    data_folder="data/swarm_a_pod",
-    worker_count=4,
-):
-    """Input: {first_day_utc: "YYYY-MM-DD", data_folder, worker_count}
-    Output: [downloaded ZIP paths, ...]"""
-    source_files = list_swarm_a_pod_files()
-    selected_files = select_latest_files(source_files, first_day_utc)
-    downloaded_paths = []
-    download_jobs = []
+def download_swarm_a_pod(day, data_folder=DEFAULT_DATA_FOLDER):
+    """Input: one day as YYYY-MM-DD
+    Output: that day's latest-version ZIP path"""
+    source_files = list_swarm_pod_files()
+    selected_files = select_latest_files(source_files, day)
+    requested_day = day.replace("-", "")
 
     for source_file in selected_files:
-        day = get_file_day(source_file)
-        year_folder = Path(data_folder) / day[:4]
-        download_jobs.append((source_file, year_folder))
+        if get_file_day(source_file) == requested_day:
+            return download_file(source_file, data_folder)
 
-    futures = []
-    with ThreadPoolExecutor(max_workers=worker_count) as executor:
-        for source_file, year_folder in download_jobs:
-            future = executor.submit(
-                download_source_file,
-                source_file,
-                year_folder,
-            )
-            futures.append(future)
+    raise ValueError(f"No Swarm-A POD file found for {day}.")
 
-        total_files = len(futures)
-        for index, future in enumerate(futures, start=1):
-            output_path, downloaded = future.result()
-            status = "downloaded" if downloaded else "exists"
-            print(f"[{index}/{total_files}] {status}: {output_path}")
-            downloaded_paths.append(output_path)
+
+def download_swarm_a_pod_since(
+    first_day,
+    data_folder=DEFAULT_DATA_FOLDER,
+):
+    """Input: first day as YYYY-MM-DD
+    Output: local ZIP paths from that day onward"""
+    source_files = list_swarm_pod_files()
+    selected_files = select_latest_files(source_files, first_day)
+    downloaded_paths = []
+
+    for index, source_file in enumerate(selected_files, start=1):
+        output_path = download_file(source_file, data_folder)
+        downloaded_paths.append(output_path)
+        print(f"[{index}/{len(selected_files)}] {output_path}")
 
     return downloaded_paths
 
 
 def main():
-    """Input: python down_swarm_pod.py [first day]
-    Output: complete, verified raw POD collection"""
     first_day = DEFAULT_FIRST_DAY
     if len(sys.argv) >= 2:
         first_day = sys.argv[1]
 
     file_paths = download_swarm_a_pod_since(first_day)
-    print(f"Complete: {len(file_paths)} verified files since {first_day}.")
+    print(f"Complete: {len(file_paths)} files since {first_day}.")
 
 
 if __name__ == "__main__":
