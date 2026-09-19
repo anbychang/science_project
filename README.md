@@ -9,8 +9,8 @@ gravity and J2.
 - `satellite_orbit/down_space_weather.py`: get raw F10.7 and Ap data.
 - `satellite_orbit/load_swarm_pod.py`: read a local Swarm-A POD ZIP file.
 - `satellite_orbit/load_space_weather.py`: add F10.7 and Ap to one state.
-- `satellite_orbit/prep_month_states.py`: make one readable prepared monthly CSV.
-- `satellite_orbit/load_prepared_states.py`: read prepared CSV into states.
+- `satellite_orbit/prep_states.py`: update one prepared SQLite database.
+- `satellite_orbit/load_prepared_states.py`: query states by UTC time range.
 - `satellite_orbit/calc_coordinates.py`: change states between GCRF and ITRF.
 - `satellite_orbit/calc_atmosphere.py`: calculate NRLMSIS 2.0 mass density.
 - `satellite_orbit/calc_time.py`: change GPS time to UTC.
@@ -78,16 +78,19 @@ Choose another UTC start time and prediction length:
 python main_pod_error.py --day 2025-01-01 --start 01:30:02 --minutes 60
 ```
 
-Prepare one UTC month for repeated experiments:
+Prepare all local POD and space-weather data:
 
 ```powershell
-python -m satellite_orbit.prep_month_states 2025-01
+python -m satellite_orbit.prep_states
 ```
 
-The output is `data/prepared_swarm_a_2025-01.csv`. It is generated data and is
-not committed to Git.
+The output is `data/swarm_a_data.sqlite`. Running the command again only adds
+new or changed source files. The database is generated data and is not
+committed to Git.
 
-`main_pod_error.py` reads this prepared CSV. `--day` and `--start` use UTC.
+`main_pod_error.py` queries only its needed UTC range. The database keeps POD
+states in official ITRF and changes the selected states to GCRF after reading.
+`--day` and `--start` use UTC.
 
 ## Model limits
 

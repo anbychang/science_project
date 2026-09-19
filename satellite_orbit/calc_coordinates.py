@@ -41,12 +41,11 @@ def gcrf_to_itrf(state):
     velocity_itrf = itrf_state.cartesian.differentials["s"].d_xyz
     velocity_m_s = velocity_itrf.to_value(u.m / u.s)
 
-    return {
-        "time": state["time"],
-        "frame": "ITRF",
-        "position_m": position_m,
-        "velocity_m_s": velocity_m_s,
-    }
+    converted_state = state.copy()
+    converted_state["frame"] = "ITRF"
+    converted_state["position_m"] = position_m
+    converted_state["velocity_m_s"] = velocity_m_s
+    return converted_state
 
 
 def itrf_to_gcrf(state):
@@ -83,14 +82,11 @@ def itrf_states_to_gcrf(states):
 
     converted_states = []
     for index in range(len(states)):
-        converted_states.append(
-            {
-                "time": states[index]["time"],
-                "frame": "GCRF",
-                "position_m": gcrf_positions_m[index],
-                "velocity_m_s": gcrf_velocities_m_s[index],
-            }
-        )
+        converted_state = states[index].copy()
+        converted_state["frame"] = "GCRF"
+        converted_state["position_m"] = gcrf_positions_m[index]
+        converted_state["velocity_m_s"] = gcrf_velocities_m_s[index]
+        converted_states.append(converted_state)
 
     return converted_states
 

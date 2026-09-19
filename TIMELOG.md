@@ -70,10 +70,10 @@
 - NRLMSIS 的 F10.7 使用前一天觀測值；F10.7A 使用當天為中心的 81 日平均。
 - 太空天氣下載器只在原始檔不存在時下載。loader 第一次使用時建立本機資料索引，之後所有 state 直接重用，不重掃 CSV，也不重新下載。
 - 每個函式都必須用短 docstring 寫出 Input 與 Output；資料形狀優先用 `[]`、`{}` 與 `...` 畫出來，不用長句解釋。
-- prepared state 採用可直接查看的 CSV，一列代表一個 `{POD GCRF state + F10.7 + F10.7A + Ap}`。
-- `prep_month_states.py` 只整理本機原始資料；缺少 POD 時直接報錯，不由 loader 暗中下載。
-- prepared CSV 是可重新產生的本機資料，不提交 Git。`load_prepared_states()` 只負責將它還原成 `[state_1, state_2, ...]`。
-- 已產生 `prepared_swarm_a_2025-01.csv`：UTC 2025-01、每 10 秒一筆、267,840 個 state、約 50.8 MB；完整讀回約 4 秒。
+- prepared data 採用單一 SQLite 檔案 `swarm_a_data.sqlite`，不再按月份切 CSV。
+- `prep_states.py` 將本機原始資料 insert／replace 進資料庫；相同 `time_us` 不會重複。
+- 資料庫保留 ITRF POD，查出需要的短區間後才批次轉成 GCRF。
+- `load_prepared_states(start_time, end_time)` 只查需要的時間範圍，並回傳帶有 F10.7、F10.7A 與 Ap 的 `[state_1, state_2, ...]`。
 - 一段軌道資料是 `[state, state, ...]`，不使用 `{times: [...], states: [...]}`。
 - `position_m = [x, y, z]`，`velocity_m_s = [vx, vy, vz]`；不用難讀的六維 `values[0]`。
 - 半長軸等衍生時間序列仍使用一個時間一列的 row-based 格式。
@@ -180,20 +180,25 @@ ITRF [x, y, z]
 原則：
 
 - 真實來源資料保存原始檔，不覆寫內容。
-- 整理後的月資料另存為 `prepared_swarm_a_YYYY-MM.csv`，可以隨時由原始資料重建。
-- prepared CSV 保存在 SSD，但不提交 Git。
+- 所有整理後資料放在單一 `swarm_a_data.sqlite`，可以隨時由原始資料重建。
+- `time_us` 是 Unix microseconds 整數主鍵；再次執行只補新增或已改變的來源檔案。
+- SQLite 保存在 SSD，但不提交 Git。
+- 太空天氣涵蓋 1957 至 2026；Swarm-A 軌道只能涵蓋衛星發射後且本機已有 POD 的時段。
 
 目前 `data/` 包含：
 
 - `swarm_a_pod/`：ESA 原始 POD ZIP。
 - `space_weather/SW-All.csv`：原始 F10.7 與 Ap。
-- `prepared_swarm_a_2025-01.csv`：可直接查看的整理結果。
+- `swarm_a_data.sqlite`：單一整理結果，包含太空天氣表與 Swarm-A state 表。
+- 已匯入 14,558,400 個 Swarm-A state，時間範圍為 2021-12-31 23:59:42 UTC 至 2026-08-12 23:59:32 UTC。
+- 已整理 201,861 個三小時太空天氣區段，範圍由 1957 至 2026。
+- 舊的 `prepared_swarm_a_2025-01.csv` 已刪除；不再保留月檔。
 
 ## 10. 已刪除或刻意不保留的資料
 
 舊的 ISS TLE 與暫時操作軌跡已移除；它們不屬於 Swarm-A 的正式 POD 資料。
 
-舊的 ISS 假軌道與假太空天氣 CSV 也已移除；正式流程只保留官方原始資料與可重新產生的 prepared CSV。
+舊的 ISS 假軌道與假太空天氣 CSV 也已移除；正式流程只保留官方原始資料與可重新產生的 SQLite。
 
 也不保留主套件內的驗證腳本與 Python cache。
 
@@ -203,10 +208,10 @@ ITRF [x, y, z]
 satellite_orbit/
   down_swarm_pod.py                 下載 Swarm-A POD 原始檔
   down_space_weather.py             下載原始 F10.7 與 Ap
-  prep_month_states.py              產生可直接查看的月資料 CSV
+  prep_states.py                    更新單一 SQLite 資料庫
   load_swarm_pod.py                 讀取本機 Swarm-A POD ZIP
   load_space_weather.py             從本機原始檔取得 F10.7 與 Ap
-  load_prepared_states.py           將月資料 CSV 還原成 states
+  load_prepared_states.py           依 UTC 範圍查詢並組成 GCRF states
   calc_coordinates.py               GCRF／ITRF 狀態與向量轉換
   calc_atmosphere.py                NRLMSIS 2.0 大氣密度
   calc_time.py                      GPS time 轉 UTC
@@ -217,7 +222,7 @@ satellite_orbit/
 data/
   swarm_a_pod/                      Swarm-A 官方 POD
   space_weather/                    原始 F10.7 與 Ap
-  prepared_swarm_a_YYYY-MM.csv      整理後的月資料，不提交 Git
+  swarm_a_data.sqlite               全部整理資料，不提交 Git
 main_pod_error.py                   執行一次 POD 位置誤差測試
 README.md
 AGENTS.md
@@ -227,7 +232,7 @@ TIMELOG.md
 目前最小正式流程已用官方 POD 跑通：
 
 ```text
-讀取 prepared GCRF states
+依時間讀取 prepared ITRF states 並轉成 GCRF
 -> 取出起點與未來官方位置
 -> 二體重力 + J2 + RK4
 -> 與未來官方 POD 比較位置誤差
@@ -247,7 +252,7 @@ RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 
 
 ## 12. 目前需要注意的檔案
 
-- `main_pod_error.py` 直接讀取 prepared CSV，不再重複解析 POD、轉 GPS time 或轉 GCRF。
+- `main_pod_error.py` 依 UTC 範圍查 SQLite，只將查出的 ITRF states 批次轉成 GCRF。
 - 舊的 CSV、ISS OEM 與 reboost 讀取程式已移除。
 
 ## 13. Git

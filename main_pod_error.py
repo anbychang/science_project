@@ -2,7 +2,6 @@
 
 import argparse
 from datetime import datetime, timedelta
-from pathlib import Path
 
 from astropy.utils import iers
 
@@ -30,14 +29,7 @@ def calculate_error(day_utc, start_time_utc, prediction_minutes):
     start_utc = datetime.fromisoformat(f"{day_utc}T{start_time_utc}+00:00")
     target_utc = start_utc + timedelta(minutes=prediction_minutes)
 
-    start_month = start_utc.strftime("%Y-%m")
-    target_month = target_utc.strftime("%Y-%m")
-    if target_month != start_month:
-        raise ValueError("Start and target must be in the same UTC month.")
-
-    prepared_file = Path(f"data/prepared_swarm_a_{start_month}.csv")
     orbit_states = load_prepared_states(
-        prepared_file,
         start_time=start_utc,
         end_time=target_utc,
     )

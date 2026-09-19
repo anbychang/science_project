@@ -1,4 +1,6 @@
 __pycache__/
 *.py[cod]
 data/swarm_a_pod/
-data/prepared_*.csv
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
