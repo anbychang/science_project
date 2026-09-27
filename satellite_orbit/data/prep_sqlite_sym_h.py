@@ -1,24 +1,19 @@
-"""Write local SYM-H CSV files into SQLite."""
+"""Write local SYM-H files into SQLite."""
 
-import csv
-from datetime import datetime
 from pathlib import Path
 
+from satellite_orbit.data.load_geomagnetic import load_geomagnetic_file
 from satellite_orbit.data.prep_sqlite_common import time_to_us
 
-def read_sym_h_file(file_path):
-    """Input: SYM-H CSV path
-    Output: [(time_us, sym_h_nt, version), ...]"""
-    rows = []
-    with Path(file_path).open(encoding="utf-8", newline="") as file:
-        for row in csv.reader(file):
-            if not row or row[0].startswith("#"):
-                continue
-            if int(row[1]) == 99999:
-                continue
-            time_utc = datetime.fromisoformat(row[0].replace("Z", "+00:00"))
-            rows.append((time_to_us(time_utc), int(row[1]), int(row[2])))
-    return rows
+
+def sym_h_row(observation):
+    """Input: {time, value_nt, version}
+    Output: (time_us, sym_h_nt, version)"""
+    return (
+        time_to_us(observation["time"]),
+        observation["value_nt"],
+        observation["version"],
+    )
 
 
 def write_sym_h(connection, geomagnetic_folder):
@@ -26,7 +21,10 @@ def write_sym_h(connection, geomagnetic_folder):
     Output: number of SYM-H source rows read"""
     stored_rows = 0
     for file_path in sorted(Path(geomagnetic_folder).glob("sym_h_*.csv")):
-        rows = read_sym_h_file(file_path)
+        observations = load_geomagnetic_file(file_path)
+        rows = []
+        for observation in observations:
+            rows.append(sym_h_row(observation))
         stored_rows += len(rows)
         connection.executemany(
             """

@@ -24,9 +24,12 @@ plans/             現行計畫與封存提案
     -> load_sqlite_states.py 讀出 ITRF state
     -> calc_coordinates.py 轉成 GCRF state
     -> prep_write_orbital_elements.py 計算半長軸並寫回 SQLite
+    -> prep_write_pod_quality.py 建立品質標記與連續 interval
 ```
 
-`prep_write_sqlite.py` 只負責依序呼叫其他小檔案。weather、SYM-H、AE、POD 的 SQLite 寫入各自放在獨立檔案。
+`prep_write_sqlite.py` 只負責依序呼叫其他小檔案。weather、SYM-H、AE、POD、density 的 SQLite 寫入各自放在獨立檔案。
+
+原始 SQLite table 不會被後續計算修改。新的計算一律讀取 raw table、建立自己的 derived table，再以相同的 `time_us` 保留可追溯關係。
 
 ## 軌道 state
 
@@ -58,7 +61,7 @@ state = {
 Swarm-A POD             已下載並寫入 SQLite
 F10.7 / Ap              已下載並寫入 SQLite
 SYM-H / AE              已下載 2024-05-09 至 2024-05-14，並寫入 SQLite
-Swarm-A DNSAACC 密度    已下載原始 ZIP，尚未讀取或寫入 SQLite
+Swarm-A DNSAACC 密度    已由 loader 寫入 SQLite
 ```
 
 ## 建立 SQLite
@@ -72,7 +75,13 @@ python -m satellite_orbit.data.prep_write_sqlite
 ## 目前限制
 
 - 10 分鐘衍生資料集尚未完成。
-- B-spline 與品質規則尚未實作。
-- Swarm-A 密度資料尚未有 loader。
+- P1.4 的基本品質標記與連續 interval 已實作；ESA quality flag 與 maneuver
+  candidate 規則尚待 audit、校準。
+- P1.5 的 orbit-average、smoothing 與衰減率尚未實作；不可直接對 osculating
+  semi-major axis 發布衰減率。
+- Swarm-A 密度尚未加入軌道 state 或最終 10 分鐘資料集。
 - NRLMSIS 2.0 可以計算密度，但大氣阻力尚未接進 RK4。
 - `main_pod_error.py` 已正式退休，不再是專案入口。
+
+P1.4 至 P1.7 的可執行工作拆分見
+[執行計畫](plans/phase_1_data_preparation/P1.4_TO_P1.7_EXECUTION_PLAN.md)。

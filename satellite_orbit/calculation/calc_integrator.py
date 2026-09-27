@@ -8,14 +8,15 @@ from satellite_orbit.calculation.calc_forces import state_derivative
 def shifted_state(state, derivative, shift_s):
     """Input: {state, derivative, shift_s}
     Output: shifted GCRF state"""
-    return {
-        "time": state["time"] + timedelta(seconds=shift_s),
-        "frame": state["frame"],
-        "position_m": state["position_m"] + shift_s * derivative["position_rate_m_s"],
-        "velocity_m_s": (
-            state["velocity_m_s"] + shift_s * derivative["velocity_rate_m_s2"]
-        ),
-    }
+    shifted = state.copy()
+    shifted["time"] = state["time"] + timedelta(seconds=shift_s)
+    shifted["position_m"] = (
+        state["position_m"] + shift_s * derivative["position_rate_m_s"]
+    )
+    shifted["velocity_m_s"] = (
+        state["velocity_m_s"] + shift_s * derivative["velocity_rate_m_s2"]
+    )
+    return shifted
 
 
 def rk4_step(state, dt_s):
@@ -42,12 +43,11 @@ def rk4_step(state, dt_s):
         + k4["velocity_rate_m_s2"]
     )
 
-    return {
-        "time": state["time"] + timedelta(seconds=dt_s),
-        "frame": "GCRF",
-        "position_m": state["position_m"] + position_change_m,
-        "velocity_m_s": state["velocity_m_s"] + velocity_change_m_s,
-    }
+    next_state = state.copy()
+    next_state["time"] = state["time"] + timedelta(seconds=dt_s)
+    next_state["position_m"] = state["position_m"] + position_change_m
+    next_state["velocity_m_s"] = state["velocity_m_s"] + velocity_change_m_s
+    return next_state
 
 
 def propagate(initial_state, dt_s, n_steps):

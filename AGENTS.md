@@ -72,3 +72,7 @@ outside the state.
 Use SI units inside the project: m, m/s, m/s^2, s, rad, kg, m^2, and kg/m^3.
 Convert source units once in the loader. Convert again only when an external
 library requires another unit, and keep that conversion at the library call.
+
+Treat raw SQLite tables as immutable source records. A calculation reads raw
+tables and writes a separate derived table keyed by the original `time_us`;
+it must not update or delete raw observations.

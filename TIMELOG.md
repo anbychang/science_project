@@ -136,7 +136,7 @@ ITRF [x, y, z]
 - 目前只完成密度計算，尚未把阻力加速度接進 `calc_forces.py` 或 RK4。
 - 單點測試：2025-01-01、赤道、450 km、F10.7 = 150、F10.7A = 150、Ap = 4，得到約 `9.58e-13 kg/m^3`。這只是程式測試，不是真實研究資料。
 - `data/swarm_density_acc/` 已有 61 個 Swarm-A `DNSAACC` 原始 ZIP：2024 年 5 月 31 天與 2025 年 11 月 30 天。
-- 密度 ZIP 尚未有 loader、尚未寫入 SQLite，也尚未和 NRLMSIS 比較。
+- 密度 ZIP 已有 `load_swarm_density.py`，並已寫入 SQLite；尚未和 NRLMSIS 比較。
 - 未來機器學習的 target 暫緩決定。
 
 ## 8. 平滑方法的更新
@@ -166,7 +166,7 @@ ITRF [x, y, z]
 - 已匯入 14,558,400 個 Swarm-A state，時間範圍為 2021-12-31 23:59:42 UTC 至 2026-08-12 23:59:32 UTC。
 - 已整理 201,861 個三小時太空天氣區段，範圍由 1957 至 2026。
 - SQLite 已有 8,640 個 geomagnetic 時間點；每點都有 SYM-H 與 AE。
-- Swarm 密度尚未寫入 SQLite。
+- SQLite 有 436,708 個 Swarm DNSAACC density point，來自 61 個原始 ZIP。
 - 舊的 `prepared_swarm_a_2025-01.csv` 已刪除；不再保留月檔。
 
 ## 10. 已刪除或刻意不保留的資料
@@ -187,6 +187,8 @@ satellite_orbit/
     down_geomagnetic.py             下載原始 SYM-H 與 AE
     load_swarm_pod.py               讀取本機 Swarm-A POD ZIP
     load_space_weather.py           從本機原始檔取得 F10.7 與 Ap
+    load_geomagnetic.py             讀取本機 SYM-H 或 AE CSV
+    load_swarm_density.py           讀取本機 DNSAACC density ZIP
     load_sqlite_states.py           依 UTC 範圍查詢並組成 ITRF states
     prep_write_sqlite.py            依序更新單一 SQLite 資料庫
     prep_sqlite_common.py           共用時間與檔案資訊工具
@@ -195,6 +197,7 @@ satellite_orbit/
     prep_sqlite_sym_h.py            寫入 SYM-H
     prep_sqlite_ae.py               寫入 AE
     prep_sqlite_pod.py              寫入 POD 軌道 state
+    prep_sqlite_density.py          寫入 DNSAACC density
     prep_write_orbital_elements.py  計算並寫入瞬時半長軸
   calculation/
     calc_coordinates.py             GCRF／ITRF 狀態與向量轉換
@@ -260,6 +263,18 @@ RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 
 5. 發布可重建的第一階段衍生資料集與 metadata。
 
 Swarm 密度 loader 與獨立密度比較可平行準備，但不應混進第一階段的核心產物。
+
+## 15. 2026-09-28 P1.4 至 P1.7 交接
+
+- `plans/phase_1_data_preparation/P1.4_TO_P1.7_EXECUTION_PLAN.md` 是明天執行
+  P1.4 至 P1.7 的工作拆分；先做 P1.4-C/D、P1.5-A、P1.6-A 的獨立準備，P1.5 正式
+  smoothing 必須等待 short-period 方法決定。
+- P1.5/P1.7 的欄位已統一：`da_dt_smooth_m_s` 與
+  `decay_rate_smooth_m_day`；F10.7 與 F10.7A 要分別保存 source time。
+- `swarm_a_pod_quality` 可安全 rebuild，並不會修改 raw POD；RK4 會保留 state 的
+  額外 weather/atmosphere 欄位。
+- 仍未完成：SP3 frame inventory、Q3/Q4 校準、P1.5 short-period 處理、P1.6 join、
+  P1.7 release。詳情見 `CHANGE_REPORT_2026-09-28.md`。
 
 ## 多 chat 協作規則
 
