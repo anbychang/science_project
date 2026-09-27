@@ -4,9 +4,8 @@ from datetime import datetime
 from pathlib import Path
 from zipfile import ZipFile
 
-import numpy as np
+from satellite_orbit.calculation.calc_time import gps_time_to_utc, gps_times_to_utc
 
-from .calc_time import gps_time_to_utc, gps_times_to_utc
 KM_TO_M = 1000.0
 DM_S_TO_M_S = 0.1
 DEFAULT_POD_FOLDER = "data/swarm_a_pod"
@@ -65,8 +64,8 @@ def _make_orbit_state(time_gps, position, velocity):
     return {
         "time": time_gps,
         "frame": "ITRF",
-        "position_m": np.array(position),
-        "velocity_m_s": np.array(velocity),
+        "position_m": position,
+        "velocity_m_s": velocity,
     }
 
 
@@ -119,8 +118,7 @@ def _find_swarm_pod_zip(day_gps, data_folder):
         return zip_paths[-1]
 
     raise FileNotFoundError(
-        f"No local Swarm-A POD file for {day_gps}. "
-        "Run down_swarm_pod.py first."
+        f"No local Swarm-A POD file for {day_gps}. Run down_swarm_pod.py first."
     )
 
 

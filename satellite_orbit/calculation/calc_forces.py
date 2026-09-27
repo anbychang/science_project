@@ -6,7 +6,7 @@ function uses ITRF, where the z-axis follows the Earth's north pole.
 
 import numpy as np
 
-from satellite_orbit.calc_coordinates import (
+from satellite_orbit.calculation.calc_coordinates import (
     gcrf_to_itrf,
     itrf_vector_to_gcrf,
 )

@@ -4,7 +4,6 @@ import csv
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
-
 DEFAULT_FILE = Path("data/space_weather/SW-All.csv")
 _weather_cache = {}
 
@@ -92,9 +91,7 @@ def load_space_weather(state, file_path=DEFAULT_FILE):
 
     state_with_weather = state.copy()
     state_with_weather["f107_sfu"] = float(previous_row["F10.7_OBS"])
-    state_with_weather["f107a_sfu"] = float(
-        current_row["F10.7_OBS_CENTER81"]
-    )
+    state_with_weather["f107a_sfu"] = float(current_row["F10.7_OBS_CENTER81"])
     state_with_weather["ap_values"] = ap_values
     state_with_weather["f107_data_type"] = previous_row["F10.7_DATA_TYPE"]
     return state_with_weather

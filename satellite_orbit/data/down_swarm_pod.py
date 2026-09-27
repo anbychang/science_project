@@ -14,10 +14,7 @@ DEFAULT_DATA_FOLDER = "data/swarm_a_pod"
 
 def list_swarm_pod_files():
     """Output: every Swarm-A POD file listed by ESA."""
-    list_url = (
-        f"{ESA_SERVER}?do=list&maxfiles=10000"
-        f"&file={quote(ESA_POD_FOLDER)}"
-    )
+    list_url = f"{ESA_SERVER}?do=list&maxfiles=10000&file={quote(ESA_POD_FOLDER)}"
 
     with urlopen(list_url) as response:
         return json.load(response)["results"]
@@ -64,10 +61,7 @@ def download_file(source_file, data_folder):
     data_folder = Path(data_folder)
     output_path = data_folder / source_file["name"]
 
-    correct_size = (
-        output_path.exists()
-        and output_path.stat().st_size == source_file["size"]
-    )
+    correct_size = output_path.exists() and output_path.stat().st_size == source_file["size"]
     if correct_size:
         return output_path
 

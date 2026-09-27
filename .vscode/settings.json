@@ -1,0 +1,42 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    ".vscode": true,
+    ".gitignore": true,
+    "requirements.txt": true,
+    "ruff.toml": true,
+    "**/.ruff_cache": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "data/swarm_a_pod": true,
+    "data/geomagnetic": true,
+    "data/space_weather": true,
+    "data/swarm_density_acc": true,
+    "data/*.sqlite": true,
+    "data/*.sqlite-shm": true,
+    "data/*.sqlite-wal": true
+  },
+  "search.exclude": {
+    "**/.git/**": true,
+    ".vscode/**": true,
+    "**/.ruff_cache/**": true,
+    "**/__pycache__/**": true,
+    "**/*.pyc": true,
+    "data/swarm_a_pod/**": true,
+    "data/geomagnetic/**": true,
+    "data/space_weather/**": true,
+    "data/swarm_density_acc/**": true,
+    "data/*.sqlite": true,
+    "data/*.sqlite-shm": true,
+    "data/*.sqlite-wal": true
+  },
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/.ruff_cache/**": true,
+    "**/__pycache__/**": true,
+    "data/swarm_a_pod/**": true,
+    "data/geomagnetic/**": true,
+    "data/space_weather/**": true,
+    "data/swarm_density_acc/**": true
+  }
+}

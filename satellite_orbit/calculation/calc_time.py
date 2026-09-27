@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from astropy.time import Time
 from astropy.utils import iers
 
-
 GPS_EPOCH = datetime(1980, 1, 6)
 iers.conf.auto_download = False
 

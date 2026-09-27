@@ -4,10 +4,6 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-import numpy as np
-
-from satellite_orbit.calc_coordinates import itrf_states_to_gcrf
-
 DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
 
 
@@ -26,12 +22,12 @@ def _us_to_time(time_us):
 
 def _row_to_state(row):
     """Input: one database row
-    Output: {time, frame, position_m, velocity_m_s, space weather}"""
+    Output: ITRF state with space weather"""
     return {
         "time": _us_to_time(row["time_us"]),
         "frame": "ITRF",
-        "position_m": np.array([row["x_m"], row["y_m"], row["z_m"]]),
-        "velocity_m_s": np.array([row["vx_m_s"], row["vy_m_s"], row["vz_m_s"]]),
+        "position_m": (row["x_m"], row["y_m"], row["z_m"]),
+        "velocity_m_s": (row["vx_m_s"], row["vy_m_s"], row["vz_m_s"]),
         "f107_sfu": row["f107_sfu"],
         "f107a_sfu": row["f107a_sfu"],
         "ap_values": [
@@ -47,13 +43,13 @@ def _row_to_state(row):
     }
 
 
-def load_prepared_states(
+def load_sqlite_states(
     start_time,
     end_time,
     database_path=DEFAULT_DATABASE,
 ):
     """Input: {start_time, end_time, database_path}
-    Output: [GCRF state_1, GCRF state_2, ...]"""
+    Output: [ITRF state_1, ITRF state_2, ...]"""
     query = """
         SELECT
             orbit.time_us,
@@ -90,4 +86,4 @@ def load_prepared_states(
         for row in rows:
             states_itrf.append(_row_to_state(row))
 
-    return itrf_states_to_gcrf(states_itrf)
+    return states_itrf

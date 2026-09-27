@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 
-from satellite_orbit.calc_forces import state_derivative
+from satellite_orbit.calculation.calc_forces import state_derivative
 
 
 def shifted_state(state, derivative, shift_s):

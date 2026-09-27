@@ -1,6 +1,8 @@
 __pycache__/
 *.py[cod]
 data/swarm_a_pod/
+data/swarm_density_acc/
+data/geomagnetic/
 data/*.sqlite
 data/*.sqlite-shm
 data/*.sqlite-wal

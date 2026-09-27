@@ -1,26 +1,34 @@
-# Swarm-A Orbit Project
+# Swarm-A 軌道衰減研究
 
-This project builds a Swarm-A orbit propagator. The current model uses two-body
-gravity and J2.
+本專案研究地磁暴如何影響 Swarm-A 的軌道衰減。XYZ 軌道預報是後續驗證工具，不是主要研究問題。
 
-## Layout
+目前只進行第一階段：建立可重建、每 10 分鐘一列的分析資料集。正式規格見 [第一階段計畫](plans/phase_1_data_preparation/PLAN.md)。
 
-- `satellite_orbit/down_swarm_pod.py`: get Swarm-A POD files from ESA.
-- `satellite_orbit/down_space_weather.py`: get raw F10.7 and Ap data.
-- `satellite_orbit/load_swarm_pod.py`: read a local Swarm-A POD ZIP file.
-- `satellite_orbit/load_space_weather.py`: add F10.7 and Ap to one state.
-- `satellite_orbit/prep_states.py`: update one prepared SQLite database.
-- `satellite_orbit/load_prepared_states.py`: query states by UTC time range.
-- `satellite_orbit/calc_coordinates.py`: change states between GCRF and ITRF.
-- `satellite_orbit/calc_atmosphere.py`: calculate NRLMSIS 2.0 mass density.
-- `satellite_orbit/calc_time.py`: change GPS time to UTC.
-- `satellite_orbit/calc_forces.py`: gravity and orbital state derivative.
-- `satellite_orbit/calc_integrator.py`: RK4 state propagation.
-- `satellite_orbit/calc_position_error.py`: compare prediction with official POD.
-- `satellite_orbit/calc_orbital_response.py`: semi-major axis and orbit-decay signals.
-- `data/`: source orbit files. They remain unchanged.
+## 結構
 
-## Orbit-state convention
+```text
+satellite_orbit/
+├─ data/           下載、讀取、SQLite 寫入
+└─ calculation/    座標與物理計算
+
+data/              原始資料與 SQLite 工作資料庫
+plans/             現行計畫與封存提案
+```
+
+## 資料流程
+
+```text
+下載檔案
+    -> load_*.py 讀取本機檔案
+    -> prep_write_sqlite.py 寫入 raw SQLite
+    -> load_sqlite_states.py 讀出 ITRF state
+    -> calc_coordinates.py 轉成 GCRF state
+    -> prep_write_orbital_elements.py 計算半長軸並寫回 SQLite
+```
+
+`prep_write_sqlite.py` 只負責依序呼叫其他小檔案。weather、SYM-H、AE、POD 的 SQLite 寫入各自放在獨立檔案。
+
+## 軌道 state
 
 ```text
 state = {
@@ -38,62 +46,33 @@ state = {
 }
 ```
 
-- Functions pass one `state` instead of separate time, position, and velocity.
-- One orbit series is `[state, state, ...]`.
-- Derived time series still use one row for each time.
-- Main coordinate frame: GCRF
-- POD source frame: ITRF
-- Time system: UTC
-- Position: m
-- Velocity: m/s
-- Acceleration: m/s^2
-- Angle: rad
-- Density: kg/m^3
+- 函式之間只傳一個 `state`，不拆開傳時間、位置與速度。
+- 一段軌道是 `[state, state, ...]`。
+- 專案內部使用 SI 單位與 UTC。
+- 主要計算座標系是 GCRF。
+- 原始 POD 的實際 reference frame 必須從 SP3 header 保存，不能永遠只標成泛稱的 ITRF。
 
-The raw POD uses km and dm/s. The loader changes these values to SI once.
-NRLMSIS requires degrees and km, so only its adapter changes rad to degrees and
-`altitude_m` to km. F10.7 and Ap keep the units required by NRLMSIS.
+## 目前資料
 
-`SW-All.csv` is downloaded only when the local file is missing. The local file
-is indexed once when first used, then reused from memory.
-
-The active source is Swarm-A precise orbit data.
-
-Swarm-A POD points must be changed from ITRF to GCRF before propagation.
-
-Coordinate changes use Astropy and IERS Earth orientation data. Install the
-packages in `requirements.txt` before running the project.
-
-## Run one POD error test
-
-Use the default start point and predict 10 minutes:
-
-```powershell
-python main_pod_error.py
+```text
+Swarm-A POD             已下載並寫入 SQLite
+F10.7 / Ap              已下載並寫入 SQLite
+SYM-H / AE              已下載 2024-05-09 至 2024-05-14，並寫入 SQLite
+Swarm-A DNSAACC 密度    已下載原始 ZIP，尚未讀取或寫入 SQLite
 ```
 
-Choose another UTC start time and prediction length:
+## 建立 SQLite
 
 ```powershell
-python main_pod_error.py --day 2025-01-01 --start 01:30:02 --minutes 60
+python -m satellite_orbit.data.prep_write_sqlite
 ```
 
-Prepare all local POD and space-weather data:
+輸出為 `data/swarm_a_data.sqlite`。原始資料保留不變；SQLite 可以由原始檔重新建立，因此不提交 Git。
 
-```powershell
-python -m satellite_orbit.prep_states
-```
+## 目前限制
 
-The output is `data/swarm_a_data.sqlite`. Running the command again only adds
-new or changed source files. The database is generated data and is not
-committed to Git.
-
-`main_pod_error.py` queries only its needed UTC range. The database keeps POD
-states in official ITRF and changes the selected states to GCRF after reading.
-`--day` and `--start` use UTC.
-
-## Model limits
-
-The current model is useful for short tests. It can calculate NRLMSIS 2.0 mass
-density, but atmospheric drag is not connected to RK4 yet. It also does not use
-a full Earth gravity model, so it is not a complete long-term predictor.
+- 10 分鐘衍生資料集尚未完成。
+- B-spline 與品質規則尚未實作。
+- Swarm-A 密度資料尚未有 loader。
+- NRLMSIS 2.0 可以計算密度，但大氣阻力尚未接進 RK4。
+- `main_pod_error.py` 已正式退休，不再是專案入口。

@@ -7,15 +7,14 @@ reference frames.
 import astropy.units as u
 import numpy as np
 from astropy.coordinates import (
-    EarthLocation,
     GCRS,
     ITRS,
     CartesianDifferential,
     CartesianRepresentation,
+    EarthLocation,
 )
 from astropy.time import Time
 from astropy.utils import iers
-
 
 iers.conf.auto_download = False
 
@@ -76,9 +75,7 @@ def itrf_states_to_gcrf(states):
     gcrf_states = itrf_states.transform_to(GCRS(obstime=times))
 
     gcrf_positions_m = gcrf_states.cartesian.xyz.to_value(u.m).T
-    gcrf_velocities_m_s = (
-        gcrf_states.cartesian.differentials["s"].d_xyz.to_value(u.m / u.s).T
-    )
+    gcrf_velocities_m_s = gcrf_states.cartesian.differentials["s"].d_xyz.to_value(u.m / u.s).T
 
     converted_states = []
     for index in range(len(states)):

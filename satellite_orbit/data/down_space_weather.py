@@ -3,7 +3,6 @@
 from pathlib import Path
 from urllib.request import urlretrieve
 
-
 SOURCE_URL = "https://celestrak.org/SpaceData/SW-All.csv"
 DEFAULT_FILE = Path("data/space_weather/SW-All.csv")
 

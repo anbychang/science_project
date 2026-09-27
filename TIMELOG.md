@@ -1,6 +1,6 @@
 # Swarm-A Orbit Project - Time Log
 
-最後更新：2026-09-19
+最後更新：2026-09-27
 
 這份檔案是本專案的共同外部記憶。它記錄已確認的決策、已做過的事情、刻意不做的事情，避免之後重複討論或把測試資料誤當研究資料。
 
@@ -22,24 +22,17 @@
 
 - 不把「檢查用、驗證用、一次性實驗用」程式混進主程式。真的需要時再另外寫。
 - 不要靠很多層資料夾假裝整理。應刪掉不必要的東西；保留的檔名要能直接說用途。
-- 檔名前綴統一為四個字母：`calc_` 是計算、`down_` 是下載、`load_` 是讀取本機檔案。
+- 檔名前綴統一為四個字母：`calc_` 是計算、`down_` 是下載、`load_` 是讀取本機檔案、`prep_` 是建立整理後資料。
 
 ## 2. 目前研究目標
 
-研究主題：盡量準確預測 Swarm-A 在指定時間的 XYZ 座標。
+2026-09-27 定案：研究主題是「地磁暴如何影響 Swarm-A 軌道衰減」。
 
-目前衛星：Swarm-A。
+XYZ 軌道預報是後續驗證研究結果的工具，不是主要研究問題。通訊系統不在範圍內。
 
-通訊系統不是本專案範圍。本專案只提供有座標系與時間標記的衛星位置；其他系統自行使用該位置指向衛星。
+目前只做第一階段資料準備：POD 品質檢查、半長軸、衰減率、10 分鐘時間對齊與可重建的分析資料集。正式規格以 `plans/phase_1_data_preparation/PLAN.md` 為準。
 
-長期研究流程：
-
-1. 取得公開 Swarm-A 精密軌道資料。
-2. 讀取官方位置、速度與品質資訊。
-3. 以官方精密軌道作為答案，檢查我們的傳播結果誤差。
-4. 逐步加入 J2、大氣阻力與太空天氣資料，改善較長時間預測。
-
-現在已有 Swarm-A 官方 POD、POD 讀取程式、GPS／UTC 與 GCRF／ITRF 轉換、二體重力、J2、RK4 與位置誤差計算。大氣阻力尚未加入。
+機器學習的 target 尚未決定，不阻擋第一階段。
 
 ## 3. 資料來源：已確認的事實
 
@@ -54,7 +47,7 @@
 
 - 主資料：ESA `SP3ACOM_2_` reduced-dynamic POD。
 - 每 10 秒一筆位置與速度，官方另有品質報告。
-- 原始座標系是 ITRF，原始時間是 GPS time。
+- 原始時間是 GPS time。SP3 header 跨越 `IGb14`、`IGS20`、`IGb20` 與 `IGc20`；舊 loader 統稱為 `ITRF` 只是暫時簡化，正式跨時段分析前必須保存真正 frame label。
 - Kinematic 軌道只做後續比較；主資料不用它，因為主資料已直接提供速度。
 - Swarm-A 有可協助理解非重力加速度與大氣阻力的公開科學資料；這是選它的主要優勢。
 
@@ -71,9 +64,9 @@
 - 太空天氣下載器只在原始檔不存在時下載。loader 第一次使用時建立本機資料索引，之後所有 state 直接重用，不重掃 CSV，也不重新下載。
 - 每個函式都必須用短 docstring 寫出 Input 與 Output；資料形狀優先用 `[]`、`{}` 與 `...` 畫出來，不用長句解釋。
 - prepared data 採用單一 SQLite 檔案 `swarm_a_data.sqlite`，不再按月份切 CSV。
-- `prep_states.py` 將本機原始資料 insert／replace 進資料庫；相同 `time_us` 不會重複。
+- `prep_write_sqlite.py` 將本機原始資料 insert／replace 進資料庫；相同 `time_us` 不會重複。
 - 資料庫保留 ITRF POD，查出需要的短區間後才批次轉成 GCRF。
-- `load_prepared_states(start_time, end_time)` 只查需要的時間範圍，並回傳帶有 F10.7、F10.7A 與 Ap 的 `[state_1, state_2, ...]`。
+- `load_sqlite_states(start_time, end_time)` 只查需要的時間範圍，並回傳帶有 F10.7、F10.7A 與 Ap 的 ITRF `[state_1, state_2, ...]`；座標轉換在 calculation 層進行。
 - 一段軌道資料是 `[state, state, ...]`，不使用 `{times: [...], states: [...]}`。
 - `position_m = [x, y, z]`，`velocity_m_s = [vx, vy, vz]`；不用難讀的六維 `values[0]`。
 - 半長軸等衍生時間序列仍使用一個時間一列的 row-based 格式。
@@ -98,46 +91,26 @@
 - Astropy 使用 IERS 資料處理歲差、章動、地球自轉與極移。
 - 未來阻力公式中的 `v_rel` 是相對大氣速度，必須扣掉地球自轉造成的大氣速度；不能直接拿 `vx, vy, vz`。
 
-## 5. 軌道反應訊號：已定案
+## 5. 軌道反應訊號
 
-每個原始狀態仍是六維：`[x, y, z, vx, vy, vz]`。
+舊方案使用約 90 分鐘 trailing average，再用相鄰點有限差分計算 `a_dot_m_s`。這個方案已被 2026-09-27 的第一階段計畫取代，只保留作歷史比較。
 
-每個時間點先從狀態計算瞬時半長軸：
+目前方案：先按資料 gap 與品質切成連續區間，建立 10 分鐘資料點，再在每個區間內獨立校準 B-spline 並由 spline 求導數。不可跨 gap、來源邊界或 maneuver candidate 平滑。
 
-```text
-distance_m = sqrt(x*x + y*y + z*z)
-speed_m_s = sqrt(vx*vx + vy*vy + vz*vz)
-a_m = 1 / (2 / distance_m - speed_m_s*speed_m_s / MU_M3_S2)
-```
+衰減率定義為 `decay_rate_m_day = -da_dt_m_s * 86400`；正值代表半長軸下降。細節以 `plans/phase_1_data_preparation/PLAN.md` 為準。
 
-不使用近日點、遠日點或「第幾圈」切分。Swarm-A 軌道接近圓形，這些切點不穩定。
-
-正式做法是「往回看一整圈」的滑動平均：
-
-- `instantaneous_a_m[t]`：當下六維狀態算出的半長軸。
-- `a_mean_m[t]`：從 `t - 約 90 分鐘` 到 `t` 的半長軸平均。
-- `a_dot_m_s[t]`：`a_mean_m` 隨時間的變化率。
-
-選擇往回平均而不是前後各半圈，因為置中平均會用到未來資料，會讓後續延遲分析看起來比真實反應更早。
-
-最前面不足一整圈的點沒有平均值與導數，應保留為 `None`，不要硬補數字。
-
-`a_dot_m_s < 0` 代表軌道正在縮小。軌道能量變化率可作為數學一致性檢查，但目前不是主分析量，暫不保存。
-
-目前程式假設資料固定間隔；真實 POD 若不規則，之後要改成按時間權重平均，不能直接照目前的「點數平均」。
-
-## 6. 地磁與太陽資料：已定案
+## 6. 地磁與太陽資料
 
 - `SYM-H(t)`：主要地磁暴強度訊號。
-- `d(SYM-H)/dt`：由原始 SYM-H 直接算出，不另外下載一欄。
-- `AE(t)`：補充極區活動。
+- 是否使用 `d(SYM-H)/dt` 尚未決定；若需要，會由原始 SYM-H 計算，不另外下載。
+- `AE(t)` 已下載並保存，但是否列為正式分析特徵尚未決定。
 - `F10.7(t)`：太陽背景活動。
 - `F10.7A(t)`：F10.7 的 81 日平均；不是 `F81`。
 - Dst 可作為較長時間尺度的輔助資料，非主訊號。
 
 軌道反應和太空天氣資料需要對到相同 UTC 時間點。官方 POD 為每 10 秒一筆；F10.7 為每日資料，Ap 為每三小時資料。
 
-## 7. 大氣阻力與 GPR
+## 7. 大氣密度與後續模型
 
 阻力加速度：
 
@@ -145,11 +118,7 @@ a_m = 1 / (2 / distance_m - speed_m_s*speed_m_s / MU_M3_S2)
 a_drag = -0.5 * Cd * A / m * rho * |v_rel| * v_rel
 ```
 
-- NRLMSIS 2.0 的密度是基準：`rho_MSIS`。
-- 真正要使用的密度：`rho_corr = rho_MSIS * C_rho`。
-- 為了保證倍率是正的，GPR 預測 `y = log(C_rho)`，再取 `C_rho = exp(y)`。
-
-關鍵限制：POD 只告訴我們軌道如何掉，不會直接告訴我們真正密度。因此 `C_rho` 必須先透過「以物理傳播結果配對 POD」反推，之後才是 GPR 的訓練標籤。
+舊方案曾考慮從 POD 與物理傳播反推 `C_rho`，再用 GPR 預測。這個方案已被「Swarm L2 密度與 NRLMSIS 獨立比較」的方向取代，不再是目前方法。
 
 2026-09-19 已完成第一段大氣程式：
 
@@ -163,17 +132,19 @@ ITRF [x, y, z]
 - 使用 `pymsis 0.12` 呼叫 NRLMSIS 2.0；程式明確指定 `version=2.0`，不使用預設的 2.1。
 - NRLMSIS 輸入為 UTC、經度、緯度、高度、前一天 F10.7、81 日 F10.7A 與 Ap。
 - 地磁暴模式使用 7 個 Ap 值：`[daily, now, -3h, -6h, -9h, avg_12_to_33h, avg_36_to_57h]`。
-- `SYM-H` 與 `AE` 不直接輸入 NRLMSIS；它們留給後續密度修正與 GPR。
+- `SYM-H` 與 `AE` 不直接輸入 NRLMSIS；它們保留給後續分析，機器學習方法與 target 尚未決定。
 - 目前只完成密度計算，尚未把阻力加速度接進 `calc_forces.py` 或 RK4。
 - 單點測試：2025-01-01、赤道、450 km、F10.7 = 150、F10.7A = 150、Ap = 4，得到約 `9.58e-13 kg/m^3`。這只是程式測試，不是真實研究資料。
+- `data/swarm_density_acc/` 已有 61 個 Swarm-A `DNSAACC` 原始 ZIP：2024 年 5 月 31 天與 2025 年 11 月 30 天。
+- 密度 ZIP 尚未有 loader、尚未寫入 SQLite，也尚未和 NRLMSIS 比較。
+- 未來機器學習的 target 暫緩決定。
 
-## 8. 高頻資料與平滑窗口的討論
+## 8. 平滑方法的更新
 
 - 114 小時平滑窗口遠大於想找的 1 到 6 小時延遲，會抹掉訊號，也可能製造假的時間偏移；不可用。
-- 本專案目前採用約 90 分鐘的一圈 trailing 平均，不是 114 小時。
-- Swarm-A 的主資料採用 Reduced-dynamic 解；它同時有位置與速度，較適合用來算半長軸。
-- 高頻取樣不代表導數一定較準；必須比較平滑窗口，例如 30、60、90、150 分鐘，看結果是否穩定。
-- 2.5 小時雖比 114 小時合理，仍可能削弱一小時尺度的訊號。
+- 90 分鐘 trailing average 是舊方案，不再是正式方法。
+- 新方案使用 10 分鐘資料點與分區間 B-spline；spline degree 與 smoothing strength 必須用資料校準，不先寫死。
+- Swarm-A 的主資料採用 Reduced-dynamic POD；瞬時半長軸不是直接量到的 drag。
 
 ## 9. 資料保存與目前資料狀態
 
@@ -189,9 +160,13 @@ ITRF [x, y, z]
 
 - `swarm_a_pod/`：ESA 原始 POD ZIP。
 - `space_weather/SW-All.csv`：原始 F10.7 與 Ap。
+- `geomagnetic/`：2024-05-09 至 2024-05-14 的原始 SYM-H 與 AE。
+- `swarm_density_acc/`：Swarm-A `DNSAACC` 原始密度 ZIP。
 - `swarm_a_data.sqlite`：單一整理結果，包含太空天氣表與 Swarm-A state 表。
 - 已匯入 14,558,400 個 Swarm-A state，時間範圍為 2021-12-31 23:59:42 UTC 至 2026-08-12 23:59:32 UTC。
 - 已整理 201,861 個三小時太空天氣區段，範圍由 1957 至 2026。
+- SQLite 已有 8,640 個 geomagnetic 時間點；每點都有 SYM-H 與 AE。
+- Swarm 密度尚未寫入 SQLite。
 - 舊的 `prepared_swarm_a_2025-01.csv` 已刪除；不再保留月檔。
 
 ## 10. 已刪除或刻意不保留的資料
@@ -206,30 +181,40 @@ ITRF [x, y, z]
 
 ```text
 satellite_orbit/
-  down_swarm_pod.py                 下載 Swarm-A POD 原始檔
-  down_space_weather.py             下載原始 F10.7 與 Ap
-  prep_states.py                    更新單一 SQLite 資料庫
-  load_swarm_pod.py                 讀取本機 Swarm-A POD ZIP
-  load_space_weather.py             從本機原始檔取得 F10.7 與 Ap
-  load_prepared_states.py           依 UTC 範圍查詢並組成 GCRF states
-  calc_coordinates.py               GCRF／ITRF 狀態與向量轉換
-  calc_atmosphere.py                NRLMSIS 2.0 大氣密度
-  calc_time.py                      GPS time 轉 UTC
-  calc_forces.py                    二體重力、J2 與狀態導數
-  calc_integrator.py                fourth-order Runge-Kutta（RK4）傳播
-  calc_position_error.py            計算預測位置與官方位置的距離
-  calc_orbital_response.py          計算 a、滑動一圈平均、a_dot
+  data/
+    down_swarm_pod.py               下載 Swarm-A POD 原始檔
+    down_space_weather.py           下載原始 F10.7 與 Ap
+    down_geomagnetic.py             下載原始 SYM-H 與 AE
+    load_swarm_pod.py               讀取本機 Swarm-A POD ZIP
+    load_space_weather.py           從本機原始檔取得 F10.7 與 Ap
+    load_sqlite_states.py           依 UTC 範圍查詢並組成 ITRF states
+    prep_write_sqlite.py            依序更新單一 SQLite 資料庫
+    prep_sqlite_common.py           共用時間與檔案資訊工具
+    prep_sqlite_tables.py           建立 SQLite tables
+    prep_sqlite_weather.py          寫入 F10.7 與 Ap
+    prep_sqlite_sym_h.py            寫入 SYM-H
+    prep_sqlite_ae.py               寫入 AE
+    prep_sqlite_pod.py              寫入 POD 軌道 state
+    prep_write_orbital_elements.py  計算並寫入瞬時半長軸
+  calculation/
+    calc_coordinates.py             GCRF／ITRF 狀態與向量轉換
+    calc_atmosphere.py              NRLMSIS 2.0 大氣密度
+    calc_time.py                    GPS time 轉 UTC
+    calc_forces.py                  二體重力、J2 與狀態導數
+    calc_integrator.py              fourth-order Runge-Kutta（RK4）傳播
+    calc_position_error.py          計算預測位置與官方位置的距離
+    calc_orbital_response.py        從一個 GCRF state 計算瞬時半長軸
 data/
   swarm_a_pod/                      Swarm-A 官方 POD
   space_weather/                    原始 F10.7 與 Ap
+  geomagnetic/                      原始 SYM-H 與 AE
   swarm_a_data.sqlite               全部整理資料，不提交 Git
-main_pod_error.py                   執行一次 POD 位置誤差測試
 README.md
 AGENTS.md
 TIMELOG.md
 ```
 
-目前最小正式流程已用官方 POD 跑通：
+歷史上曾用官方 POD 跑通以下位置誤差測試：
 
 ```text
 依時間讀取 prepared ITRF states 並轉成 GCRF
@@ -238,7 +223,7 @@ TIMELOG.md
 -> 與未來官方 POD 比較位置誤差
 ```
 
-目前預設測試：
+歷史測試結果：
 
 ```text
 起點：2025-01-01 00:00:02 UTC
@@ -248,28 +233,33 @@ TIMELOG.md
 位置誤差：29.295 m
 ```
 
+2026-09-27 決定正式退休並刪除 `main_pod_error.py`。以上數字只保留為歷史記錄；目前沒有正式指令入口可直接重跑。
+
 RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 與 Euler 而存在，現在已移除。也已移除 `make_derivative` 這類函式內函式的寫法。
 
 ## 12. 目前需要注意的檔案
 
-- `main_pod_error.py` 依 UTC 範圍查 SQLite，只將查出的 ITRF states 批次轉成 GCRF。
-- 舊的 CSV、ISS OEM 與 reboost 讀取程式已移除。
+- `plans/phase_1_data_preparation/PLAN.md` 是第一階段唯一正式規格。
+- `plans/phase_1_data_preparation/archive/RESEARCH_PLAN.md` 是外部提案快照，不代表目前決策或已完成結果。
+- 舊的 CSV、ISS OEM、reboost 讀取程式與 `main_pod_error.py` 已移除。
 
 ## 13. Git
 
 - 2026-09-15：建立本機 Git repository。
 - 2026-09-15：已建立私有 GitHub repository：`https://github.com/anbychang/science_project`。
-- `master` 已連到 `origin/master`；目前本機有尚未推送的提交。
+- `master` 已連到 `origin/master`；目前沒有未推送 commit，但有尚未提交的文件與資料夾重組。
 
 ## 14. 下一步，尚未做
 
-1. 將位置總誤差拆成 RTN 三個方向。
-2. 檢查不同起始時間與預測長度的誤差。
-3. 逐步加入更完整的地球重力項。
-4. 取得並保存 SYM-H 與 AE 原始資料。
-5. 將 NRLMSIS 密度與大氣阻力接進 RK4。
+依 `plans/phase_1_data_preparation/PLAN.md`：
 
-官方 POD 只作為起始狀態與答案；不能把未來 POD 偷放進傳播器修正預測。
+1. audit POD coverage、native cadence、gap 與 SP3 frame label。
+2. 實作半長軸品質檢查與 continuous interval。
+3. 建立 10 分鐘 bin 與 B-spline derivative。
+4. 對齊 SYM-H、Ap 與 F10.7，保留 source timestamp。
+5. 發布可重建的第一階段衍生資料集與 metadata。
+
+Swarm 密度 loader 與獨立密度比較可平行準備，但不應混進第一階段的核心產物。
 
 ## 多 chat 協作規則
 

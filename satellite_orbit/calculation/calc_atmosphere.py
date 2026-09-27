@@ -5,7 +5,7 @@ from datetime import timezone
 import numpy as np
 from pymsis import Variable, calculate
 
-from satellite_orbit.calc_coordinates import gcrf_to_itrf, itrf_to_geodetic
+from satellite_orbit.calculation.calc_coordinates import gcrf_to_itrf, itrf_to_geodetic
 
 
 def add_atmospheric_density(state):
