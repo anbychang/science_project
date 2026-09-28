@@ -194,8 +194,7 @@ satellite_orbit/
     prep_sqlite_common.py           共用時間與檔案資訊工具
     prep_sqlite_tables.py           建立 SQLite tables
     prep_sqlite_weather.py          寫入 F10.7 與 Ap
-    prep_sqlite_sym_h.py            寫入 SYM-H
-    prep_sqlite_ae.py               寫入 AE
+    prep_sqlite_geomagnetic.py      寫入 SYM-H 與 AE
     prep_sqlite_pod.py              寫入 POD 軌道 state
     prep_sqlite_density.py          寫入 DNSAACC density
     prep_write_orbital_elements.py  計算並寫入瞬時半長軸

@@ -46,9 +46,10 @@ table 可能留下孤兒列的問題。
 
 ### 現有資料 I/O 的責任分離
 
-這批變更也把 SYM-H/AE 的 CSV parsing 集中在 `load_geomagnetic.py`，讓兩個 SQLite
-writer 只負責 table row shape；Swarm DNSAACC density 則有獨立 loader、writer 與 raw
-table。`prep_write_sqlite.py` 保持為順序協調器，而不是塞入 parsing 邏輯。
+這批變更把 SYM-H/AE 的 CSV parsing 集中在 `load_geomagnetic.py`，並以
+`prep_sqlite_geomagnetic.py` 的單一 writer 處理兩種 index；Swarm DNSAACC density 則有
+獨立 loader、writer 與 raw table。`prep_write_sqlite.py` 保持為順序協調器，而不是塞入
+parsing 邏輯。
 
 ## 專案級盤點
 
@@ -97,3 +98,12 @@ passed
 先看 `P1.4_TO_P1.7_EXECUTION_PLAN.md` 的「依賴與可平行工作」表。最安全的第一批
 工作是 P1.4-C、P1.4-D 的 pure residual/sample audit、P1.5-A 的 synthetic/bin helper，
 以及 P1.6-A 的 pure join tests；它們互不寫同一張 derived table。
+
+## 後續整理
+
+- 刪除重複的 `prep_sqlite_ae.py` 與 `prep_sqlite_sym_h.py`，改由
+  `prep_sqlite_geomagnetic.py` 以固定的 `sym_h`/`ae` column mapping 寫入。呼叫端與
+  test 已改成同一個入口；輸出 row-count key 維持不變。
+- `POD_FINAL_OUTPUT_SPEC.md` 不再重複 P1.5-A 至 D 的實作步驟，只維護 P1.5 table
+  schema 與 release checks。可執行步驟的唯一維護位置是
+  `P1.4_TO_P1.7_EXECUTION_PLAN.md`。

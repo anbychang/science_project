@@ -3,10 +3,9 @@
 import sqlite3
 from pathlib import Path
 
-from satellite_orbit.data.prep_sqlite_ae import write_ae
 from satellite_orbit.data.prep_sqlite_density import write_density_folder
+from satellite_orbit.data.prep_sqlite_geomagnetic import write_geomagnetic
 from satellite_orbit.data.prep_sqlite_pod import write_pod_folder
-from satellite_orbit.data.prep_sqlite_sym_h import write_sym_h
 from satellite_orbit.data.prep_sqlite_tables import create_tables
 from satellite_orbit.data.prep_sqlite_weather import write_space_weather
 
@@ -41,8 +40,8 @@ def write_sqlite_database(
     with sqlite3.connect(database_path) as connection:
         create_tables(connection)
         weather_rows = write_space_weather(connection, weather_file)
-        sym_h_rows = write_sym_h(connection, geomagnetic_folder)
-        ae_rows = write_ae(connection, geomagnetic_folder)
+        sym_h_rows = write_geomagnetic(connection, geomagnetic_folder, "sym_h")
+        ae_rows = write_geomagnetic(connection, geomagnetic_folder, "ae")
         known_weather_times = weather_times(connection)
 
         pod_files, state_rows = write_pod_folder(
