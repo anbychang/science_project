@@ -285,6 +285,9 @@ Swarm 密度 loader 與獨立密度比較可平行準備，但不應混進第一
 - SYM-H/AE 已下載並匯入 2021-01-01 至 2026-08-12；各有 2,952,000 個 minute
   timestamps，SYM-H 最大 gap 是 60 秒，完整覆蓋本機 POD。P1.6-B final writer 仍等待
   P1.5 的正式 10 分鐘 orbit schema。
+- WDC Kyoto 的 SYM-H 年度 request 可能在約 290 天截斷卻仍回傳成功。`down_geomagnetic.py`
+  現在限制每次最多 180 天，且驗證檔案最後 observation 到達 requested end date；未來下載
+  不可再用年度範圍。
 
 ## 多 chat 協作規則
 

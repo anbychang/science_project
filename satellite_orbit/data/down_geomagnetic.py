@@ -8,6 +8,7 @@ from urllib.request import urlretrieve
 
 WDC_DATA_URL = "https://wdc.kugi.kyoto-u.ac.jp/hapi/data"
 DEFAULT_DATA_FOLDER = Path("data/geomagnetic")
+MAX_DOWNLOAD_DAYS = 180
 
 DATASETS = {
     "sym_h": ("min_asysym", "symHValue,versionCode"),
@@ -28,6 +29,36 @@ def _hapi_time(time_utc):
     return time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _last_observation_day(file_path):
+    """Input: downloaded geomagnetic CSV path
+    Output: UTC date of its last observation"""
+    last_time = None
+
+    with Path(file_path).open(encoding="utf-8") as file:
+        for line in file:
+            row_text = line.strip()
+            if not row_text or row_text.startswith("#"):
+                continue
+            time_text = row_text.split(",", maxsplit=1)[0]
+            last_time = datetime.fromisoformat(time_text.replace("Z", "+00:00"))
+
+    if last_time is None:
+        raise ValueError(f"No geomagnetic observation was downloaded to {file_path}.")
+    return last_time.date()
+
+
+def _check_download_coverage(file_path, last_day):
+    """Input: downloaded geomagnetic CSV path and requested last UTC day
+    Output: None when the file reaches the requested last day"""
+    downloaded_last_day = _last_observation_day(file_path)
+    requested_last_day = _read_day(last_day).date()
+    if downloaded_last_day < requested_last_day:
+        raise ValueError(
+            f"{file_path} ends at {downloaded_last_day}, not {requested_last_day}. "
+            "Download a shorter date range."
+        )
+
+
 def download_geomagnetic(first_day, last_day, data_folder=DEFAULT_DATA_FOLDER):
     """Input: {first_day, last_day, data_folder}
     Output: {sym_h: raw_csv_path, ae: raw_csv_path}"""
@@ -36,8 +67,10 @@ def download_geomagnetic(first_day, last_day, data_folder=DEFAULT_DATA_FOLDER):
 
     if stop_time <= start_time:
         raise ValueError("last_day must not be before first_day.")
-    if stop_time - start_time > timedelta(days=366):
-        raise ValueError("One download can contain at most 366 days.")
+    if stop_time - start_time > timedelta(days=MAX_DOWNLOAD_DAYS):
+        raise ValueError(
+            f"One download can contain at most {MAX_DOWNLOAD_DAYS} days."
+        )
 
     data_folder = Path(data_folder)
     data_folder.mkdir(parents=True, exist_ok=True)
@@ -58,6 +91,7 @@ def download_geomagnetic(first_day, last_day, data_folder=DEFAULT_DATA_FOLDER):
 
         if not file_path.exists():
             urlretrieve(f"{WDC_DATA_URL}?{query}", file_path)
+        _check_download_coverage(file_path, last_day)
 
         downloaded_paths[name] = file_path
 
