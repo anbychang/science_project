@@ -55,7 +55,7 @@ def _average_ap(ap_by_time, current_time, hours_before):
 
 def load_space_weather(state, file_path=DEFAULT_FILE):
     """Input: state
-    Output: state + {f107_sfu, f107a_sfu, ap_values, f107_data_type}
+    Output: state + {f107_sfu, f107a_sfu, f107a_last81_sfu, ap_values, f107_data_type}
 
     ap_values = [daily, now, -3h, -6h, -9h, avg_12_to_33h, avg_36_to_57h]
     """
@@ -93,6 +93,7 @@ def load_space_weather(state, file_path=DEFAULT_FILE):
     state_with_weather = state.copy()
     state_with_weather["f107_sfu"] = float(previous_row["F10.7_OBS"])
     state_with_weather["f107a_sfu"] = float(current_row["F10.7_OBS_CENTER81"])
+    state_with_weather["f107a_last81_sfu"] = float(current_row["F10.7_OBS_LAST81"])
     state_with_weather["ap_values"] = ap_values
     state_with_weather["f107_data_type"] = previous_row["F10.7_DATA_TYPE"]
     return state_with_weather

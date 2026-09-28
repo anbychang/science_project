@@ -278,6 +278,13 @@ Swarm 密度 loader 與獨立密度比較可平行準備，但不應混進第一
   原則是刪除未使用 API、修正明確名稱與邊界，不以 class/config/selector 取代簡單流程。
 - Clean Code review 後實際重跑 P1.2、P1.3、P1.4 entry point：raw POD 與 quality table
   都是 14,558,400 列，全部可用，且有 1,685 個 interval；詳見 review 文件。
+- P1.6-A 已完成：`prep_feature_alignment.py` 固定 SYM-H、Ap、F10.7 的 pure alignment
+  rules 與 boundary/gap tests。P1.6 analysis 不可使用 centered `F10.7_OBS_CENTER81`，
+  因為它含未來日期；SQLite 新增 `f107a_last81_sfu`，analysis 改用前一日
+  `F10.7_OBS_LAST81`。既有 NRLMSIS state 的 centered `f107a_sfu` 保留不變。
+- 現有 SYM-H/AE 只涵蓋 2024-05-09 至 2024-05-14；space weather 覆蓋整個本機 POD
+  範圍。未選研究日期前，不下載更多 SYM-H。P1.6-B final writer 仍等待 P1.5 的正式
+  10 分鐘 orbit schema。
 
 ## 多 chat 協作規則
 

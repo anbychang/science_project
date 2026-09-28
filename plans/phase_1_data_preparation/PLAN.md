@@ -142,7 +142,9 @@ P1.5 與新的 Swarm POD 下載目前暫緩；不可跳過短週期項處理而�
 - SYM-H：只在兩個有效的 1-minute observation 之間 linear interpolate；不可跨已定義的 gap，否則 feature 缺失。
 - Ap：在 official 3-hour block 中 forward-fill。
 - F10.7/F10.7A：forward-fill daily value，並保留 `f107_data_type` 分辨 observed、estimated 與 predicted；
-  `f107_sfu` 與 `f107a_sfu` 要各自保留 source timestamp。
+  分析用的 `f107_sfu` 與 `f107a_sfu` 都使用前一日來源，並各自保留 source timestamp。
+  `f107a_sfu` 使用 causal `F10.7_OBS_LAST81`；既有 NRLMSIS 用的 centered 81-day value
+  不能用於禁止 future leakage 的分析資料。
 - 每個 feature 都保存原始 source timestamp。
 
 完成條件：join 不可使用 future value；00:00 UTC 與 3-hour Ap transition 必須有明確測試。

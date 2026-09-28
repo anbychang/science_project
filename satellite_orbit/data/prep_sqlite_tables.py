@@ -10,6 +10,7 @@ def create_tables(connection):
             time_us INTEGER PRIMARY KEY,
             f107_sfu REAL NOT NULL,
             f107a_sfu REAL NOT NULL,
+            f107a_last81_sfu REAL,
             ap_daily REAL NOT NULL,
             ap_now REAL NOT NULL,
             ap_3h REAL NOT NULL,
@@ -62,3 +63,15 @@ def create_tables(connection):
         );
         """
     )
+    add_f107a_last81_column(connection)
+
+
+def add_f107a_last81_column(connection):
+    """Input: SQLite connection
+    Output: space_weather has f107a_last81_sfu"""
+    columns = connection.execute("PRAGMA table_info(space_weather)").fetchall()
+    column_names = set()
+    for column in columns:
+        column_names.add(column[1])
+    if "f107a_last81_sfu" not in column_names:
+        connection.execute("ALTER TABLE space_weather ADD COLUMN f107a_last81_sfu REAL")
