@@ -60,7 +60,7 @@ state = {
 ```text
 Swarm-A POD             已下載並寫入 SQLite
 F10.7 / Ap              已下載並寫入 SQLite
-SYM-H / AE              已下載 2024-05-09 至 2024-05-14，並寫入 SQLite
+SYM-H / AE              已下載 2021-01-01 至 2026-08-12，並寫入 SQLite
 Swarm-A DNSAACC 密度    已由 loader 寫入 SQLite
 ```
 

@@ -282,9 +282,9 @@ Swarm 密度 loader 與獨立密度比較可平行準備，但不應混進第一
   rules 與 boundary/gap tests。P1.6 analysis 不可使用 centered `F10.7_OBS_CENTER81`，
   因為它含未來日期；SQLite 新增 `f107a_last81_sfu`，analysis 改用前一日
   `F10.7_OBS_LAST81`。既有 NRLMSIS state 的 centered `f107a_sfu` 保留不變。
-- 現有 SYM-H/AE 只涵蓋 2024-05-09 至 2024-05-14；space weather 覆蓋整個本機 POD
-  範圍。未選研究日期前，不下載更多 SYM-H。P1.6-B final writer 仍等待 P1.5 的正式
-  10 分鐘 orbit schema。
+- SYM-H/AE 已下載並匯入 2021-01-01 至 2026-08-12；各有 2,952,000 個 minute
+  timestamps，SYM-H 最大 gap 是 60 秒，完整覆蓋本機 POD。P1.6-B final writer 仍等待
+  P1.5 的正式 10 分鐘 orbit schema。
 
 ## 多 chat 協作規則
 
