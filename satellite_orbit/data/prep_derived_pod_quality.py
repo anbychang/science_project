@@ -200,7 +200,7 @@ def write_pod_quality(database_path=DEFAULT_DATABASE):
 
 
 def main():
-    """Input: python -m satellite_orbit.data.prep_write_pod_quality
+    """Input: python -m satellite_orbit.data.prep_derived_pod_quality
     Output: POD quality summary"""
     result = write_pod_quality()
     print(f"POD rows checked: {result['raw_rows']}")

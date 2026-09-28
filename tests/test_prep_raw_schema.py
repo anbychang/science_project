@@ -3,7 +3,7 @@
 import sqlite3
 import unittest
 
-from satellite_orbit.data.prep_sqlite_tables import create_tables
+from satellite_orbit.data.prep_raw_schema import create_tables
 
 
 class SQLiteTableTest(unittest.TestCase):

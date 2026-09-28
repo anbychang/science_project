@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from satellite_orbit.data.load_swarm_pod import load_swarm_pod
-from satellite_orbit.data.prep_sqlite_common import file_signature, time_to_us
+from satellite_orbit.data.prep_raw_common import file_signature, time_to_us
 
 
 def weather_block_time(time_utc):

@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from satellite_orbit.data.prep_sqlite_geomagnetic import write_ae, write_sym_h
-from satellite_orbit.data.prep_sqlite_tables import create_tables
+from satellite_orbit.data.prep_raw_geomagnetic import write_ae, write_sym_h
+from satellite_orbit.data.prep_raw_schema import create_tables
 
 
 class GeomagneticSQLiteTest(unittest.TestCase):

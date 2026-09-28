@@ -48,22 +48,22 @@ class、把 SQLite entry point 的路徑參數包成 config object，會增加�
 | `load_sqlite_states.py` | 由 raw SQLite 查出 ITRF state 與對應 weather。 | 維持；row-to-state 的轉換是唯一需要，query 與輸出 shape 對應直接。 |
 | `load_swarm_density.py` | 解開 DNSAACC CDF 並濾掉 fill value。 | 維持；列處理直接反映 CDF 變數，沒有多餘層次。 |
 | `load_swarm_pod.py` | 讀 POD SP3、轉 SI 與 UTC。 | 修改；刪除未使用的 period loader 和 ZIP 搜尋 helper，轉 UTC 的 list 建立改成直接形式。 |
-| `prep_sqlite_common.py` | SQLite preparation 共用的 time/signature 工具。 | 維持；兩個函式很小且真正共用。 |
-| `prep_sqlite_density.py` | 將 density raw observations 寫入 SQLite。 | 維持；保留目前獨立責任。source signature/key migration 是資料模型變更，等 density 加入研究主線時再做。 |
-| `prep_sqlite_geomagnetic.py` | 寫入 SYM-H 與 AE。 | 修改；拿掉 selector abstraction，保留兩個明確 writer 與一個共用 row converter。 |
-| `prep_sqlite_pod.py` | 將 POD 寫入 raw state table 並依 weather block 對齊。 | 修改；`weather_block_time` 與 `prepare_source_file` 名稱說明真正行為，過濾改成單一 list comprehension。 |
-| `prep_sqlite_tables.py` | 建立 raw SQLite schema。 | 維持；schema 集中在一處是正確的 single source of truth。 |
-| `prep_sqlite_weather.py` | 將 weather CSV 展成 3 小時 raw rows。 | 維持；signature guard 和 incomplete-row skip 是資料完整性需要。 |
-| `prep_write_orbital_elements.py` | 由 raw state 建立瞬時半長軸 derived table。 | 修改；source-file terminology 取代 day terminology。逐 source commit 是長資料工作需要，不抽象。 |
-| `prep_write_pod_quality.py` | 重建 POD quality 與 continuous interval derived table。 | 修改；interval decision 改為傳遞一個前筆 context，減少平行參數。Q3/Q4 仍未實作，沒有假造通用 quality framework。 |
-| `prep_write_sqlite.py` | 協調所有 raw data writer。 | 修改；`available_weather_times` 用名稱與 set comprehension 表達查詢目的。五個可注入 path 參數保留，因為它是唯一的 batch entry point；額外 config class 只會增加層次。 |
+| `prep_raw_common.py` | raw SQLite 匯入共用的 time/signature 工具。 | 維持；兩個函式很小且真正共用。 |
+| `prep_raw_density.py` | 將 density raw observations 寫入 SQLite。 | 維持；保留目前獨立責任。source signature/key migration 是資料模型變更，等 density 加入研究主線時再做。 |
+| `prep_raw_geomagnetic.py` | 寫入 SYM-H 與 AE raw observations。 | 修改；拿掉 selector abstraction，保留兩個明確 writer 與一個共用 row converter。 |
+| `prep_raw_pod.py` | 將 POD 寫入 raw state table 並依 weather block 對齊。 | 修改；`weather_block_time` 與 `prepare_source_file` 名稱說明真正行為，過濾改成單一 list comprehension。 |
+| `prep_raw_schema.py` | 建立 raw SQLite schema。 | 維持；schema 集中在一處是正確的 single source of truth。 |
+| `prep_raw_weather.py` | 將 weather CSV 展成 3 小時 raw rows。 | 維持；signature guard 和 incomplete-row skip 是資料完整性需要。 |
+| `prep_derived_orbital_elements.py` | 由 raw state 建立瞬時半長軸 derived table。 | 修改；source-file terminology 取代 day terminology。逐 source commit 是長資料工作需要，不抽象。 |
+| `prep_derived_pod_quality.py` | 重建 POD quality 與 continuous interval derived table。 | 修改；interval decision 改為傳遞一個前筆 context，減少平行參數。Q3/Q4 仍未實作，沒有假造通用 quality framework。 |
+| `prep_raw_sqlite.py` | 協調所有 raw data writer。 | 修改；`available_weather_times` 用名稱與 set comprehension 表達查詢目的。五個可注入 path 參數保留，因為它是唯一的 batch entry point；額外 config class 只會增加層次。 |
 | `tests/test_calc_coordinates.py` | 驗證最新 POD 日期的 frame round trip 與 IERS freshness。 | 維持；這是外部資料邊界測試，不能為了速度改成 mock。 |
 | `tests/test_calc_forces.py` | 驗證 gravity zero-distance guard。 | 新增；兩個小型 unit test 各驗證一個 public force function。 |
 | `tests/test_calc_integrator.py` | 驗證 RK4 不丟失附帶 state 欄位。 | 維持；這是之前修正的直接 regression test。 |
 | `tests/test_calc_orbital_response.py` | 驗證 circular orbit、frame 與 bound-orbit guard。 | 維持；涵蓋主要物理邊界。 |
 | `tests/test_prep_pod_quality.py` | 驗證 Q1/Q5、interval boundary、derived rebuild。 | 修改；更新為三參數 interval API，補連續列與前列 rejected 的 branch。保留 in-memory/small SQLite test，不讀正式資料庫。 |
-| `tests/test_prep_sqlite.py` | 驗證 SYM-H/AE 可以共存同一 geomagnetic row。 | 修改；改呼叫兩個明確 writer，測試不再依賴 selector。 |
-| `tests/test_prep_sqlite_pod.py` | 驗證 POD UTC time 對齊正確的 3 小時 weather block。 | 新增；覆蓋 02:59 與 03:00 boundary。 |
+| `tests/test_prep_raw_geomagnetic.py` | 驗證 SYM-H/AE 可以共存同一 geomagnetic row。 | 修改；改呼叫兩個明確 writer，測試不再依賴 selector。 |
+| `tests/test_prep_raw_pod.py` | 驗證 POD UTC time 對齊正確的 3 小時 weather block。 | 新增；覆蓋 02:59 與 03:00 boundary。 |
 
 ## 刻意不做的改動
 
@@ -92,17 +92,17 @@ git diff --check
 除 unit tests 外，已在目前的本機 SQLite 執行三個正式 entry point：
 
 ```text
-prep_write_sqlite
+prep_raw_sqlite
 weather rows added: 0
 POD files changed: 0
 orbit states added: 0
 
-prep_write_orbital_elements
+prep_derived_orbital_elements
 POD source files: 1,685
 missing POD source files written: 0
 rows rejected: 0
 
-prep_write_pod_quality
+prep_derived_pod_quality
 swarm_a_states rows: 14,558,400
 swarm_a_pod_quality rows: 14,558,400
 is_usable = 1 rows: 14,558,400

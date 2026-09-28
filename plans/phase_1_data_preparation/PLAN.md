@@ -48,7 +48,7 @@ derived 10-minute analysis dataset
 
 ## Raw 與衍伸資料規則
 
-SQLite 的 raw table 是不可變的來源紀錄。`swarm_a_states`、`space_weather`、`geomagnetic` 與 `swarm_a_density` 只由對應的 `prep_write_sqlite.py` 寫入；後續計算不可修改或刪除其中的 observation。
+SQLite 的 raw table 是不可變的來源紀錄。`swarm_a_states`、`space_weather`、`geomagnetic` 與 `swarm_a_density` 只由對應的 `prep_raw_sqlite.py` 寫入；後續計算不可修改或刪除其中的 observation。
 
 要增加新維度時，使用下面固定流程：
 
@@ -73,7 +73,7 @@ load SQLite raw data
 
 ### P1.2 建立原始資料庫
 
-使用 `python -m satellite_orbit.data.prep_write_sqlite`。它把原始觀測寫到分開的 SQLite tables；POD row 只連到可用的 3 小時 weather block。
+使用 `python -m satellite_orbit.data.prep_raw_sqlite`。它把原始觀測寫到分開的 SQLite tables；POD row 只連到可用的 3 小時 weather block。
 
 完成條件：已報告 row count、首尾 UTC、重複時間與 source provenance。原始觀測不可在原 table 中 resample。
 

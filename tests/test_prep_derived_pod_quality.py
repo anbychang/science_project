@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from satellite_orbit.data.prep_sqlite_tables import create_tables
-from satellite_orbit.data.prep_write_pod_quality import (
+from satellite_orbit.data.prep_raw_schema import create_tables
+from satellite_orbit.data.prep_derived_pod_quality import (
     create_quality_table,
     quality_row,
     starts_new_interval,

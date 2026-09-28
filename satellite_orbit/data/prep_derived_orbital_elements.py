@@ -9,7 +9,7 @@ from satellite_orbit.calculation.calc_coordinates import itrf_states_to_gcrf
 from satellite_orbit.calculation.calc_forces import MU_M3_S2
 from satellite_orbit.calculation.calc_orbital_response import calculate_semi_major_axis
 from satellite_orbit.data.load_sqlite_states import load_sqlite_states
-from satellite_orbit.data.prep_sqlite_common import time_to_us
+from satellite_orbit.data.prep_raw_common import time_to_us
 
 DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
 ALGORITHM_NAME = "two_body_specific_energy_gcrf_v1"
@@ -152,7 +152,7 @@ def write_orbital_elements(database_path=DEFAULT_DATABASE):
 
 
 def main():
-    """Input: python -m satellite_orbit.data.prep_write_orbital_elements
+    """Input: python -m satellite_orbit.data.prep_derived_orbital_elements
     Output: orbital-element write summary"""
     result = write_orbital_elements()
     print(f"POD source files: {result['source_files']}")

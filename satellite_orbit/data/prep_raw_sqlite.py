@@ -3,11 +3,11 @@
 import sqlite3
 from pathlib import Path
 
-from satellite_orbit.data.prep_sqlite_density import write_density_folder
-from satellite_orbit.data.prep_sqlite_geomagnetic import write_ae, write_sym_h
-from satellite_orbit.data.prep_sqlite_pod import write_pod_folder
-from satellite_orbit.data.prep_sqlite_tables import create_tables
-from satellite_orbit.data.prep_sqlite_weather import write_space_weather
+from satellite_orbit.data.prep_raw_density import write_density_folder
+from satellite_orbit.data.prep_raw_geomagnetic import write_ae, write_sym_h
+from satellite_orbit.data.prep_raw_pod import write_pod_folder
+from satellite_orbit.data.prep_raw_schema import create_tables
+from satellite_orbit.data.prep_raw_weather import write_space_weather
 
 DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
 DEFAULT_POD_FOLDER = Path("data/swarm_a_pod")
@@ -64,7 +64,7 @@ def write_sqlite_database(
 
 
 def main():
-    """Input: python -m satellite_orbit.data.prep_write_sqlite
+    """Input: python -m satellite_orbit.data.prep_raw_sqlite
     Output: database update summary"""
     result = write_sqlite_database()
     print(f"Database: {result['database_path']}")

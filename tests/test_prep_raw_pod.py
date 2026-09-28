@@ -3,7 +3,7 @@
 import unittest
 from datetime import datetime, timezone
 
-from satellite_orbit.data.prep_sqlite_pod import weather_block_time
+from satellite_orbit.data.prep_raw_pod import weather_block_time
 
 
 class PodWeatherBlockTest(unittest.TestCase):

@@ -64,7 +64,7 @@ XYZ 軌道預報是後續驗證研究結果的工具，不是主要研究問題�
 - 太空天氣下載器只在原始檔不存在時下載。loader 第一次使用時建立本機資料索引，之後所有 state 直接重用，不重掃 CSV，也不重新下載。
 - 每個函式都必須用短 docstring 寫出 Input 與 Output；資料形狀優先用 `[]`、`{}` 與 `...` 畫出來，不用長句解釋。
 - prepared data 採用單一 SQLite 檔案 `swarm_a_data.sqlite`，不再按月份切 CSV。
-- `prep_write_sqlite.py` 將本機原始資料 insert／replace 進資料庫；相同 `time_us` 不會重複。
+- `prep_raw_sqlite.py` 將本機原始資料 insert／replace 進資料庫；相同 `time_us` 不會重複。
 - 資料庫保留 ITRF POD，查出需要的短區間後才批次轉成 GCRF。
 - `load_sqlite_states(start_time, end_time)` 只查需要的時間範圍，並回傳帶有 F10.7、F10.7A 與 Ap 的 ITRF `[state_1, state_2, ...]`；座標轉換在 calculation 層進行。
 - 一段軌道資料是 `[state, state, ...]`，不使用 `{times: [...], states: [...]}`。
@@ -190,14 +190,15 @@ satellite_orbit/
     load_geomagnetic.py             讀取本機 SYM-H 或 AE CSV
     load_swarm_density.py           讀取本機 DNSAACC density ZIP
     load_sqlite_states.py           依 UTC 範圍查詢並組成 ITRF states
-    prep_write_sqlite.py            依序更新單一 SQLite 資料庫
-    prep_sqlite_common.py           共用時間與檔案資訊工具
-    prep_sqlite_tables.py           建立 SQLite tables
-    prep_sqlite_weather.py          寫入 F10.7 與 Ap
-    prep_sqlite_geomagnetic.py      寫入 SYM-H 與 AE
-    prep_sqlite_pod.py              寫入 POD 軌道 state
-    prep_sqlite_density.py          寫入 DNSAACC density
-    prep_write_orbital_elements.py  計算並寫入瞬時半長軸
+    prep_raw_sqlite.py              依序更新 raw SQLite 資料庫
+    prep_raw_common.py              raw 匯入共用時間與檔案資訊工具
+    prep_raw_schema.py              建立 raw SQLite tables
+    prep_raw_weather.py             寫入 F10.7 與 Ap raw observations
+    prep_raw_geomagnetic.py         寫入 SYM-H 與 AE raw observations
+    prep_raw_pod.py                 寫入 POD raw orbit states
+    prep_raw_density.py             寫入 DNSAACC raw density
+    prep_derived_orbital_elements.py 計算並寫入瞬時半長軸
+    prep_derived_pod_quality.py     建立 POD quality derived table
   calculation/
     calc_coordinates.py             GCRF／ITRF 狀態與向量轉換
     calc_atmosphere.py              NRLMSIS 2.0 大氣密度

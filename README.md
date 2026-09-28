@@ -20,14 +20,14 @@ plans/             現行計畫與封存提案
 ```text
 下載檔案
     -> load_*.py 讀取本機檔案
-    -> prep_write_sqlite.py 寫入 raw SQLite
+    -> prep_raw_sqlite.py 寫入 raw SQLite
     -> load_sqlite_states.py 讀出 ITRF state
     -> calc_coordinates.py 轉成 GCRF state
-    -> prep_write_orbital_elements.py 計算半長軸並寫回 SQLite
-    -> prep_write_pod_quality.py 建立品質標記與連續 interval
+    -> prep_derived_orbital_elements.py 計算半長軸並寫回 SQLite
+    -> prep_derived_pod_quality.py 建立品質標記與連續 interval
 ```
 
-`prep_write_sqlite.py` 只負責依序呼叫其他小檔案。weather、SYM-H、AE、POD、density 的 SQLite 寫入各自放在獨立檔案。
+`prep_raw_sqlite.py` 只負責依序呼叫其他小檔案。`prep_raw_*` 全部是 raw source 寫入 SQLite；`prep_derived_*` 全部是由 raw table 寫入 derived table；`prep_feature_alignment.py` 則只放 P1.6 的 feature 對齊規則。weather、SYM-H、AE、POD、density 的 SQLite 寫入各自放在獨立檔案。
 
 原始 SQLite table 不會被後續計算修改。新的計算一律讀取 raw table、建立自己的 derived table，再以相同的 `time_us` 保留可追溯關係。
 
@@ -67,7 +67,7 @@ Swarm-A DNSAACC 密度    已由 loader 寫入 SQLite
 ## 建立 SQLite
 
 ```powershell
-python -m satellite_orbit.data.prep_write_sqlite
+python -m satellite_orbit.data.prep_raw_sqlite
 ```
 
 輸出為 `data/swarm_a_data.sqlite`。原始資料保留不變；SQLite 可以由原始檔重新建立，因此不提交 Git。

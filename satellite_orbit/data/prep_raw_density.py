@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from satellite_orbit.data.load_swarm_density import load_swarm_density
-from satellite_orbit.data.prep_sqlite_common import time_to_us
+from satellite_orbit.data.prep_raw_common import time_to_us
 
 
 def density_row(density_point, file_name):
