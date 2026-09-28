@@ -4,11 +4,10 @@ from datetime import datetime
 from pathlib import Path
 from zipfile import ZipFile
 
-from satellite_orbit.calculation.calc_time import gps_time_to_utc, gps_times_to_utc
+from satellite_orbit.calculation.calc_time import gps_times_to_utc
 
 KM_TO_M = 1000.0
 DM_S_TO_M_S = 0.1
-DEFAULT_POD_FOLDER = "data/swarm_a_pod"
 
 
 def _find_sp3_name(zip_file):
@@ -90,64 +89,8 @@ def load_swarm_pod(zip_path):
                     state = _make_orbit_state(time_gps, position, velocity)
                     orbit_states.append(state)
 
-    times_gps = []
-    for state in orbit_states:
-        times_gps.append(state["time"])
-
-    times_utc = gps_times_to_utc(times_gps)
-    for index in range(len(orbit_states)):
-        orbit_states[index]["time"] = times_utc[index]
+    times_utc = gps_times_to_utc([state["time"] for state in orbit_states])
+    for state, time_utc in zip(orbit_states, times_utc):
+        state["time"] = time_utc
 
     return orbit_states
-
-
-def _find_swarm_pod_zip(day_gps, data_folder):
-    """Input: {day_gps: "YYYY-MM-DD", data_folder}
-    Output: ZIP path for that GPS day"""
-    day_text = day_gps.replace("-", "")
-    zip_paths = []
-
-    for zip_path in Path(data_folder).glob("*.ZIP"):
-        file_day = zip_path.name.split("_")[-2][:8]
-
-        if file_day == day_text:
-            zip_paths.append(zip_path)
-
-    if zip_paths:
-        zip_paths.sort()
-        return zip_paths[-1]
-
-    raise FileNotFoundError(
-        f"No local Swarm-A POD file for {day_gps}. Run down_swarm_pod.py first."
-    )
-
-
-def load_swarm_pod_period(
-    day_gps,
-    start_time_gps,
-    end_time_gps,
-    data_folder=DEFAULT_POD_FOLDER,
-):
-    """Input: {day_gps, start_time_gps, end_time_gps}
-    Output: [{time, frame, position_m, velocity_m_s}, ...]"""
-    start_gps = datetime.fromisoformat(f"{day_gps}T{start_time_gps}")
-    end_gps = datetime.fromisoformat(f"{day_gps}T{end_time_gps}")
-
-    if end_gps <= start_gps:
-        raise ValueError("End time must be later than start time.")
-
-    start_utc = gps_time_to_utc(start_gps)
-    end_utc = gps_time_to_utc(end_gps)
-
-    zip_path = _find_swarm_pod_zip(day_gps, data_folder)
-    all_states = load_swarm_pod(zip_path)
-    selected_states = []
-
-    for state in all_states:
-        time_utc = state["time"]
-        if time_utc < start_utc or time_utc >= end_utc:
-            continue
-
-        selected_states.append(state)
-
-    return selected_states

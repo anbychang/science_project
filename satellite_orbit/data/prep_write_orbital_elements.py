@@ -36,9 +36,9 @@ def create_orbital_element_table(connection):
     )
 
 
-def source_days(connection):
+def source_ranges(connection):
     """Input: SQLite connection
-    Output: [(first_time_us, last_time_us, state_count), ...]"""
+    Output: [(first_time_us, last_time_us, state_count), ...] per source file"""
     return connection.execute(
         """
         SELECT MIN(time_us), MAX(time_us), COUNT(*)
@@ -49,10 +49,10 @@ def source_days(connection):
     ).fetchall()
 
 
-def day_is_written(connection, day):
-    """Input: {SQLite connection, POD day range}
+def source_range_is_written(connection, source_range):
+    """Input: {SQLite connection, POD source range}
     Output: True when all states already have an element row"""
-    first_time_us, last_time_us, state_count = day
+    first_time_us, last_time_us, state_count = source_range
     element_count = connection.execute(
         """
         SELECT COUNT(*) FROM swarm_a_orbital_elements
@@ -74,10 +74,10 @@ def element_row(state):
     return time_to_us(state["time"]), semi_major_axis_m, None
 
 
-def write_one_day(connection, database_path, day):
-    """Input: {SQLite connection, database path, POD day range}
+def write_source_range(connection, database_path, source_range):
+    """Input: {SQLite connection, database path, POD source range}
     Output: (written rows, rejected rows)"""
-    first_time_us, last_time_us, _ = day
+    first_time_us, last_time_us, _ = source_range
     states_itrf = load_sqlite_states(
         us_to_time(first_time_us),
         us_to_time(last_time_us),
@@ -115,7 +115,7 @@ def write_metadata(connection):
 
 def write_orbital_elements(database_path=DEFAULT_DATABASE):
     """Input: SQLite database path
-    Output: {source_days, new_source_days, stored_rows, rejected_rows}"""
+    Output: {source_files, new_source_files, stored_rows, rejected_rows}"""
     database_path = Path(database_path)
     stored_rows = 0
     rejected_rows = 0
@@ -123,22 +123,29 @@ def write_orbital_elements(database_path=DEFAULT_DATABASE):
     with sqlite3.connect(database_path) as connection:
         create_orbital_element_table(connection)
         write_metadata(connection)
-        all_days = source_days(connection)
-        missing_days = []
-        for day in all_days:
-            if not day_is_written(connection, day):
-                missing_days.append(day)
+        all_source_ranges = source_ranges(connection)
+        missing_source_ranges = []
+        for source_range in all_source_ranges:
+            if not source_range_is_written(connection, source_range):
+                missing_source_ranges.append(source_range)
 
-        for day_number, day in enumerate(missing_days, start=1):
-            day_rows, day_rejections = write_one_day(connection, database_path, day)
-            stored_rows += day_rows
-            rejected_rows += day_rejections
+        for source_number, source_range in enumerate(missing_source_ranges, start=1):
+            source_rows, source_rejections = write_source_range(
+                connection,
+                database_path,
+                source_range,
+            )
+            stored_rows += source_rows
+            rejected_rows += source_rejections
             connection.commit()
-            print(f"POD days: {day_number}/{len(missing_days)}", flush=True)
+            print(
+                f"POD source files: {source_number}/{len(missing_source_ranges)}",
+                flush=True,
+            )
 
     return {
-        "source_days": len(all_days),
-        "new_source_days": len(missing_days),
+        "source_files": len(all_source_ranges),
+        "new_source_files": len(missing_source_ranges),
         "stored_rows": stored_rows,
         "rejected_rows": rejected_rows,
     }
@@ -148,8 +155,8 @@ def main():
     """Input: python -m satellite_orbit.data.prep_write_orbital_elements
     Output: orbital-element write summary"""
     result = write_orbital_elements()
-    print(f"POD source days: {result['source_days']}")
-    print(f"Missing POD days written: {result['new_source_days']}")
+    print(f"POD source files: {result['source_files']}")
+    print(f"Missing POD source files written: {result['new_source_files']}")
     print(f"Orbital-element rows written: {result['stored_rows']}")
     print(f"Rows rejected: {result['rejected_rows']}")
 

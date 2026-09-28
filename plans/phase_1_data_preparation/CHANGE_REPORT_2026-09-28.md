@@ -107,3 +107,5 @@ passed
 - `POD_FINAL_OUTPUT_SPEC.md` 不再重複 P1.5-A 至 D 的實作步驟，只維護 P1.5 table
   schema 與 release checks。可執行步驟的唯一維護位置是
   `P1.4_TO_P1.7_EXECUTION_PLAN.md`。
+- 全部 Python module 的原始目標、比較結果、刻意不採用的 abstraction 與測試結果見
+  `CLEAN_CODE_REVIEW_2026-09-28.md`。

@@ -28,15 +28,10 @@ def gps_times_to_utc(times_gps):
     first_offset = gps_time_to_utc(times_gps[0]) - first_gps
     last_offset = gps_time_to_utc(times_gps[-1]) - last_gps
 
-    times_utc = []
-
     if first_offset == last_offset:
-        for time_gps in times_gps:
-            time_utc = time_gps.replace(tzinfo=timezone.utc) + first_offset
-            times_utc.append(time_utc)
-        return times_utc
+        return [
+            time_gps.replace(tzinfo=timezone.utc) + first_offset
+            for time_gps in times_gps
+        ]
 
-    for time_gps in times_gps:
-        times_utc.append(gps_time_to_utc(time_gps))
-
-    return times_utc
+    return [gps_time_to_utc(time_gps) for time_gps in times_gps]

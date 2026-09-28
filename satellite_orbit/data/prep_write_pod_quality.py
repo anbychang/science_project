@@ -108,20 +108,18 @@ def measure_native_cadence_us(connection):
 
 def starts_new_interval(
     row,
-    previous_time_us,
-    previous_source_id,
-    previous_is_usable,
+    previous_quality_row,
     cadence_us,
 ):
     """Input: current and previous POD quality context
     Output: True when a new continuous interval starts"""
-    if previous_time_us is None:
+    if previous_quality_row is None:
         return True
-    if row["source_id"] != previous_source_id:
+    if row["source_id"] != previous_quality_row["source_id"]:
         return True
-    if not previous_is_usable:
+    if not previous_quality_row["is_usable"]:
         return True
-    return row["time_us"] - previous_time_us > cadence_us
+    return row["time_us"] - previous_quality_row["time_us"] > cadence_us
 
 
 def write_pod_quality(database_path=DEFAULT_DATABASE):
@@ -140,9 +138,7 @@ def write_pod_quality(database_path=DEFAULT_DATABASE):
         if cadence_us is None:
             raise ValueError("Cannot measure POD cadence from the raw states.")
         source_rows = quality_source_rows(connection)
-        previous_time_us = None
-        previous_source_id = None
-        previous_is_usable = False
+        previous_quality_row = None
         interval_id = 0
 
         try:
@@ -153,27 +149,38 @@ def write_pod_quality(database_path=DEFAULT_DATABASE):
 
                 quality_rows = []
                 for row in batch:
-                    result = quality_row(row, previous_time_us)
-                    if result[1] == 1:
+                    time_us = row["time_us"]
+                    result = quality_row(
+                        row,
+                        (
+                            None
+                            if previous_quality_row is None
+                            else previous_quality_row["time_us"]
+                        ),
+                    )
+                    is_usable = result[1] == 1
+                    if is_usable:
                         if starts_new_interval(
                             row,
-                            previous_time_us,
-                            previous_source_id,
-                            previous_is_usable,
+                            previous_quality_row,
                             cadence_us,
                         ):
                             interval_id += 1
                         result = result[:3] + (interval_id,)
                     quality_rows.append(result)
-                    previous_time_us = row["time_us"]
-                    previous_source_id = row["source_id"]
-                    previous_is_usable = result[1] == 1
+                    previous_quality_row = {
+                        "time_us": time_us,
+                        "source_id": row["source_id"],
+                        "is_usable": is_usable,
+                    }
                     raw_rows += 1
-                    if result[1] == 1:
+                    if is_usable:
                         usable_rows += 1
                     else:
-                        reason = result[2]
-                        rejection_counts[reason] = rejection_counts.get(reason, 0) + 1
+                        rejection_reason = result[2]
+                        rejection_counts[rejection_reason] = (
+                            rejection_counts.get(rejection_reason, 0) + 1
+                        )
 
                 connection.executemany(
                     "INSERT OR REPLACE INTO swarm_a_pod_quality VALUES (?, ?, ?, ?)",

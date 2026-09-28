@@ -4,7 +4,7 @@ import sqlite3
 from pathlib import Path
 
 from satellite_orbit.data.prep_sqlite_density import write_density_folder
-from satellite_orbit.data.prep_sqlite_geomagnetic import write_geomagnetic
+from satellite_orbit.data.prep_sqlite_geomagnetic import write_ae, write_sym_h
 from satellite_orbit.data.prep_sqlite_pod import write_pod_folder
 from satellite_orbit.data.prep_sqlite_tables import create_tables
 from satellite_orbit.data.prep_sqlite_weather import write_space_weather
@@ -16,13 +16,10 @@ DEFAULT_GEOMAGNETIC_FOLDER = Path("data/geomagnetic")
 DEFAULT_DENSITY_FOLDER = Path("data/swarm_density_acc")
 
 
-def weather_times(connection):
+def available_weather_times(connection):
     """Input: SQLite connection
     Output: {weather time_us, ...}"""
-    times = set()
-    for row in connection.execute("SELECT time_us FROM space_weather"):
-        times.add(row[0])
-    return times
+    return {row[0] for row in connection.execute("SELECT time_us FROM space_weather")}
 
 
 def write_sqlite_database(
@@ -40,9 +37,9 @@ def write_sqlite_database(
     with sqlite3.connect(database_path) as connection:
         create_tables(connection)
         weather_rows = write_space_weather(connection, weather_file)
-        sym_h_rows = write_geomagnetic(connection, geomagnetic_folder, "sym_h")
-        ae_rows = write_geomagnetic(connection, geomagnetic_folder, "ae")
-        known_weather_times = weather_times(connection)
+        sym_h_rows = write_sym_h(connection, geomagnetic_folder)
+        ae_rows = write_ae(connection, geomagnetic_folder)
+        known_weather_times = available_weather_times(connection)
 
         pod_files, state_rows = write_pod_folder(
             connection,

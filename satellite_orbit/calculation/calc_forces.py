@@ -24,6 +24,8 @@ def two_body_acceleration(state):
 
     position_m = state["position_m"]
     distance_m = np.linalg.norm(position_m)
+    if not np.isfinite(distance_m) or distance_m <= 0.0:
+        raise ValueError("Two-body state has an invalid distance.")
     return -MU_M3_S2 * position_m / distance_m**3
 
 
@@ -35,6 +37,8 @@ def j2_acceleration(state):
 
     x_m, y_m, z_m = state["position_m"]
     distance_m = np.linalg.norm(state["position_m"])
+    if not np.isfinite(distance_m) or distance_m <= 0.0:
+        raise ValueError("J2 state has an invalid distance.")
     distance_squared_m2 = distance_m * distance_m
     z_ratio_squared = z_m * z_m / distance_squared_m2
 

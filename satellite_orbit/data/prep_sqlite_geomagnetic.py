@@ -1,46 +1,63 @@
-"""Write local geomagnetic index files into SQLite."""
+"""Write local SYM-H and AE files into SQLite."""
 
 from pathlib import Path
 
 from satellite_orbit.data.load_geomagnetic import load_geomagnetic_file
 from satellite_orbit.data.prep_sqlite_common import time_to_us
 
-INDEX_COLUMNS = {
-    "sym_h": ("sym_h_nt", "sym_h_version"),
-    "ae": ("ae_nt", "ae_version"),
-}
+def geomagnetic_rows(file_path):
+    """Input: local SYM-H or AE CSV path
+    Output: [(time_us, value_nt, version), ...]"""
+    observations = load_geomagnetic_file(file_path)
+    return [
+        (
+            time_to_us(observation["time"]),
+            observation["value_nt"],
+            observation["version"],
+        )
+        for observation in observations
+    ]
 
 
-def geomagnetic_row(observation):
-    """Input: {time, value_nt, version}
-    Output: (time_us, value_nt, version)"""
-    return (
-        time_to_us(observation["time"]),
-        observation["value_nt"],
-        observation["version"],
-    )
-
-
-def write_geomagnetic(connection, geomagnetic_folder, index_name):
-    """Input: {SQLite connection, geomagnetic folder, sym_h or ae}
-    Output: number of source rows written"""
-    if index_name not in INDEX_COLUMNS:
-        raise ValueError(f"Unsupported geomagnetic index: {index_name}")
-
-    value_column, version_column = INDEX_COLUMNS[index_name]
-    query = f"""
-        INSERT INTO geomagnetic (time_us, {value_column}, {version_column})
-        VALUES (?, ?, ?)
-        ON CONFLICT(time_us) DO UPDATE SET
-            {value_column} = excluded.{value_column},
-            {version_column} = excluded.{version_column}
-    """
+def write_sym_h(connection, geomagnetic_folder):
+    """Input: {SQLite connection, geomagnetic folder}
+    Output: number of SYM-H source rows written"""
     stored_rows = 0
 
-    for file_path in sorted(Path(geomagnetic_folder).glob(f"{index_name}_*.csv")):
-        observations = load_geomagnetic_file(file_path)
-        rows = [geomagnetic_row(observation) for observation in observations]
-        connection.executemany(query, rows)
+    for file_path in sorted(Path(geomagnetic_folder).glob("sym_h_*.csv")):
+        rows = geomagnetic_rows(file_path)
+        connection.executemany(
+            """
+            INSERT INTO geomagnetic (time_us, sym_h_nt, sym_h_version)
+            VALUES (?, ?, ?)
+            ON CONFLICT(time_us) DO UPDATE SET
+                sym_h_nt = excluded.sym_h_nt,
+                sym_h_version = excluded.sym_h_version
+            """,
+            rows,
+        )
+        stored_rows += len(rows)
+
+    return stored_rows
+
+
+def write_ae(connection, geomagnetic_folder):
+    """Input: {SQLite connection, geomagnetic folder}
+    Output: number of AE source rows written"""
+    stored_rows = 0
+
+    for file_path in sorted(Path(geomagnetic_folder).glob("ae_*.csv")):
+        rows = geomagnetic_rows(file_path)
+        connection.executemany(
+            """
+            INSERT INTO geomagnetic (time_us, ae_nt, ae_version)
+            VALUES (?, ?, ?)
+            ON CONFLICT(time_us) DO UPDATE SET
+                ae_nt = excluded.ae_nt,
+                ae_version = excluded.ae_version
+            """,
+            rows,
+        )
         stored_rows += len(rows)
 
     return stored_rows

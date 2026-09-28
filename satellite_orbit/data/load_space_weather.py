@@ -5,6 +5,9 @@ from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
 DEFAULT_FILE = Path("data/space_weather/SW-All.csv")
+AP_BLOCK_HOURS = 3
+AP_12_TO_33_HOURS = range(12, 34, AP_BLOCK_HOURS)
+AP_36_TO_57_HOURS = range(36, 58, AP_BLOCK_HOURS)
 _weather_cache = {}
 
 
@@ -29,7 +32,7 @@ def _load_weather_file(file_path):
             day_start = datetime.combine(row_day, time.min, tzinfo=timezone.utc)
 
             for slot in range(8):
-                slot_time = day_start + timedelta(hours=3 * slot)
+                slot_time = day_start + timedelta(hours=AP_BLOCK_HOURS * slot)
                 ap_by_time[slot_time] = float(row[f"AP{slot + 1}"])
 
     weather_data = {
@@ -40,15 +43,13 @@ def _load_weather_file(file_path):
     return weather_data
 
 
-def _average_ap(ap_by_time, current_time, first_hour, last_hour):
-    """Input: {ap_by_time, current_time, first_hour, last_hour}
+def _average_ap(ap_by_time, current_time, hours_before):
+    """Input: {ap_by_time, current_time, hours_before}
     Output: average Ap value"""
-    values = []
-
-    for hours_before in range(first_hour, last_hour + 1, 3):
-        wanted_time = current_time - timedelta(hours=hours_before)
-        values.append(ap_by_time[wanted_time])
-
+    values = [
+        ap_by_time[current_time - timedelta(hours=offset_h)]
+        for offset_h in hours_before
+    ]
     return sum(values) / len(values)
 
 
@@ -71,7 +72,7 @@ def load_space_weather(state, file_path=DEFAULT_FILE):
 
     current_row = daily_rows[current_day]
     previous_row = daily_rows[previous_day]
-    start_hour = state_time.hour - state_time.hour % 3
+    start_hour = state_time.hour - state_time.hour % AP_BLOCK_HOURS
     current_ap_time = state_time.replace(
         hour=start_hour,
         minute=0,
@@ -82,11 +83,11 @@ def load_space_weather(state, file_path=DEFAULT_FILE):
     ap_values = [
         float(current_row["AP_AVG"]),
         ap_by_time[current_ap_time],
-        ap_by_time[current_ap_time - timedelta(hours=3)],
-        ap_by_time[current_ap_time - timedelta(hours=6)],
-        ap_by_time[current_ap_time - timedelta(hours=9)],
-        _average_ap(ap_by_time, current_ap_time, 12, 33),
-        _average_ap(ap_by_time, current_ap_time, 36, 57),
+        ap_by_time[current_ap_time - timedelta(hours=AP_BLOCK_HOURS)],
+        ap_by_time[current_ap_time - timedelta(hours=2 * AP_BLOCK_HOURS)],
+        ap_by_time[current_ap_time - timedelta(hours=3 * AP_BLOCK_HOURS)],
+        _average_ap(ap_by_time, current_ap_time, AP_12_TO_33_HOURS),
+        _average_ap(ap_by_time, current_ap_time, AP_36_TO_57_HOURS),
     ]
 
     state_with_weather = state.copy()

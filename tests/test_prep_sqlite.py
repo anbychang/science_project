@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from satellite_orbit.data.prep_sqlite_geomagnetic import write_geomagnetic
+from satellite_orbit.data.prep_sqlite_geomagnetic import write_ae, write_sym_h
 from satellite_orbit.data.prep_sqlite_tables import create_tables
 
 
@@ -29,8 +29,8 @@ class GeomagneticSQLiteTest(unittest.TestCase):
 
             connection = sqlite3.connect(":memory:")
             create_tables(connection)
-            self.assertEqual(write_geomagnetic(connection, folder, "sym_h"), 1)
-            self.assertEqual(write_geomagnetic(connection, folder, "ae"), 1)
+            self.assertEqual(write_sym_h(connection, folder), 1)
+            self.assertEqual(write_ae(connection, folder), 1)
 
             row = connection.execute(
                 "SELECT sym_h_nt, ae_nt FROM geomagnetic"

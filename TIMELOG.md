@@ -274,6 +274,10 @@ Swarm 密度 loader 與獨立密度比較可平行準備，但不應混進第一
   額外 weather/atmosphere 欄位。
 - 仍未完成：SP3 frame inventory、Q3/Q4 校準、P1.5 short-period 處理、P1.6 join、
   P1.7 release。詳情見 `CHANGE_REPORT_2026-09-28.md`。
+- 全部 Python 檔案已在 `CLEAN_CODE_REVIEW_2026-09-28.md` 做 Clean Code review。
+  原則是刪除未使用 API、修正明確名稱與邊界，不以 class/config/selector 取代簡單流程。
+- Clean Code review 後實際重跑 P1.2、P1.3、P1.4 entry point：raw POD 與 quality table
+  都是 14,558,400 列，全部可用，且有 1,685 個 interval；詳見 review 文件。
 
 ## 多 chat 協作規則
 

@@ -69,14 +69,32 @@ class PodQualityTest(unittest.TestCase):
         Output: new interval"""
         row = valid_row()
         row["source_id"] = 2
-        self.assertTrue(starts_new_interval(row, 990_000, 1, True, 10_000))
+        previous_row = {"time_us": 990_000, "source_id": 1, "is_usable": True}
+        self.assertTrue(starts_new_interval(row, previous_row, 10_000))
 
     def test_starts_new_interval_after_gap(self):
         """Input: same-source rows with a missing 10-second observation
         Output: new interval"""
         row = valid_row()
         row["source_id"] = 1
-        self.assertTrue(starts_new_interval(row, 980_000, 1, True, 10_000))
+        previous_row = {"time_us": 980_000, "source_id": 1, "is_usable": True}
+        self.assertTrue(starts_new_interval(row, previous_row, 10_000))
+
+    def test_continuous_usable_rows_keep_one_interval(self):
+        """Input: adjacent usable rows from one source file
+        Output: no new interval"""
+        row = valid_row()
+        row["source_id"] = 1
+        previous_row = {"time_us": 990_000, "source_id": 1, "is_usable": True}
+        self.assertFalse(starts_new_interval(row, previous_row, 10_000))
+
+    def test_rejected_previous_row_starts_new_interval(self):
+        """Input: usable row after a rejected row
+        Output: new interval"""
+        row = valid_row()
+        row["source_id"] = 1
+        previous_row = {"time_us": 990_000, "source_id": 1, "is_usable": False}
+        self.assertTrue(starts_new_interval(row, previous_row, 10_000))
 
     def test_rebuild_removes_stale_quality_rows(self):
         """Input: raw POD rows and one obsolete derived row

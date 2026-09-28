@@ -6,7 +6,7 @@ from satellite_orbit.data.load_swarm_pod import load_swarm_pod
 from satellite_orbit.data.prep_sqlite_common import file_signature, time_to_us
 
 
-def weather_time(time_utc):
+def weather_block_time(time_utc):
     """Input: UTC datetime
     Output: start time of its 3-hour weather block"""
     start_hour = time_utc.hour - time_utc.hour % 3
@@ -21,13 +21,13 @@ def pod_row(state, source_id):
     return (
         time_to_us(state["time"]), float(position[0]), float(position[1]),
         float(position[2]), float(velocity[0]), float(velocity[1]),
-        float(velocity[2]), time_to_us(weather_time(state["time"])), source_id,
+        float(velocity[2]), time_to_us(weather_block_time(state["time"])), source_id,
     )
 
 
-def source_id_for_file(connection, zip_path):
+def prepare_source_file(connection, zip_path):
     """Input: {SQLite connection, POD ZIP path}
-    Output: source id, or None when this file is already stored"""
+    Output: source id, or None when this file is already stored unchanged"""
     zip_path = Path(zip_path)
     signature = file_signature(zip_path)
     old_row = connection.execute(
@@ -56,14 +56,15 @@ def source_id_for_file(connection, zip_path):
 def write_pod_file(connection, zip_path, weather_times):
     """Input: {SQLite connection, POD ZIP path, weather times}
     Output: number of stored orbit states"""
-    source_id = source_id_for_file(connection, zip_path)
+    source_id = prepare_source_file(connection, zip_path)
     if source_id is None:
         return 0
 
-    rows = []
-    for state in load_swarm_pod(zip_path):
-        if time_to_us(weather_time(state["time"])) in weather_times:
-            rows.append(pod_row(state, source_id))
+    rows = [
+        pod_row(state, source_id)
+        for state in load_swarm_pod(zip_path)
+        if time_to_us(weather_block_time(state["time"])) in weather_times
+    ]
 
     connection.executemany(
         "INSERT OR REPLACE INTO swarm_a_states VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
