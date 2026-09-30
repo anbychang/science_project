@@ -1,308 +1,299 @@
-# Swarm-A Orbit Project - Time Log
+# Swarm-A 軌道衰減研究實驗日誌
 
-最後更新：2026-09-27
+最後更新：2026-09-30
 
-這份檔案是本專案的共同外部記憶。它記錄已確認的決策、已做過的事情、刻意不做的事情，避免之後重複討論或把測試資料誤當研究資料。
+這份檔案記錄實際做過的研究與工程工作：為什麼做、輸入資料是什麼、實際操作、量到什麼、因此做出什麼決定，以及下一步。它不是完整技術規格；正式欄位定義與研究 gate 請看 `plans/phase_1_data_preparation/`。
 
-## 1. 合作方式與程式規則
+## 目前位置
 
-- 用繁體中文，先講結論，再講原因。
-- 解釋要非常白話；一次只處理一個觀念。
-- 程式碼不是只要能跑，還要讓人一眼看懂。
-- 不用壓縮寫法：不用 list comprehension、generator expression、巢狀函式、過度抽象的 class 或工具層。
-- 函式名稱要說清楚物理意義與單位，例如 `position_m`、`velocity_m_s`、`a_dot_m_s`。
-- 程式註解盡量使用簡單英文；真的無法說清楚時才使用中文。
-- 英文使用常見單字與短句，重點是容易理解，不追求複雜文法。
-- docstring 用短格式與括號表示資料，例如：
+研究問題：地磁暴如何影響 Swarm-A 軌道衰減。
 
-  ```python
-  """Input: {orbital_response, weather_points}
-  Output: [{time, a_mean_m, a_dot_m_s, sym_h_nT, ...}, ...]"""
-  ```
-
-- 不把「檢查用、驗證用、一次性實驗用」程式混進主程式。真的需要時再另外寫。
-- 不要靠很多層資料夾假裝整理。應刪掉不必要的東西；保留的檔名要能直接說用途。
-- 檔名前綴統一為四個字母：`calc_` 是計算、`down_` 是下載、`load_` 是讀取本機檔案、`prep_` 是建立整理後資料。
-
-## 2. 目前研究目標
-
-2026-09-27 定案：研究主題是「地磁暴如何影響 Swarm-A 軌道衰減」。
-
-XYZ 軌道預報是後續驗證研究結果的工具，不是主要研究問題。通訊系統不在範圍內。
-
-目前只做第一階段資料準備：POD 品質檢查、半長軸、衰減率、10 分鐘時間對齊與可重建的分析資料集。正式規格以 `plans/phase_1_data_preparation/PLAN.md` 為準。
-
-機器學習的 target 尚未決定，不阻擋第一階段。
-
-## 3. 資料來源：已確認的事實
-
-### TLE、OEM、POD 的差別
-
-- `TLE`：兩行平均軌道元素，給 SGP4 用。它是擬合過的簡化描述，不能當精密觀測真值。
-- `OEM`：一種軌道檔案格式，不等於精密資料；裡面可能是預報、操作用軌跡或 POD。
-- `POD`：由實際量測資料重建的高品質位置與速度序列，才適合當本研究的「觀測軌道」。
-- 更原始的 GNSS／測距量測也可以用，但必須自己做軌道決定；目前不走這條路。
-
-### Swarm-A 的正式資料
-
-- 主資料：ESA `SP3ACOM_2_` reduced-dynamic POD。
-- 每 10 秒一筆位置與速度，官方另有品質報告。
-- 原始時間是 GPS time。SP3 header 跨越 `IGb14`、`IGS20`、`IGb20` 與 `IGc20`；舊 loader 統稱為 `ITRF` 只是暫時簡化，正式跨時段分析前必須保存真正 frame label。
-- Kinematic 軌道只做後續比較；主資料不用它，因為主資料已直接提供速度。
-- Swarm-A 有可協助理解非重力加速度與大氣阻力的公開科學資料；這是選它的主要優勢。
-
-## 4. 座標、時間與單位：已定案
-
-- 軌道流程只使用一種 state：`{time, frame, position_m, velocity_m_s}`。
-- loader、座標轉換、力模型、RK4 與誤差計算之間只傳一個 state，不再分開傳 time、position、velocity。
-- 二體重力與 J2 也接收完整 state；一致性比少傳幾個未使用欄位更重要。
-- state 代表一個時間點的完整快照。F10.7、Ap 與大氣密度等會隨時間改變的資料可以直接加入 state；地球常數與衛星固定參數不放入。
-- 大氣函式接收 GCRF state，內部計算衛星的地理位置，再回傳加入 `density_kg_m3` 的同一種 state。
-- 原始 F10.7 與 Ap 使用 CelesTrak `SW-All.csv`，保存於 `data/space_weather/`，不修改內容。
-- `load_space_weather(state)` 會加入 `f107_sfu`、`f107a_sfu`、7 個 `ap_values` 與 `f107_data_type`。
-- NRLMSIS 的 F10.7 使用前一天觀測值；F10.7A 使用當天為中心的 81 日平均。
-- 太空天氣下載器只在原始檔不存在時下載。loader 第一次使用時建立本機資料索引，之後所有 state 直接重用，不重掃 CSV，也不重新下載。
-- 每個函式都必須用短 docstring 寫出 Input 與 Output；資料形狀優先用 `[]`、`{}` 與 `...` 畫出來，不用長句解釋。
-- prepared data 採用單一 SQLite 檔案 `swarm_a_data.sqlite`，不再按月份切 CSV。
-- `prep_raw_sqlite.py` 將本機原始資料 insert／replace 進資料庫；相同 `time_us` 不會重複。
-- 資料庫保留 ITRF POD，查出需要的短區間後才批次轉成 GCRF。
-- `load_sqlite_states(start_time, end_time)` 只查需要的時間範圍，並回傳帶有 F10.7、F10.7A 與 Ap 的 ITRF `[state_1, state_2, ...]`；座標轉換在 calculation 層進行。
-- 一段軌道資料是 `[state, state, ...]`，不使用 `{times: [...], states: [...]}`。
-- `position_m = [x, y, z]`，`velocity_m_s = [vx, vy, vz]`；不用難讀的六維 `values[0]`。
-- 半長軸等衍生時間序列仍使用一個時間一列的 row-based 格式。
-- 主要座標系：`GCRF`。
-- 主要時間：`UTC`。
-- 位置與距離：`m`。
-- 速度：`m/s`。
-- 加速度：`m/s^2`。
-- 角度：`rad`。
-- 質量：`kg`。
-- 面積：`m^2`。
-- 大氣密度：`kg/m^3`。
-- 原始 POD 的 `km` 與 `dm/s` 只在 loader 轉換一次；內部不再來回換單位。
-- NRLMSIS 的接口要求角度使用 `deg`、高度使用 `km`，因此只在呼叫 pymsis 前由 `rad` 與 `altitude_m` 轉一次。
-- F10.7 與 Ap 沒有一般 SI 替代，保留 NRLMSIS 規定的原生單位。
-- 軌道狀態與 RK4 傳播使用 GCRF。
-- Swarm-A 原始 POD 讀入時，必須先處理 GPS time 與 ITRF；不要假裝它原本就是 UTC／GCRF。
-- J2、大氣阻力、POD 比較或地面位置需要時，暫時轉到 ITRF；算完加速度後再轉回 GCRF。
-- 大氣模型需要經緯度高度時，由 ITRF 再轉成地理座標。
-- `RTN` 只用來拆解位置誤差，不作為 RK4 主座標。
-- GCRF／ITRF 狀態與向量轉換使用 Astropy，不自行簡化地球旋轉公式。
-- Astropy 使用 IERS 資料處理歲差、章動、地球自轉與極移。
-- 未來阻力公式中的 `v_rel` 是相對大氣速度，必須扣掉地球自轉造成的大氣速度；不能直接拿 `vx, vy, vz`。
-
-## 5. 軌道反應訊號
-
-舊方案使用約 90 分鐘 trailing average，再用相鄰點有限差分計算 `a_dot_m_s`。這個方案已被 2026-09-27 的第一階段計畫取代，只保留作歷史比較。
-
-目前方案：先按資料 gap 與品質切成連續區間，建立 10 分鐘資料點，再在每個區間內獨立校準 B-spline 並由 spline 求導數。不可跨 gap、來源邊界或 maneuver candidate 平滑。
-
-衰減率定義為 `decay_rate_m_day = -da_dt_m_s * 86400`；正值代表半長軸下降。細節以 `plans/phase_1_data_preparation/PLAN.md` 為準。
-
-## 6. 地磁與太陽資料
-
-- `SYM-H(t)`：主要地磁暴強度訊號。
-- 是否使用 `d(SYM-H)/dt` 尚未決定；若需要，會由原始 SYM-H 計算，不另外下載。
-- `AE(t)` 已下載並保存，但是否列為正式分析特徵尚未決定。
-- `F10.7(t)`：太陽背景活動。
-- `F10.7A(t)`：F10.7 的 81 日平均；不是 `F81`。
-- Dst 可作為較長時間尺度的輔助資料，非主訊號。
-
-軌道反應和太空天氣資料需要對到相同 UTC 時間點。官方 POD 為每 10 秒一筆；F10.7 為每日資料，Ap 為每三小時資料。
-
-## 7. 大氣密度與後續模型
-
-阻力加速度：
+目前只進行第一階段：將 Swarm-A POD、space weather 與 geomagnetic data 整理成可重建的 10 分鐘分析資料集。XYZ 軌道預報、machine learning、將 atmospheric drag 接入 propagator 都不是目前範圍。
 
 ```text
-a_drag = -0.5 * Cd * A / m * rho * |v_rel| * v_rel
+已完成
+P1.1 原始 POD 取得
+P1.2 raw SQLite 建置
+P1.3 瞬時半長軸計算
+P1.4-A/B 基本品質檢查與連續區間
+P1.6-A feature 時間對齊規則
+
+尚未完成
+P1.4-C/D frame/Q3 audit 與 maneuver 校準
+P1.5 orbit-average、short-period 處理、10 分鐘衰減率
+P1.6-B 最終 analysis table writer
+P1.7 可重建資料集發布
 ```
 
-舊方案曾考慮從 POD 與物理傳播反推 `C_rho`，再用 GPR 預測。這個方案已被「Swarm L2 密度與 NRLMSIS 獨立比較」的方向取代，不再是目前方法。
+目前資料庫：`data/swarm_a_data.sqlite`，約 1.91 GB，不提交 Git。
 
-2026-09-19 已完成第一段大氣程式：
+| Table | 已寫入列數 | 用途 |
+| --- | ---: | --- |
+| `swarm_a_states` | 14,558,400 | raw POD ITRF position/velocity |
+| `swarm_a_orbital_elements` | 14,558,400 | P1.3 instantaneous semi-major axis |
+| `swarm_a_pod_quality` | 14,558,400 | P1.4 quality 與 interval |
+| `geomagnetic` | 2,952,000 | raw SYM-H / AE minute data |
+| `space_weather` | 201,861 | raw F10.7 / F10.7A / Ap 3-hour rows |
+| `swarm_a_density` | 436,708 | raw DNSAACC density，尚未進核心分析 |
+
+## 實驗紀錄
+
+### 2026-09-15：建立原型並淘汰 ISS 假資料
+
+**目的**：先確認軌道資料處理、Git 保存與數值傳播是否能跑通。
+
+**做了什麼**：
+
+1. 建立本機 Git repository 與私有 GitHub repository。
+2. 使用 ISS TLE、假軌道與假太空天氣資料做初期程式原型。
+3. 檢視 TLE、OEM、POD 的資料意義與精度差異。
+4. 決定研究改用 Swarm-A，而不是延續 ISS 原型。
+
+**觀察結果**：TLE 是給 SGP4 使用的平均軌道元素，不是精密軌道觀測；OEM 只是格式名稱，也不保證內容是精密產品。這兩者都不適合作為「地磁暴造成的細微軌道衰減」研究真值。
+
+**結論**：ISS 假資料只適合作為程式練習，不能進正式研究。正式輸入必須換成 ESA Swarm-A reduced-dynamic POD。
+
+**後續動作**：封存並移除 ISS 假資料與相關流程，開始建立 Swarm-A POD 下載、讀取與驗證管線。
+
+### 2026-09-16：取得 Swarm-A POD，建立基本軌道資料管線
+
+**目的**：把 ESA 提供的 Swarm-A precise-orbit product 轉成專案可使用的 state。
+
+**原始輸入**：ESA Swarm-A `SP3ACOM_2_` reduced-dynamic POD ZIP；ZIP 內為 SP3 軌道檔。
+
+**做了什麼**：
+
+1. 實作 Swarm POD 下載器，加入批次下載、續傳與下載後覆蓋檢查。
+2. 先下載一天資料，再擴充為多個 POD ZIP 的批次處理。
+3. 解析 SP3 epoch、`P` position line、`V` velocity line。
+4. 將 SP3 的 GPS time 轉 UTC。
+5. 將 position 從 km 轉 m，velocity 從 dm/s 轉 m/s。
+6. 統一輸出 orbit state：`{time, frame, position_m, velocity_m_s}`。
+7. 建立 GCRF/ITRF 座標轉換，並加入二體重力、J2 與 RK4。
+
+**觀察結果**：
+
+- POD 原始資料約每 10 秒一筆，且直接提供位置與速度。
+- SP3 header 的 reference frame 跨越 `IGb14`、`IGS20`、`IGb20`、`IGc20`。早期程式統稱 `ITRF`，但跨時段研究前仍要做 frame inventory。
+- 用官方 POD 跑過歷史位置誤差實驗：從 `2025-01-01 00:00:02 UTC` 起，以二體重力、J2、10 秒 RK4 傳播 10 分鐘，與未來官方 POD 比較的 position error 為 29.295 m。
+
+**結論**：POD parser、GPS-to-UTC、座標轉換與基本傳播可用；但位置預報只是後續驗證工具，不是研究主問題。
+
+**後續動作**：停止把「預報誤差」當主產物，改把 POD 當成觀測軌道，研究其半長軸的長期衰減。
+
+### 2026-09-19：統一資料形狀、加入太空天氣與大氣密度準備
+
+**目的**：建立一致的物理資料介面，讓 POD、座標轉換、力模型與 atmosphere 不再各自使用不同資料格式。
+
+**做了什麼**：
+
+1. 將整個軌道流程統一為同一種 state：`{time, frame, position_m, velocity_m_s}`。
+2. 確立專案內部一律使用 SI units：m、m/s、m/s^2、kg、kg/m^3；來源單位只在 loader 轉換一次。
+3. 建立 CelesTrak `SW-All.csv` downloader 與 reader。
+4. 對一筆 state 加入前一日 F10.7、centered F10.7A、trailing F10.7A、7 個 Ap 值與 F10.7 data type。
+5. 使用 Astropy 處理 GCRF/ITRF、IERS 資料與地理座標轉換。
+6. 建立 NRLMSIS 2.0 density call：ITRF position -> WGS84 longitude/latitude/altitude -> density。
+7. 將原先按月份準備的 CSV 流程改成單一 SQLite 資料庫設計。
+
+**觀察結果**：
+
+- NRLMSIS 單點程式檢查：`2025-01-01`、赤道、450 km、F10.7 = 150、F10.7A = 150、Ap = 4，輸出約 `9.58e-13 kg/m^3`。這只驗證程式呼叫與單位，不是研究觀測結果。
+- NRLMSIS 的 F10.7 使用前一天觀測，F10.7A 使用當日 centered 81-day average；這個差異後來成為 P1.6 防止 future leakage 的重要問題。
+- Swarm DNSAACC density ZIP 可讀取並寫入 SQLite，但尚未和 NRLMSIS 或軌道衰減做比較。
+
+**結論**：資料單位與 state 介面已統一；大氣密度只能先作獨立資料準備，不能在沒有明確研究設計時直接接入 drag force 或 machine learning。
+
+**後續動作**：以 SQLite 保存 raw source records；後續計算必須另寫 derived table，不可覆寫 raw observation。
+
+### 2026-09-21：固定第一階段研究邊界
+
+**目的**：避免程式功能持續擴張，先定義一個可驗證、可重建的最小研究產物。
+
+**做了什麼**：
+
+1. 建立第一階段正式計畫 `plans/phase_1_data_preparation/PLAN.md`。
+2. 將研究流程定為：raw files -> raw SQLite -> instantaneous semi-major axis -> quality/interval -> 10-minute orbit data -> feature alignment -> release。
+3. 明確排除 machine learning、atmospheric drag propagator 與 XYZ 預報主線。
+4. 規定 raw SQLite table 是不可變來源紀錄；任何計算結果必須寫獨立 derived table，使用同一個 `time_us` 追溯。
+
+**觀察結果**：若同時做 density comparison、drag model、預報、ML 與資料整理，會無法判斷任何錯誤到底來自資料品質、物理模型或統計模型。
+
+**結論**：目前唯一可交付目標是「可重建的 10 分鐘分析資料集」，不是預報模型。
+
+**後續動作**：將舊 CSV 產物與一次性驗證程式逐步移出主流程，集中實作 SQLite raw/derived pipeline。
+
+### 2026-09-27：清理資料流程，驗證 P1.5 不能直接平滑
+
+**目的**：減少重複程式與過期流程，並測試能否直接從每 10 秒半長軸得到衰減率。
+
+**做了什麼**：
+
+1. 簡化資料準備程式，移除舊的月 CSV 產物與不再使用的 API。
+2. 保留 raw SQLite、P1.3 orbital-element table 與後續 derived table 的分層。
+3. 對第一個可用 POD interval 的 instantaneous semi-major axis 試跑自然 cubic B-spline。
+4. 量測相鄰 10 秒半長軸差、spline derivative 與合理物理尺度。
+
+**觀察結果**：
+
+| 量測 | 結果 |
+| --- | ---: |
+| interval 內半長軸範圍 | 6,791,545.8 至 6,811,052.0 m |
+| 相鄰 10 秒半長軸差標準差 | 153.9 m |
+| GCV cubic spline 在第一個 10 分鐘點的 derivative | -7.97 m/s |
+
+`-7.97 m/s` 等於每天數十萬公尺下降，物理上不可能是 Swarm-A 的 atmospheric drag。
+
+**結論**：瞬時 osculating semi-major axis 含有強烈 short-period variation。不可直接做 spline 後把 derivative 稱為 orbital decay。P1.5 必須先選擇 orbit-average 或明確、經 synthetic validation 的短週期處理方法。
+
+**後續動作**：暫停 P1.5 正式資料表；先完成可獨立驗證的 P1.4 品質控制、P1.6 時間規則與資料來源盤點。
+
+### 2026-09-28：建立 P1.4 至 P1.7 執行計畫與 P1.4-A/B
+
+**目的**：把後續工作拆成不互相覆寫資料、可平行準備且有明確停止條件的工作包。
+
+**做了什麼**：
+
+1. 建立 `P1.4_TO_P1.7_EXECUTION_PLAN.md`，區分 P1.4-C/D、P1.5-A 至 D、P1.6-A/B、P1.7。
+2. 由 raw `swarm_a_states` 與 P1.3 `swarm_a_orbital_elements` 重建 `swarm_a_pod_quality`。
+3. P1.4-A 實作不需猜測門檻的檢查：時間遞增、position/velocity finite、P1.3 result 存在、軌道能量與半長軸合理。
+4. P1.4-B 量測 native cadence，遇到 source-file boundary、前一列不可用或同 source 的 time gap 時切開 `interval_id`。
+5. 將 P1.3、P1.4 與 raw table 的資料責任分開，quality rebuild 不修改 raw POD。
+
+**觀察結果**：
+
+| 項目 | 結果 |
+| --- | ---: |
+| raw POD / P1.3 / P1.4-A rows | 14,558,400 |
+| `is_usable = 1` | 14,558,400 |
+| P1.4-A Q1/Q5 rejected rows | 0 |
+| native cadence | 10 s |
+| continuous intervals | 1,685 |
+| 每個 interval POD rows | 8,640 |
+| interval 內 time gaps | 0 |
+
+**結論**：目前每個 interval 剛好對應一份 POD source file。這只代表 Q1/Q5 與 gap 已通過；P1.4 尚未完成，因為 Q3 ESA quality flag 與 Q4 maneuver candidate 還沒有可辯護的校準。
+
+**後續動作**：P1.4-C 要盤點真實 SP3 frame label 與逐筆官方 quality information；P1.4-D 要用正常 interval 的 position/velocity residual 校準 maneuver threshold，不能拿衰減率大小當判定規則。
+
+### 2026-09-28：下載完整 SYM-H / AE，並修正資料完整性檢查
+
+**目的**：讓地磁資料完整覆蓋本機 POD 時段，且避免下載器把被來源截斷的檔案當成完整資料。
+
+**原始輸入**：WDC Kyoto HAPI `min_asysym` 的 SYM-H 與 `min_ae` 的 AE minute data。
+
+**做了什麼**：
+
+1. 下載並匯入 `2021-01-01` 至 `2026-08-12` 的 SYM-H / AE。
+2. 發現 WDC 的 2025 SYM-H 年度 request 在 `2025-10-18 10:40` 提早停止，雖然下載表面成功。
+3. 補下載 `2025-10-18` 至 `2025-12-31` 的較短範圍，重新匯入 raw SQLite。
+4. 修改 `down_geomagnetic.py`：單次 request 最多 180 天，並讀取 CSV 最後一筆 observation 檢查是否到達 requested end date。
+5. 將 SYM-H 與 AE 寫入同一張 `geomagnetic` table：同一 `time_us` 共享一列，但保留各自 value 與 version。
+
+**觀察結果**：
+
+| 項目 | 結果 |
+| --- | ---: |
+| SYM-H rows | 2,952,000 |
+| AE rows | 2,952,000 |
+| UTC coverage | 2021-01-01 00:00 至 2026-08-12 23:59 |
+| SYM-H 最大相鄰 gap | 60 s |
+| 大於 2 分鐘 gap | 0 |
+
+**結論**：raw geomagnetic data 已完整覆蓋目前 POD。未來不得再使用年度 WDC request；需要分成不超過 180 天的區段，並由程式驗證末筆資料。
+
+**後續動作**：用這份 raw coverage 寫 P1.6-A 的 source-time 對齊規則；AE 保留但不自行加入正式 feature。
+
+### 2026-09-28：完成 P1.6-A，定義 feature 時間規則
+
+**目的**：在寫任何 final SQLite join 前，先確定每個 environmental feature 在某個 orbit time 是否能合法使用，避免 future leakage。
+
+**做了什麼**：
+
+1. 建立 `prep_feature_alignment.py`，只放 pure alignment functions，不讀 SQLite、不寫 SQLite。
+2. 定義 SYM-H 規則：exact minute 直接使用；僅在左右 source total gap <= 2 分鐘時線性內插；否則缺失。
+3. 定義 Ap 規則：使用 target 所屬官方 3-hour block；`02:59:59` 不可提早使用 `03:00` block。
+4. 檢查 CelesTrak F10.7A 欄位：既有 centered `F10.7_OBS_CENTER81` 會包含未來日資料。
+5. 在 raw `space_weather` 新增並重建 `f107a_last81_sfu`，保存 `F10.7_OBS_LAST81`。
+6. 定義 P1.6 使用前一日 F10.7 與前一日 trailing F10.7A，並保存各自 source time。
+7. 為 exact/interpolation/gap、future-only SYM-H、Ap boundary、F10.7 source date、trailing F10.7A 建立 unit tests。
+
+**觀察結果**：
+
+- `space_weather` 有 201,861 筆 3-hour rows，範圍覆蓋目前 POD。
+- centered F10.7A 適合保留給既有 NRLMSIS state，但不適合 P1.6 的因果分析。
+- `F10.7_OBS_LAST81` 是只看當日與過去 80 日的 trailing average，可避免 future leakage。
+- 目前 Python test suite 共 34 個測試，全部通過。
+
+**結論**：P1.6-A 已完成。P1.6 不是把所有資料粗暴對到每 10 秒 POD；它只會對 P1.5 最終的 10 分鐘 `time_us` 做 feature alignment，並保留每個 feature 的 source timestamp。
+
+**後續動作**：P1.6-B 等 P1.5 固定 `swarm_a_orbit_10min` 的 `time_us`、半長軸、衰減率與 `interval_id` schema 後才可開始。
+
+### 2026-09-28：依 clean-code 與 KISS 原則整理資料模組
+
+**目的**：讓資料管線可以從檔名看出責任，移除不必要 abstraction，避免後續 P1.5/P1.6 在不清楚的模組中堆疊邏輯。
+
+**做了什麼**：
+
+1. 刪除過度泛化的 geomagnetic selector abstraction，保留明確的 `write_sym_h` 與 `write_ae`。
+2. 將資料準備檔名分成三種角色：
 
 ```text
-ITRF [x, y, z]
--> WGS84 [longitude, latitude, altitude]
--> NRLMSIS 2.0
--> density_kg_m3
+prep_raw_*       原始檔寫入 raw SQLite
+prep_derived_*   raw table 產生 derived table
+prep_feature_alignment.py
+                 P1.6 的純時間對齊規則
 ```
 
-- 使用 `pymsis 0.12` 呼叫 NRLMSIS 2.0；程式明確指定 `version=2.0`，不使用預設的 2.1。
-- NRLMSIS 輸入為 UTC、經度、緯度、高度、前一天 F10.7、81 日 F10.7A 與 Ap。
-- 地磁暴模式使用 7 個 Ap 值：`[daily, now, -3h, -6h, -9h, avg_12_to_33h, avg_36_to_57h]`。
-- `SYM-H` 與 `AE` 不直接輸入 NRLMSIS；它們保留給後續分析，機器學習方法與 target 尚未決定。
-- 目前只完成密度計算，尚未把阻力加速度接進 `calc_forces.py` 或 RK4。
-- 單點測試：2025-01-01、赤道、450 km、F10.7 = 150、F10.7A = 150、Ap = 4，得到約 `9.58e-13 kg/m^3`。這只是程式測試，不是真實研究資料。
-- `data/swarm_density_acc/` 已有 61 個 Swarm-A `DNSAACC` 原始 ZIP：2024 年 5 月 31 天與 2025 年 11 月 30 天。
-- 密度 ZIP 已有 `load_swarm_density.py`，並已寫入 SQLite；尚未和 NRLMSIS 比較。
-- 未來機器學習的 target 暫緩決定。
+3. 將測試檔改成相同責任名稱，例如 `test_prep_raw_geomagnetic.py` 與 `test_prep_derived_pod_quality.py`。
+4. 保留單一 `prep_raw_sqlite.py` 作為 raw data 更新入口；沒有新增 class、config layer 或新資料夾。
+5. 重新檢查所有 Python module import、編譯與 unit test。
 
-## 8. 平滑方法的更新
+**觀察結果**：檔案命名不再讓 raw import、derived calculation 與 feature rule 混在 `prep_write_*` / `prep_sqlite_*` 名稱中；34 個測試仍全部通過。
 
-- 114 小時平滑窗口遠大於想找的 1 到 6 小時延遲，會抹掉訊號，也可能製造假的時間偏移；不可用。
-- 90 分鐘 trailing average 是舊方案，不再是正式方法。
-- 新方案使用 10 分鐘資料點與分區間 B-spline；spline degree 與 smoothing strength 必須用資料校準，不先寫死。
-- Swarm-A 的主資料採用 Reduced-dynamic POD；瞬時半長軸不是直接量到的 drag。
+**結論**：目前資料層責任清楚，適合從 P1.4 繼續往 P1.5/P1.6 走。這次只做命名與必要 correctness 修正，不做 class 或通用 framework。
 
-## 9. 資料保存與目前資料狀態
+**後續動作**：新程式依既有命名規則加入；不要為可能的未來資料來源先建立 provider interface。
 
-原則：
+### 2026-09-30：固定 P1.6 final schema 與資料 lineage
 
-- 真實來源資料保存原始檔，不覆寫內容。
-- 所有整理後資料放在單一 `swarm_a_data.sqlite`，可以隨時由原始資料重建。
-- `time_us` 是 Unix microseconds 整數主鍵；再次執行只補新增或已改變的來源檔案。
-- SQLite 保存在 SSD，但不提交 Git。
-- 太空天氣涵蓋 1957 至 2026；Swarm-A 軌道只能涵蓋衛星發射後且本機已有 POD 的時段。
+**目的**：將 P1.6 的重要定義從聊天整理成可長期參照的文件，避免之後只記得欄位名稱卻不知道每個值從哪裡來。
 
-目前 `data/` 包含：
+**做了什麼**：
 
-- `swarm_a_pod/`：ESA 原始 POD ZIP。
-- `space_weather/SW-All.csv`：原始 F10.7 與 Ap。
-- `geomagnetic/`：2024-05-09 至 2024-05-14 的原始 SYM-H 與 AE。
-- `swarm_density_acc/`：Swarm-A `DNSAACC` 原始密度 ZIP。
-- `swarm_a_data.sqlite`：單一整理結果，包含太空天氣表與 Swarm-A state 表。
-- 已匯入 14,558,400 個 Swarm-A state，時間範圍為 2021-12-31 23:59:42 UTC 至 2026-08-12 23:59:32 UTC。
-- 已整理 201,861 個三小時太空天氣區段，範圍由 1957 至 2026。
-- SQLite 已有 8,640 個 geomagnetic 時間點；每點都有 SYM-H 與 AE。
-- SQLite 有 436,708 個 Swarm DNSAACC density point，來自 61 個原始 ZIP。
-- 舊的 `prepared_swarm_a_2025-01.csv` 已刪除；不再保留月檔。
+1. 建立 `P1.6_ANALYSIS_SCHEMA.md`。
+2. 定義預計的 `swarm_a_analysis_10min` 欄位：SQLite/Python 型態、單位、`NULL` 規則、中文意義與 source timestamp。
+3. 逐一記錄 POD、SYM-H、AE、F10.7、F10.7A、Ap、DNSAACC density 從原始產品到 P1.6 的資料路徑。
+4. 記錄 P1.6-B 明確禁止事項：不刪 orbit row、不改 raw table、不跨 source gap 補值、不使用 future F10.7/F10.7A。
+5. 在 `P1.6_FEATURE_ALIGNMENT.md` 加上連結，讓時間規則與完整 schema 可互相追溯。
 
-## 10. 已刪除或刻意不保留的資料
+**觀察結果**：P1.6 的欄位與來源資料不再散落於 plan、code 與聊天。最終 table 尚未存在，文件清楚標記為 P1.6-B 的固定介面規格，而非已寫入資料。
 
-舊的 ISS TLE 與暫時操作軌跡已移除；它們不屬於 Swarm-A 的正式 POD 資料。
+**結論**：之後實作 P1.6-B 時，應直接以這份 schema 寫 table 與 tests；若要改欄位、source time 或缺失規則，必須先更新文件與測試，不能在 writer 中默默改意義。
 
-舊的 ISS 假軌道與假太空天氣 CSV 也已移除；正式流程只保留官方原始資料與可重新產生的 SQLite。
+**後續動作**：回到 P1.4-C/D 與 P1.5-A。P1.6-B 仍等待 P1.5 的最終 10 分鐘 orbit output。
 
-也不保留主套件內的驗證腳本與 Python cache。
+## 下一個實驗應做什麼
 
-## 11. 現有程式結構
+不要直接開始 P1.5-B/C/D。先從下列可驗證工作選一項：
 
-```text
-satellite_orbit/
-  data/
-    down_swarm_pod.py               下載 Swarm-A POD 原始檔
-    down_space_weather.py           下載原始 F10.7 與 Ap
-    down_geomagnetic.py             下載原始 SYM-H 與 AE
-    load_swarm_pod.py               讀取本機 Swarm-A POD ZIP
-    load_space_weather.py           從本機原始檔取得 F10.7 與 Ap
-    load_geomagnetic.py             讀取本機 SYM-H 或 AE CSV
-    load_swarm_density.py           讀取本機 DNSAACC density ZIP
-    load_sqlite_states.py           依 UTC 範圍查詢並組成 ITRF states
-    prep_raw_sqlite.py              依序更新 raw SQLite 資料庫
-    prep_raw_common.py              raw 匯入共用時間與檔案資訊工具
-    prep_raw_schema.py              建立 raw SQLite tables
-    prep_raw_weather.py             寫入 F10.7 與 Ap raw observations
-    prep_raw_geomagnetic.py         寫入 SYM-H 與 AE raw observations
-    prep_raw_pod.py                 寫入 POD raw orbit states
-    prep_raw_density.py             寫入 DNSAACC raw density
-    prep_derived_orbital_elements.py 計算並寫入瞬時半長軸
-    prep_derived_pod_quality.py     建立 POD quality derived table
-  calculation/
-    calc_coordinates.py             GCRF／ITRF 狀態與向量轉換
-    calc_atmosphere.py              NRLMSIS 2.0 大氣密度
-    calc_time.py                    GPS time 轉 UTC
-    calc_forces.py                  二體重力、J2 與狀態導數
-    calc_integrator.py              fourth-order Runge-Kutta（RK4）傳播
-    calc_position_error.py          計算預測位置與官方位置的距離
-    calc_orbital_response.py        從一個 GCRF state 計算瞬時半長軸
-data/
-  swarm_a_pod/                      Swarm-A 官方 POD
-  space_weather/                    原始 F10.7 與 Ap
-  geomagnetic/                      原始 SYM-H 與 AE
-  swarm_a_data.sqlite               全部整理資料，不提交 Git
-README.md
-AGENTS.md
-TIMELOG.md
-```
+1. **P1.4-C**：inventory 所有 SP3 source 的真實 frame label，確認是否能安全跨 frame transition。
+2. **P1.4-D**：從正常 interval 的 position/velocity residual 校準 maneuver candidate 規則，先以 synthetic jump 驗證。
+3. **P1.5-A**：建立 synthetic linear-decay input，測試候選 orbit-average / short-period 方法能否回收已知 slope。
 
-歷史上曾用官方 POD 跑通以下位置誤差測試：
+P1.4-C、P1.4-D、P1.5-A 可分開準備；但 P1.5 正式資料表與 P1.6-B 都必須等方法與 schema 決定。
 
-```text
-依時間讀取 prepared ITRF states 並轉成 GCRF
--> 取出起點與未來官方位置
--> 二體重力 + J2 + RK4
--> 與未來官方 POD 比較位置誤差
-```
+## 必讀文件
 
-歷史測試結果：
+- `plans/phase_1_data_preparation/PLAN.md`：第一階段唯一正式規格。
+- `plans/phase_1_data_preparation/P1.4_TO_P1.7_EXECUTION_PLAN.md`：依賴、可平行工作與 release gate。
+- `plans/phase_1_data_preparation/P1.4_QUALITY_CONTROL.md`：P1.4 實作與結果。
+- `plans/phase_1_data_preparation/P1.5_RESAMPLE_AND_DECAY.md`：P1.5 試跑失敗的原因與停止條件。
+- `plans/phase_1_data_preparation/P1.6_ANALYSIS_SCHEMA.md`：P1.6 final schema 與資料來源追溯。
+- `plans/phase_1_data_preparation/archive/RESEARCH_PLAN.md`：外部提案快照，不是現行規格。
 
-```text
-起點：2025-01-01 00:00:02 UTC
-模型：二體重力 + J2 + RK4
-步長：10 秒
-預測：10 分鐘
-位置誤差：29.295 m
-```
+## Git 狀態
 
-2026-09-27 決定正式退休並刪除 `main_pod_error.py`。以上數字只保留為歷史記錄；目前沒有正式指令入口可直接重跑。
-
-RK4 是目前唯一保留的數值積分器。Euler step 原本只為比較 RK4 與 Euler 而存在，現在已移除。也已移除 `make_derivative` 這類函式內函式的寫法。
-
-## 12. 目前需要注意的檔案
-
-- `plans/phase_1_data_preparation/PLAN.md` 是第一階段唯一正式規格。
-- `plans/phase_1_data_preparation/archive/RESEARCH_PLAN.md` 是外部提案快照，不代表目前決策或已完成結果。
-- 舊的 CSV、ISS OEM、reboost 讀取程式與 `main_pod_error.py` 已移除。
-
-## 13. Git
-
-- 2026-09-15：建立本機 Git repository。
-- 2026-09-15：已建立私有 GitHub repository：`https://github.com/anbychang/science_project`。
-- `master` 已連到 `origin/master`；目前沒有未推送 commit，但有尚未提交的文件與資料夾重組。
-
-## 14. 下一步，尚未做
-
-依 `plans/phase_1_data_preparation/PLAN.md`：
-
-1. audit POD coverage、native cadence、gap 與 SP3 frame label。
-2. 實作半長軸品質檢查與 continuous interval。
-3. 建立 10 分鐘 bin 與 B-spline derivative。
-4. 對齊 SYM-H、Ap 與 F10.7，保留 source timestamp。
-5. 發布可重建的第一階段衍生資料集與 metadata。
-
-Swarm 密度 loader 與獨立密度比較可平行準備，但不應混進第一階段的核心產物。
-
-## 15. 2026-09-28 P1.4 至 P1.7 交接
-
-- `plans/phase_1_data_preparation/P1.4_TO_P1.7_EXECUTION_PLAN.md` 是明天執行
-  P1.4 至 P1.7 的工作拆分；先做 P1.4-C/D、P1.5-A、P1.6-A 的獨立準備，P1.5 正式
-  smoothing 必須等待 short-period 方法決定。
-- P1.5/P1.7 的欄位已統一：`da_dt_smooth_m_s` 與
-  `decay_rate_smooth_m_day`；F10.7 與 F10.7A 要分別保存 source time。
-- `swarm_a_pod_quality` 可安全 rebuild，並不會修改 raw POD；RK4 會保留 state 的
-  額外 weather/atmosphere 欄位。
-- 仍未完成：SP3 frame inventory、Q3/Q4 校準、P1.5 short-period 處理、P1.6 join、
-  P1.7 release。詳情見 `CHANGE_REPORT_2026-09-28.md`。
-- 全部 Python 檔案已在 `CLEAN_CODE_REVIEW_2026-09-28.md` 做 Clean Code review。
-  原則是刪除未使用 API、修正明確名稱與邊界，不以 class/config/selector 取代簡單流程。
-- Clean Code review 後實際重跑 P1.2、P1.3、P1.4 entry point：raw POD 與 quality table
-  都是 14,558,400 列，全部可用，且有 1,685 個 interval；詳見 review 文件。
-- P1.6-A 已完成：`prep_feature_alignment.py` 固定 SYM-H、Ap、F10.7 的 pure alignment
-  rules 與 boundary/gap tests。P1.6 analysis 不可使用 centered `F10.7_OBS_CENTER81`，
-  因為它含未來日期；SQLite 新增 `f107a_last81_sfu`，analysis 改用前一日
-  `F10.7_OBS_LAST81`。既有 NRLMSIS state 的 centered `f107a_sfu` 保留不變。
-- SYM-H/AE 已下載並匯入 2021-01-01 至 2026-08-12；各有 2,952,000 個 minute
-  timestamps，SYM-H 最大 gap 是 60 秒，完整覆蓋本機 POD。P1.6-B final writer 仍等待
-  P1.5 的正式 10 分鐘 orbit schema。
-- WDC Kyoto 的 SYM-H 年度 request 可能在約 290 天截斷卻仍回傳成功。`down_geomagnetic.py`
-  現在限制每次最多 180 天，且驗證檔案最後 observation 到達 requested end date；未來下載
-  不可再用年度範圍。
-
-## 多 chat 協作規則
-
-當同一件工作由多個 chat 同時處理時：
-
-```text
-主 chat：討論方向、做最後決策
-工作 chat：執行一個明確的小任務
-TIMELOG.md：共同的決策與目前事實
-Git：每次完成後保存版本
-```
-
-- 只能有一個主 chat 負責最後決策。
-- 不同 chat 不可同時修改同一個檔案。
-- 重要決策只寫進 `TIMELOG.md`，不要只留在聊天裡。
-- 完成一件事就 commit；下一個 chat 開始前先讀 `TIMELOG.md` 與最新 Git 狀態。
-- 需要交接時，只傳「做了什麼、改了什麼、下一步是什麼」的短摘要，不轉貼整段聊天。
+- Git repository 建於 2026-09-15。
+- 遠端：`https://github.com/anbychang/science_project.git`。
+- `master` 是目前工作分支。
+- 每完成一個可驗證工作包，先更新本日誌與相關規格，再建立一筆清楚的 commit。
