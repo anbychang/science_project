@@ -89,6 +89,14 @@ short-period window。已知 `1 m/day` trend 加入 km-level periodic variation 
 
 P1.5-A 仍要完成 orbit-average 或理論 mean-element conversion 的定義與驗證。P1.5 的輸出只可在同一 `interval_id` 內計算。
 
+已驗證的 numerical candidate 只適用於 mean-like 10-minute series：73-sample（12 小時）
+centered Savitzky-Golay、order 2，兩端各排除 6 小時。真實資料尚未證明符合它的 input contract，
+所以這不是 P1.5 release。
+
+simple rectangular orbit-average 已實測淘汰：1 至 12 Kepler orbits 的 residual std 都約 12 至
+13 m，不能交給 SG candidate。下一個合理選項是 Brouwer-Lyddane conversion；本機尚無其
+Orekit / Java dependency，不能自行重寫公式冒充等價方法。
+
 ## P1.6 硬性規則
 
 詳細欄位、型態與完整 lineage 看 `plans/phase_1_data_preparation/P1.6_ANALYSIS_SCHEMA.md`。

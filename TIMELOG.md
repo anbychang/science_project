@@ -212,6 +212,30 @@ edge window 後的 interior derivative。
 short-period variation。P1.5 不能直接 SG raw osculating series。下一步是定義並驗證
 orbit-average 或理論 osculating-to-mean conversion；P1.5-B/C/D 與 P1.6-B 仍不得開始。
 
+## 2026-09-30：驗證條件式 mean-like SG candidate 與 10 分鐘 bin
+
+**結果**：對 mean-like 10 分鐘 synthetic series，73-sample（12 小時）order-2 centered
+Savitzky-Golay 的 median decay 是 `0.9462 m/day`，95th-percentile pointwise error 是
+`0.1812 m/day`；different-seed held-out error 是 `0.1527 m/day`，均通過 gate。UTC bin helper
+會拒絕 cross-bin、cross-interval、non-increasing input，並保留 count、首尾 source time、max gap。
+
+**證據**：開頭 3 個與最後 1 個真實 interval 的 read-only audit 都量到約 19.5 km
+peak-to-peak 與 46.452 分鐘 dominant short-period component，支持 direct raw-SG rejection
+不是單一檔案的偶然結果。
+
+**未解決**：真實 orbit-average / mean-element conversion 能否把輸入轉成這個 SG candidate
+要求的 mean-like series。這仍是 P1.5-B 前的 gate，不建立正式 table。
+
+## 2026-09-30：淘汰 simple rectangular orbit-average
+
+**結果**：用第一個 interval 的 5,582.02 s Kepler period，測試 1 至 12 個 orbit 的
+rectangular rolling average。raw peak-to-peak 從 `19,506.2 m` 降到約 `66.6 m`，但 residual
+std 仍是 `12.131` 至 `13.245 m`；1-orbit linear slope 是 `20.306 m/day`。
+
+**決定**：simple orbit-average 不符合 SG candidate 的 mean-like input contract，淘汰。
+Brouwer-Lyddane conversion 是下一個合理選項，但本機沒有 Java、Orekit 或 Python bridge；
+不自行重寫理論公式。
+
 ## 下一個時間紀錄應記錄的實驗
 
 下一個工作只能從以下可驗證項目選擇：

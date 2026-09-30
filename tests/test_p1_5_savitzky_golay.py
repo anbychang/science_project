@@ -15,6 +15,14 @@ RAW_SG_WINDOWS = (279, 559, 837)
 POLYNOMIAL_ORDERS = (2, 3)
 MAX_MEDIAN_ERROR_M_DAY = 0.05
 MAX_P95_ERROR_M_DAY = 0.2
+MEAN_SERIES_SAMPLE_INTERVAL_S = 600.0
+MEAN_SERIES_WINDOW_SAMPLES = 73
+MEAN_SERIES_POLYNOMIAL_ORDER = 2
+MEAN_SERIES_NOISE_STD_M = 0.1
+MEAN_SERIES_FIT_NOISE_SEED = 20_260_930
+MEAN_SERIES_HELD_OUT_NOISE_SEED = 7
+MAX_MEAN_SERIES_MEDIAN_ERROR_M_DAY = 0.1
+MAX_MEAN_SERIES_P95_ERROR_M_DAY = 0.2
 
 
 def create_synthetic_osculating_series():
@@ -30,6 +38,17 @@ def create_synthetic_osculating_series():
     return true_semi_major_axis_m, true_semi_major_axis_m + periodic_variation_m + noise_m
 
 
+def create_synthetic_mean_series(noise_seed):
+    """Input: deterministic Gaussian-noise seed
+    Output: (true_semi_major_axis_m, mean_like_semi_major_axis_m)"""
+    time_s = np.arange(0.0, DAY_S, MEAN_SERIES_SAMPLE_INTERVAL_S)
+    true_semi_major_axis_m = 6_800_000.0 - TRUE_DECAY_RATE_M_DAY * time_s / DAY_S
+    noise_m = np.random.default_rng(noise_seed).normal(
+        0.0, MEAN_SERIES_NOISE_STD_M, time_s.size
+    )
+    return true_semi_major_axis_m, true_semi_major_axis_m + noise_m
+
+
 def calculate_interior_decay_errors(observed_semi_major_axis_m, window_length, polynomial_order):
     """Input: regular series, odd window length, polynomial order
     Output: (median_decay_m_day, p95_absolute_error_m_day)"""
@@ -40,14 +59,31 @@ def calculate_interior_decay_errors(observed_semi_major_axis_m, window_length, p
         deriv=1,
         delta=SAMPLE_INTERVAL_S,
     ) * DAY_S
-    interior_decay_rate_m_day = decay_rate_m_day[window_length:-window_length]
+    half_window_samples = window_length // 2
+    interior_decay_rate_m_day = decay_rate_m_day[
+        half_window_samples:-half_window_samples
+    ]
     absolute_errors_m_day = np.abs(interior_decay_rate_m_day - TRUE_DECAY_RATE_M_DAY)
     return float(np.median(interior_decay_rate_m_day)), float(
         np.percentile(absolute_errors_m_day, 95.0)
     )
 
 
-class DirectSavitzkyGolayTest(unittest.TestCase):
+def calculate_mean_series_interior_decay_rates(mean_like_series_m):
+    """Input: regular 10-minute mean-like series
+    Output: interior decay_rate_m_day[]"""
+    decay_rate_m_day = -savgol_filter(
+        mean_like_series_m,
+        MEAN_SERIES_WINDOW_SAMPLES,
+        MEAN_SERIES_POLYNOMIAL_ORDER,
+        deriv=1,
+        delta=MEAN_SERIES_SAMPLE_INTERVAL_S,
+    ) * DAY_S
+    half_window_samples = MEAN_SERIES_WINDOW_SAMPLES // 2
+    return decay_rate_m_day[half_window_samples:-half_window_samples]
+
+
+class SavitzkyGolayCandidateTest(unittest.TestCase):
     """Input: synthetic 10-second semi-major-axis series
     Output: direct raw-SG candidate decision"""
 
@@ -81,6 +117,53 @@ class DirectSavitzkyGolayTest(unittest.TestCase):
                     qualifying_candidates.append((window_length, polynomial_order))
 
         self.assertEqual(qualifying_candidates, [])
+
+    def test_mean_series_candidate_recovers_median_decay(self):
+        """Input: mean-like 10-minute series with 0.1 m residual noise
+        Output: median decay within 0.1 m/day of truth"""
+        _, mean_like_series_m = create_synthetic_mean_series(MEAN_SERIES_FIT_NOISE_SEED)
+        interior_decay_rate_m_day = calculate_mean_series_interior_decay_rates(
+            mean_like_series_m
+        )
+
+        self.assertLessEqual(
+            abs(float(np.median(interior_decay_rate_m_day)) - TRUE_DECAY_RATE_M_DAY),
+            MAX_MEAN_SERIES_MEDIAN_ERROR_M_DAY,
+        )
+
+    def test_mean_series_candidate_limits_pointwise_decay_error(self):
+        """Input: mean-like 10-minute series with 0.1 m residual noise
+        Output: 95th-percentile error within 0.2 m/day"""
+        _, mean_like_series_m = create_synthetic_mean_series(MEAN_SERIES_FIT_NOISE_SEED)
+        interior_decay_rate_m_day = calculate_mean_series_interior_decay_rates(
+            mean_like_series_m
+        )
+        p95_error_m_day = float(
+            np.percentile(
+                np.abs(interior_decay_rate_m_day - TRUE_DECAY_RATE_M_DAY),
+                95.0,
+            )
+        )
+
+        self.assertLessEqual(p95_error_m_day, MAX_MEAN_SERIES_P95_ERROR_M_DAY)
+
+    def test_mean_series_candidate_limits_held_out_pointwise_error(self):
+        """Input: mean-like series with a different residual-noise seed
+        Output: held-out 95th-percentile error within 0.2 m/day"""
+        _, mean_like_series_m = create_synthetic_mean_series(
+            MEAN_SERIES_HELD_OUT_NOISE_SEED
+        )
+        interior_decay_rate_m_day = calculate_mean_series_interior_decay_rates(
+            mean_like_series_m
+        )
+        p95_error_m_day = float(
+            np.percentile(
+                np.abs(interior_decay_rate_m_day - TRUE_DECAY_RATE_M_DAY),
+                95.0,
+            )
+        )
+
+        self.assertLessEqual(p95_error_m_day, MAX_MEAN_SERIES_P95_ERROR_M_DAY)
 
 
 if __name__ == "__main__":
