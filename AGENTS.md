@@ -54,6 +54,14 @@ Write project Markdown documents in Traditional Chinese. Use English there only
 for proper technical terms, file names, database fields, function names, and
 code. Keep code comments in English.
 
+Markdown is an operating document, not an essay. Lead with the decision,
+status, constraint, or result. Use short paragraphs and compact bullets; remove
+transition phrases and repeated context. Prefer one small ASCII flow, tree, or
+`{field, ...}` shape when it makes a relationship clearer. Do not add decorative
+icons, emoji, prose summaries of tables, or a second explanation of a diagram.
+Historical reports keep only date, result, evidence, decision, and unresolved
+work. A reader should be able to scan any section without reading every line.
+
 Every function must show its input and output in a short docstring. Prefer visual
 shapes such as `Input: [state_1, state_2, ...]` and
 `Output: {time, frame, position_m, velocity_m_s}` over long prose.

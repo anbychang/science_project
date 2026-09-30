@@ -1,87 +1,76 @@
 # Swarm-A 軌道衰減研究
 
-本專案研究地磁暴如何影響 Swarm-A 的軌道衰減。XYZ 軌道預報是後續驗證工具，不是主要研究問題。
+目標：研究地磁暴與 Swarm-A 軌道衰減的關係。
 
-目前只進行第一階段：建立可重建、每 10 分鐘一列的分析資料集。正式規格見 [第一階段計畫](plans/phase_1_data_preparation/PLAN.md)。
+目前範圍：可重建的 10 分鐘分析資料集。XYZ 預報、machine learning、drag propagator 均不在此階段。
 
-## 結構
+正式規格：[第一階段計畫](plans/phase_1_data_preparation/PLAN.md)。
+
+## 專案地圖
 
 ```text
 satellite_orbit/
-├─ data/           下載、讀取、SQLite 寫入
-└─ calculation/    座標與物理計算
+├─ data/          [下載 | 讀取 | SQLite]
+└─ calculation/   [座標 | 物理 | 數值]
 
-data/              原始資料與 SQLite 工作資料庫
-plans/             現行計畫與封存提案
+data/             原始檔與工作 SQLite
+plans/            現行規格與封存提案
 ```
 
-## 資料流程
+## 資料流
 
 ```text
-下載檔案
-    -> load_*.py 讀取本機檔案
-    -> prep_raw_sqlite.py 寫入 raw SQLite
-    -> load_sqlite_states.py 讀出 ITRF state
-    -> calc_coordinates.py 轉成 GCRF state
-    -> prep_derived_orbital_elements.py 計算半長軸並寫回 SQLite
-    -> prep_derived_pod_quality.py 建立品質標記與連續 interval
+[raw files]
+  -> [raw SQLite]
+  -> [GCRF + orbital elements]
+  -> [quality + continuous intervals]
+  -> [10-minute orbit]
+  -> [analysis features]
 ```
 
-`prep_raw_sqlite.py` 只負責依序呼叫其他小檔案。`prep_raw_*` 全部是 raw source 寫入 SQLite；`prep_derived_*` 全部是由 raw table 寫入 derived table；`prep_feature_alignment.py` 則只放 P1.6 的 feature 對齊規則。weather、SYM-H、AE、POD、density 的 SQLite 寫入各自放在獨立檔案。
+| 前綴 / 模組 | 責任 |
+| --- | --- |
+| `load_*` | 讀取本機檔案或 SQLite |
+| `down_*` | 下載來源資料 |
+| `prep_raw_*` | 原始資料寫入 raw table |
+| `prep_derived_*` | raw table 產生 derived table |
+| `calc_*` | 物理與數值計算 |
+| `prep_feature_alignment.py` | P1.6 時間對齊規則 |
 
-原始 SQLite table 不會被後續計算修改。新的計算一律讀取 raw table、建立自己的 derived table，再以相同的 `time_us` 保留可追溯關係。
+raw table 不可修改。每個 calculation 建立自己的 derived table，以原始 `time_us` 追溯來源。
 
-## 軌道 state
+## 共用資料形狀
 
 ```text
 state = {
-    time,
-    frame,
-    position_m: [x, y, z],
-    velocity_m_s: [vx, vy, vz],
-
-    # Added when the atmosphere is needed:
-    f107_sfu,
-    f107a_sfu,
-    ap_values,
-    f107_data_type,
-    density_kg_m3,
+  time, frame,
+  position_m: [x, y, z],
+  velocity_m_s: [vx, vy, vz],
+  ...space_weather_or_density,
 }
+
+orbit_series = [state, ...]
 ```
 
-- 函式之間只傳一個 `state`，不拆開傳時間、位置與速度。
-- 一段軌道是 `[state, state, ...]`。
-- 專案內部使用 SI 單位與 UTC。
-- 主要計算座標系是 GCRF。
-- 原始 POD 的實際 reference frame 必須從 SP3 header 保存，不能永遠只標成泛稱的 ITRF。
+`state` 不拆成時間、位置、速度三組參數。內部單位是 SI；時間是 UTC；主要計算 frame 是 GCRF。
 
-## 目前資料
+## 現況
 
-```text
-Swarm-A POD             已下載並寫入 SQLite
-F10.7 / Ap              已下載並寫入 SQLite
-SYM-H / AE              已下載 2021-01-01 至 2026-08-12，並寫入 SQLite
-Swarm-A DNSAACC 密度    已由 loader 寫入 SQLite
-```
+| 資料 / 階段 | 狀態 |
+| --- | --- |
+| POD、F10.7、Ap、SYM-H、AE | 已寫入 SQLite |
+| P1.4 基本 QC、interval | 已完成；Q3/Q4 待校準 |
+| P1.5 orbit-average、衰減率 | 未完成；不可直接用 osculating 半長軸推估 |
+| P1.6 最終 join | 等待 P1.5 schema |
+| DNSAACC density | 已保存；不是 P1.6 core feature |
+| NRLMSIS 2.0 | 可算密度；未接入 RK4 |
 
-## 建立 SQLite
+## 重建 raw SQLite
 
 ```powershell
 python -m satellite_orbit.data.prep_raw_sqlite
 ```
 
-輸出為 `data/swarm_a_data.sqlite`。原始資料保留不變；SQLite 可以由原始檔重新建立，因此不提交 Git。
+輸出：`data/swarm_a_data.sqlite`。可由原始檔重建，不提交 Git。
 
-## 目前限制
-
-- 10 分鐘衍生資料集尚未完成。
-- P1.4 的基本品質標記與連續 interval 已實作；ESA quality flag 與 maneuver
-  candidate 規則尚待 audit、校準。
-- P1.5 的 orbit-average、smoothing 與衰減率尚未實作；不可直接對 osculating
-  semi-major axis 發布衰減率。
-- Swarm-A 密度尚未加入軌道 state 或最終 10 分鐘資料集。
-- NRLMSIS 2.0 可以計算密度，但大氣阻力尚未接進 RK4。
-- `main_pod_error.py` 已正式退休，不再是專案入口。
-
-P1.4 至 P1.7 的可執行工作拆分見
-[執行計畫](plans/phase_1_data_preparation/P1.4_TO_P1.7_EXECUTION_PLAN.md)。
+下一步拆分與停止條件：[P1.4 至 P1.7 執行計畫](plans/phase_1_data_preparation/P1.4_TO_P1.7_EXECUTION_PLAN.md)。
