@@ -192,12 +192,32 @@ prep_feature_alignment.py
 
 **結論**：P1.6-B 實作時必須以 schema 文件與現有 pure tests 為準。欄位或時間規則若要改，必須先更新文件與測試。
 
+## 2026-09-30：淘汰 direct raw Savitzky-Golay
+
+**目的**：檢驗能否直接將 Savitzky-Golay 用在每 10 秒 osculating semi-major axis，
+再把導數當作 orbital decay。
+
+**做了什麼**：先 read-only audit 第一個真實 interval：半長軸 peak-to-peak 為
+`19,506.2 m`，最強 FFT short-period component 約 46.45 分鐘、振幅 `9,535.4 m`。再建立
+可重跑的 24 小時 synthetic series：已知 `1 m/day` linear decline，加上這個 representative
+component 的 fundamental / harmonic variation，以及固定 seed 的 25 m Gaussian noise。以
+279、559、837 samples 和 polynomial order 2、3 測試 6 個 raw-SG candidate；只量測排除
+edge window 後的 interior derivative。
+
+**量到或確認的事**：所有 candidate 都遠超過預先設定的 recovery gate。最佳 median result
+仍是 `-3,845.5 m/day`，而真值是 `1 m/day`；最小的 95th-percentile absolute error 仍為
+`64,417.9 m/day`。相對地，只有 linear trend 的 control input 能正確回收 `1 m/day`。
+
+**結論**：問題不是 derivative 的 unit 或 sign，而是 direct SG 仍會追蹤 km-level
+short-period variation。P1.5 不能直接 SG raw osculating series。下一步是定義並驗證
+orbit-average 或理論 osculating-to-mean conversion；P1.5-B/C/D 與 P1.6-B 仍不得開始。
+
 ## 下一個時間紀錄應記錄的實驗
 
 下一個工作只能從以下可驗證項目選擇：
 
 1. P1.4-C：盤點 SP3 source 的真實 frame label 與 official quality information。
 2. P1.4-D：從正常 interval 的 position/velocity residual 校準 maneuver candidate，並以 synthetic jump 驗證。
-3. P1.5-A：建立 synthetic linear-decay input，檢驗候選 orbit-average / short-period 方法能否回收已知 slope。
+3. P1.5-A：建立並驗證 orbit-average synthetic input，檢驗候選方法能否回收已知 slope。
 
 每次新增紀錄都要寫：原始輸入、實際操作、量測結果、結論、下一步；不可只寫「完成某功能」。

@@ -79,11 +79,15 @@ python -m satellite_orbit.data.prep_raw_sqlite
 
 ## P1.5 硬性停止條件
 
-不可直接對每 10 秒 osculating `semi_major_axis_m` 做 spline，然後把 derivative 當 atmospheric decay。
+不可直接對每 10 秒 osculating `semi_major_axis_m` 做 B-spline 或 Savitzky-Golay，然後把 derivative 當 atmospheric decay。
 
 原因：試跑的 GCV cubic spline 得到 `-7.97 m/s`，相當於每天數十萬公尺下降，顯然在追蹤 J2 等 short-period variation，不是真實 drag。
 
-P1.5 必須先完成 P1.5-A：選擇 orbit-average 或可驗證的 short-period treatment，並以 synthetic known-slope input 驗證。P1.5 的輸出只可在同一 `interval_id` 內計算。
+P1.5-A 的 direct raw Savitzky-Golay synthetic test 也已淘汰 1、2、3 個 representative
+short-period window。已知 `1 m/day` trend 加入 km-level periodic variation 後，6 個 candidate
+全都無法通過 slope recovery gate。完整定義與結果看 `P1.5_RESAMPLE_AND_DECAY.md`。
+
+P1.5-A 仍要完成 orbit-average 或理論 mean-element conversion 的定義與驗證。P1.5 的輸出只可在同一 `interval_id` 內計算。
 
 ## P1.6 硬性規則
 
@@ -102,7 +106,7 @@ P1.6-A 已完成。P1.6-B 等 P1.5 固定 final 10-minute orbit schema 後才可
 
 1. P1.4-C：SP3 frame / Q3 official quality audit。
 2. P1.4-D：Q4 maneuver candidate calibration。
-3. P1.5-A：synthetic validation 與 short-period method selection。
+3. P1.5-A：orbit-average synthetic validation 與 short-period method selection。
 4. P1.5-B/C/D：只在 P1.5-A 決定方法後開始。
 5. P1.6-B：只在 P1.5 final schema 存在後開始。
 6. P1.7：乾淨資料夾重建、metadata、export 與 release report。

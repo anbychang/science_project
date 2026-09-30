@@ -3,7 +3,7 @@
 ## 狀態
 
 這是 P1.5 的 10 分鐘軌道中間產物規格，不是 P1.7 的完整分析資料集。現在已完成
-原始 POD、瞬時半長軸與基本品質標記；orbit-average、B-spline 平滑半長軸與衰減率尚未
+原始 POD、瞬時半長軸與基本品質標記；orbit-average、short-period treatment、平滑半長軸與衰減率尚未
 發布，原因記在 `P1.5_RESAMPLE_AND_DECAY.md`。P1.6 feature join 與 P1.7 最終欄位
 見 `P1.4_TO_P1.7_EXECUTION_PLAN.md`。
 

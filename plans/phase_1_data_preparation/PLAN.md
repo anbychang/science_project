@@ -40,7 +40,7 @@ UTC alignment, GCRF conversion, orbital elements
 quality labels and continuous usable intervals
             |
             v
-10-minute resampling and B-spline smoothing
+10-minute resampling and verified short-period treatment
             |
             v
 derived 10-minute analysis dataset
@@ -122,16 +122,19 @@ maneuver candidate 尚未校準，因此 P1.4 尚未完成。細節見 `P1.4_QUA
 
 1. 定義 UTC 10 分鐘 bin boundary。
 2. 只使用同一個連續區間內、有足夠有效 POD observation 的 bin；記錄 `pod_count` 與最大 source-time gap。
-3. 每個 valid interval 分開 fit B-spline，不可跨 gap 或 maneuver candidate。
-4. 在 10 分鐘時間點 evaluate spline 與一階導數。
+3. 先做已驗證的 short-period treatment；不得直接對 osculating 半長軸做 Savitzky-Golay
+   或 B-spline 再把導數當 decay。
+4. 每個 valid interval 分開處理，不可跨 gap 或 maneuver candidate；只在通過 P1.5-A 的
+   較慢 series 上計算平滑值與一階導數。
 5. 儲存 `semi_major_axis_smooth_m`、`da_dt_smooth_m_s` 與正值代表下降的
    `decay_rate_smooth_m_day`。
 
-spline degree 與 smoothing strength 是要校準的參數，不是先驗事實；用 held-out interval 選擇，並把方法與數值記進 metadata。
+smoothing method 與參數是要校準的決策，不是先驗事實；用 held-out interval 選擇，並把方法與數值記進 metadata。
 
-目前進度：直接對 osculating `semi_major_axis_m` 做 B-spline 試跑會保留過大的
-short-period variation，尚未產生 P1.5 資料集。細節見 `P1.5_RESAMPLE_AND_DECAY.md`。
-P1.5 與新的 Swarm POD 下載目前暫緩；不可跳過短週期項處理而直接發布衰減率。
+目前進度：direct B-spline 試跑與 direct raw Savitzky-Golay synthetic test 都會把強烈
+short-period variation 的導數誤當 decay，尚未產生 P1.5 資料集。接下來要驗證
+orbit-average；細節見 `P1.5_RESAMPLE_AND_DECAY.md`。不可跳過 short-period treatment
+而直接發布衰減率。
 
 完成條件：乾淨的 synthetic linear-decay input 可恢復正確 slope；輸出不可跨 source gap。
 
@@ -176,7 +179,7 @@ P1.5 與新的 Swarm POD 下載目前暫緩；不可跳過短週期項處理而�
 }
 ```
 
-資料旁要保存 source signature、code revision、frame、Earth gravitational parameter、spline configuration、日期範圍與 row count。CSV 或 Parquet 是可選 export；SQLite 是工作資料庫。
+資料旁要保存 source signature、code revision、frame、Earth gravitational parameter、short-period treatment 與 smoothing configuration、日期範圍與 row count。CSV 或 Parquet 是可選 export；SQLite 是工作資料庫。
 
 POD 最終輸出欄位、行數限制與檢驗條件見 `POD_FINAL_OUTPUT_SPEC.md`。
 
@@ -188,14 +191,15 @@ POD 最終輸出欄位、行數限制與檢驗條件見 `POD_FINAL_OUTPUT_SPEC.m
 - [x] Raw SQLite database 已成功 rebuilt。
 - [x] GCRF orbital-element calculation 已驗證。
 - [ ] Quality rules 已校準並產生 rejection report。
-- [ ] B-spline derivative 已用 synthetic data 驗證。
+- [x] Direct raw Savitzky-Golay candidate 已用 synthetic data 淘汰。
+- [ ] Orbit-average / mean-element method 已用 synthetic data 驗證。
 - [ ] 10-minute feature join 已在 boundary 與 gap 驗證。
 - [ ] Derived dataset 與 metadata 可重建。
 
 ## 暫緩決定
 
 - 精確 date range 與目標 geomagnetic storm 數量。
-- B-spline degree、smoothing parameter 與最小 usable bin count。
+- Orbit-average definition、後續 smoothing parameter 與最小 usable bin count。
 - `decay_rate_smooth_m_day` 是後續分析 target 還是 intermediate feature。
 - 是否加入 AE 或其他 geomagnetic index。
 
@@ -235,7 +239,7 @@ SP3 可能沒有逐 epoch 的單一 `good` flag。實作 Q3 前先確認 ESA pro
 | --- | --- |
 | Constant two-body state sequence | stable semi-major axis；平滑後 decay rate 接近零 |
 | Synthetic linear semi-major-axis decrease | derivative 大小正確，且 decay-rate sign convention 正確 |
-| One missing POD block | 形成兩個 interval；derived row 與 spline 不可跨 block |
+| One missing POD block | 形成兩個 interval；derived row 與 smoothing 不可跨 block |
 | One injected state jump | 成為 maneuver candidate；切開 interval |
 | SYM-H source gap | 不可跨 gap interpolation |
 | Ap boundary at 03:00 UTC | value 只在 official block boundary 改變 |
