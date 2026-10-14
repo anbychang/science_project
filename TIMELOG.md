@@ -2,7 +2,7 @@
 
 最後更新：2026-09-30
 
-這份檔案只記錄時間順序：某一天做了什麼、量到什麼、得到什麼結論。它不放長期規則或完整技術定義；那些放在 `PROJECT_MEMO.md`。
+這份檔案只記錄時間順序：某一天做了什麼、量到什麼、得到什麼結論。它不放長期規則或完整技術定義；那些放在 `plans/phase_1_data_preparation/PLAN.md` 與各階段規格。
 
 ## 日期可信度
 
@@ -235,6 +235,45 @@ std 仍是 `12.131` 至 `13.245 m`；1-orbit linear slope 是 `20.306 m/day`。
 **決定**：simple orbit-average 不符合 SG candidate 的 mean-like input contract，淘汰。
 Brouwer-Lyddane conversion 是下一個合理選項，但本機沒有 Java、Orekit 或 Python bridge；
 不自行重寫理論公式。
+
+## 2026-10-01：釐清 data module 命名與入口
+
+**結果**：
+
+- `prep_raw_common.py` 改為 `prep_raw_identifiers.py`：只負責 raw record 的 `time_us` 與 source signature。
+- `prep_raw_sqlite.py` 改為 `prep_raw_database.py`：明確表示它建立並更新 local SQLite database。
+- 純時間規則 `prep_feature_alignment.py` 改為 `calc_feature_alignment.py`。
+- `prep_orbit_bins.py` 改為 `prep_orbit_bin_summary.py`。
+
+**證據**：更新所有 current import、test、執行指令與規格引用後，Python test suite 全過。
+
+**決定**：保留 `prep_raw_*` 與 `prep_derived_*`，因為它們確實建立 prepared data；不為了少檔案合併 download、load、raw write、derived write 四個責任層。
+
+## 2026-10-01：移除尚未啟動階段的預先實作
+
+**結果**：刪除 P1.5/P1.6 的 standalone bin/alignment helper、專屬測試與已淘汰 raw-SG verifier；刪除未接入現行研究流程的 atmosphere、RK4 propagation 與 position-error code。
+
+**證據**：這些 module 沒有現行 production caller；raw SQLite -> P1.3 -> P1.4 pipeline 不引用它們。
+
+**決定**：保留 P1.5/P1.6 文件中的規則、輸入條件與量測結果。相應 phase 開始時才寫最小 implementation 與 test。
+
+## 2026-10-14：拆分 Phase 1 data lineage 文件
+
+**結果**：將原本單一 data-lineage 文件拆成 POD、space weather、geomagnetic、density 四份。每份固定記錄 `資料`、`程式`、`動作`、`輸出`、`Shape`、`例`；資料 shape 用多行 `{}` 與 `[]`，不把巢狀欄位塞成長句。
+
+**證據**：`plans/phase_1_data_preparation/data_lineage/` 內的 `DATA_LINEAGE_POD.md` 追到 `swarm_a_pod_quality`；`DATA_LINEAGE_SPACE_WEATHER.md` 追到 `space_weather`；`DATA_LINEAGE_GEOMAGNETIC.md` 追到 `geomagnetic`；`DATA_LINEAGE_DENSITY.md` 追到 `swarm_a_density`。P1.5/P1.6 都標為未建立。
+
+**決定**：資料血緣是程式與資料表之間的追溯文件，不是研究計畫替代品。新增來源或改變 writer 時，必須同步更新對應 lineage 文件與本格式規則。
+
+## 2026-10-14：raw data integrity 與 POD 時間邊界 code review
+
+**結果**：以三輪 review / red-green 修正檢查資料準備主線。space-weather CSV 若在完整日期之間缺少 `AP1`，或 `AP1..AP8` 任一欄缺失或非數字，現在會在寫入前失敗；不留下不完整 raw rows 或 provenance。最後完整日期之後的空白列仍可略過。weather preparation version 升為 `3`，舊 SQLite database 必須重建。
+
+**結果**：POD SP3 epoch 的秒數若四捨五入進位，例如 `59.9999996`，現在會正規化到下一秒，而不是建立無效的 `microsecond=1000000`。
+
+**證據**：新增 weather malformed/interior-gap/trailing-gap regression tests，以及 SP3 fractional-second carry test。完整 `python -m unittest discover -s tests -v`：34 tests passed；`git diff --check` 無 whitespace error。
+
+**決定**：raw source 的 complete coverage 必須先驗證，才允許寫入 metadata。只在確定的資料完整性與時間解析邊界補最小修正，不重構尚未進入主線的 module。
 
 ## 下一個時間紀錄應記錄的實驗
 

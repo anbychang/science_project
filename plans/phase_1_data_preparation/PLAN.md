@@ -48,7 +48,7 @@ derived 10-minute analysis dataset
 
 ## Raw 與衍伸資料規則
 
-SQLite 的 raw table 是不可變的來源紀錄。`swarm_a_states`、`space_weather`、`geomagnetic` 與 `swarm_a_density` 只由對應的 `prep_raw_sqlite.py` 寫入；後續計算不可修改或刪除其中的 observation。
+SQLite 的 raw table 是不可變的來源紀錄。`swarm_a_states`、`space_weather`、`geomagnetic` 與 `swarm_a_density` 只由 `prep_raw_database.py` 寫入；後續計算不可修改或刪除其中的 observation。
 
 要增加新維度時，使用下面固定流程：
 
@@ -59,6 +59,23 @@ load SQLite raw data
 ```
 
 每個 derived row 必須保留原始 `time_us`，並記錄演算法與必要設定。例子：P1.3 從 `swarm_a_states` 讀取 POD，計算後寫入 `swarm_a_orbital_elements`；原始 POD table 不變。
+
+## 資料血緣文件格式
+
+每一類 raw data 各有一份獨立文件：`data_lineage/DATA_LINEAGE_POD.md`、`data_lineage/DATA_LINEAGE_SPACE_WEATHER.md`、`data_lineage/DATA_LINEAGE_GEOMAGNETIC.md`、`data_lineage/DATA_LINEAGE_DENSITY.md`。入口是 `data_lineage/README.md`。
+
+每個處理 stage 固定使用下列欄位：
+
+```text
+資料：輸入資料或 shape
+程式：module.py -> function()
+動作：轉換、計算、filter、join 或停止條件
+輸出：檔案、SQLite table 或 planned table
+Shape：多行 {field, ...}；巢狀資料換行
+例：一個具體輸入 -> 輸出
+```
+
+未實作 stage 的 `程式` 必須寫「未建立」，不能用規格文件偽裝成現行程式。
 
 ## 工作項目
 
@@ -73,13 +90,13 @@ load SQLite raw data
 
 ### P1.2 建立原始資料庫
 
-使用 `python -m satellite_orbit.data.prep_raw_sqlite`。它把原始觀測寫到分開的 SQLite tables；POD row 只連到可用的 3 小時 weather block。
+使用 `python -m satellite_orbit.data.prep_raw_database`。它把原始觀測寫到分開的 SQLite tables；POD row 只連到可用的 3 小時 weather block。
 
 完成條件：已報告 row count、首尾 UTC、重複時間與 source provenance。原始觀測不可在原 table 中 resample。
 
 狀態：`[done]`
 
-- SQLite：`data/swarm_a_data.sqlite`，約 1.13 GiB。
+- SQLite：`data/swarm_a_data.sqlite`，目前約 1.8 GiB；可由 raw source 重建。
 - POD：14,558,400 筆，2021-12-31 23:59:42 UTC 至 2026-08-12 23:59:32 UTC。
 - 每筆 POD 都有完整的位置與速度；沒有重複 `time_us`。
 - 1,685 個 `source_files` 與 1,685 個原始 POD ZIP 一一對應。

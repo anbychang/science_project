@@ -1,6 +1,7 @@
 """Mark basic POD quality without changing raw observations."""
 
 import sqlite3
+from collections import Counter
 from math import isfinite
 from pathlib import Path
 
@@ -22,12 +23,6 @@ def create_quality_table(connection):
         )
         """
     )
-
-
-def clear_quality_table(connection):
-    """Input: SQLite connection
-    Output: old POD quality rows removed"""
-    connection.execute("DELETE FROM swarm_a_pod_quality")
 
 
 def quality_row(row, previous_time_us):
@@ -86,24 +81,18 @@ def measure_native_cadence_us(connection):
     time_rows = connection.execute(
         "SELECT time_us, source_id FROM swarm_a_states ORDER BY time_us"
     )
-    difference_counts = {}
+    difference_counts = Counter()
     previous_time_us = None
     previous_source_id = None
 
     for time_us, source_id in time_rows:
         if source_id == previous_source_id and time_us > previous_time_us:
             difference_us = time_us - previous_time_us
-            difference_counts[difference_us] = difference_counts.get(difference_us, 0) + 1
+            difference_counts[difference_us] += 1
         previous_time_us = time_us
         previous_source_id = source_id
 
-    cadence_us = None
-    largest_count = 0
-    for difference_us, count in difference_counts.items():
-        if count > largest_count:
-            cadence_us = difference_us
-            largest_count = count
-    return cadence_us
+    return max(difference_counts, key=difference_counts.get, default=None)
 
 
 def starts_new_interval(
@@ -133,7 +122,7 @@ def write_pod_quality(database_path=DEFAULT_DATABASE):
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
         create_quality_table(connection)
-        clear_quality_table(connection)
+        connection.execute("DELETE FROM swarm_a_pod_quality")
         cadence_us = measure_native_cadence_us(connection)
         if cadence_us is None:
             raise ValueError("Cannot measure POD cadence from the raw states.")

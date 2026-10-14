@@ -29,9 +29,10 @@ def _hapi_time(time_utc):
     return time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _last_observation_day(file_path):
+def _observation_days(file_path):
     """Input: downloaded geomagnetic CSV path
-    Output: UTC date of its last observation"""
+    Output: (first UTC day, last UTC day)"""
+    first_time = None
     last_time = None
 
     with Path(file_path).open(encoding="utf-8") as file:
@@ -40,18 +41,27 @@ def _last_observation_day(file_path):
             if not row_text or row_text.startswith("#"):
                 continue
             time_text = row_text.split(",", maxsplit=1)[0]
-            last_time = datetime.fromisoformat(time_text.replace("Z", "+00:00"))
+            observation_time = datetime.fromisoformat(time_text.replace("Z", "+00:00"))
+            if first_time is None:
+                first_time = observation_time
+            last_time = observation_time
 
-    if last_time is None:
+    if first_time is None or last_time is None:
         raise ValueError(f"No geomagnetic observation was downloaded to {file_path}.")
-    return last_time.date()
+    return first_time.date(), last_time.date()
 
 
-def _check_download_coverage(file_path, last_day):
-    """Input: downloaded geomagnetic CSV path and requested last UTC day
-    Output: None when the file reaches the requested last day"""
-    downloaded_last_day = _last_observation_day(file_path)
+def _check_download_coverage(file_path, first_day, last_day):
+    """Input: downloaded CSV path and requested UTC day range
+    Output: None when the file covers the requested range"""
+    downloaded_first_day, downloaded_last_day = _observation_days(file_path)
+    requested_first_day = _read_day(first_day).date()
     requested_last_day = _read_day(last_day).date()
+    if downloaded_first_day > requested_first_day:
+        raise ValueError(
+            f"{file_path} starts at {downloaded_first_day}, not {requested_first_day}. "
+            "Download a shorter date range."
+        )
     if downloaded_last_day < requested_last_day:
         raise ValueError(
             f"{file_path} ends at {downloaded_last_day}, not {requested_last_day}. "
@@ -89,9 +99,23 @@ def download_geomagnetic(first_day, last_day, data_folder=DEFAULT_DATA_FOLDER):
             }
         )
 
-        if not file_path.exists():
-            urlretrieve(f"{WDC_DATA_URL}?{query}", file_path)
-        _check_download_coverage(file_path, last_day)
+        if file_path.exists():
+            try:
+                _check_download_coverage(file_path, first_day, last_day)
+            except ValueError:
+                pass
+            else:
+                downloaded_paths[name] = file_path
+                continue
+
+        temporary_path = file_path.with_suffix(".download")
+        try:
+            urlretrieve(f"{WDC_DATA_URL}?{query}", temporary_path)
+            _check_download_coverage(temporary_path, first_day, last_day)
+            temporary_path.replace(file_path)
+        finally:
+            if temporary_path.exists():
+                temporary_path.unlink()
 
         downloaded_paths[name] = file_path
 

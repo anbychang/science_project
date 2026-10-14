@@ -16,8 +16,9 @@ def _load_weather_file(file_path):
     Output: {daily_rows: {...}, ap_by_time: {...}}"""
     file_path = Path(file_path).resolve()
 
-    if file_path in _weather_cache:
-        return _weather_cache[file_path]
+    cache_key = (file_path, file_path.stat().st_mtime_ns, file_path.stat().st_size)
+    if cache_key in _weather_cache:
+        return _weather_cache[cache_key]
 
     daily_rows = {}
     ap_by_time = {}
@@ -39,7 +40,7 @@ def _load_weather_file(file_path):
         "daily_rows": daily_rows,
         "ap_by_time": ap_by_time,
     }
-    _weather_cache[file_path] = weather_data
+    _weather_cache[cache_key] = weather_data
     return weather_data
 
 

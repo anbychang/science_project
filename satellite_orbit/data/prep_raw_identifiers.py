@@ -1,4 +1,4 @@
-"""Small helpers shared by SQLite preparation files."""
+"""Create raw-record time and source identifiers."""
 
 from pathlib import Path
 

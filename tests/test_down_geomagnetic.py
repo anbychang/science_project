@@ -22,7 +22,11 @@ class GeomagneticDownloadTest(unittest.TestCase):
             file_path = Path(temporary_folder) / "geomagnetic.csv"
             file_path.write_text("2025-12-31T23:59:00Z,-10,1\n", encoding="utf-8")
 
-            result = _check_download_coverage(file_path, "2025-12-31")
+            result = _check_download_coverage(
+                file_path,
+                "2025-12-31",
+                "2025-12-31",
+            )
 
         self.assertIsNone(result)
 
@@ -34,7 +38,25 @@ class GeomagneticDownloadTest(unittest.TestCase):
             file_path.write_text("2025-10-18T10:40:00Z,-10,1\n", encoding="utf-8")
 
             with self.assertRaisesRegex(ValueError, "Download a shorter date range"):
-                _check_download_coverage(file_path, "2025-12-31")
+                _check_download_coverage(
+                    file_path,
+                    "2025-01-01",
+                    "2025-12-31",
+                )
+
+    def test_rejects_file_starting_after_requested_first_day(self):
+        """Input: file without the requested first day
+        Output: clear incomplete-download error"""
+        with tempfile.TemporaryDirectory() as temporary_folder:
+            file_path = Path(temporary_folder) / "geomagnetic.csv"
+            file_path.write_text("2025-10-18T10:40:00Z,-10,1\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "starts at"):
+                _check_download_coverage(
+                    file_path,
+                    "2025-01-01",
+                    "2025-12-31",
+                )
 
     def test_rejects_a_range_above_the_wdc_safe_limit(self):
         """Input: request longer than the WDC safe range

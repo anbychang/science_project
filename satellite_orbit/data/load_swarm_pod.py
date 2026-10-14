@@ -1,23 +1,12 @@
 """Load a Swarm-A POD file."""
 
-from datetime import datetime
-from pathlib import Path
+from datetime import datetime, timedelta
 from zipfile import ZipFile
 
 from satellite_orbit.calculation.calc_time import gps_times_to_utc
 
 KM_TO_M = 1000.0
 DM_S_TO_M_S = 0.1
-
-
-def _find_sp3_name(zip_file):
-    """Input: POD ZIP
-    Output: "path/to/orbit.sp3"""
-    for file_name in zip_file.namelist():
-        if file_name.lower().endswith(".sp3"):
-            return file_name
-
-    raise ValueError("No SP3 file found in the ZIP file.")
 
 
 def _read_time(line):
@@ -28,15 +17,15 @@ def _read_time(line):
     whole_second = int(second)
     microsecond = round((second - whole_second) * 1_000_000)
 
-    return datetime(
+    time_gps = datetime(
         int(fields[0]),
         int(fields[1]),
         int(fields[2]),
         int(fields[3]),
         int(fields[4]),
         whole_second,
-        microsecond,
     )
+    return time_gps + timedelta(microseconds=microsecond)
 
 
 def _read_position(line):
@@ -57,24 +46,18 @@ def _read_velocity(line):
     return vx, vy, vz
 
 
-def _make_orbit_state(time_gps, position, velocity):
-    """Input: {time_gps, position, velocity}
-    Output: {time, frame, position_m, velocity_m_s}"""
-    return {
-        "time": time_gps,
-        "frame": "ITRF",
-        "position_m": position,
-        "velocity_m_s": velocity,
-    }
-
-
 def load_swarm_pod(zip_path):
     """Input: Swarm-A POD ZIP
     Output: [{time, frame, position_m, velocity_m_s}, ...]"""
     orbit_states = []
 
     with ZipFile(zip_path) as zip_file:
-        sp3_name = _find_sp3_name(zip_file)
+        sp3_name = next(
+            (name for name in zip_file.namelist() if name.lower().endswith(".sp3")),
+            None,
+        )
+        if sp3_name is None:
+            raise ValueError("No SP3 file found in the ZIP file.")
 
         with zip_file.open(sp3_name) as sp3_file:
             for raw_line in sp3_file:
@@ -86,8 +69,14 @@ def load_swarm_pod(zip_path):
                     position = _read_position(line)
                 elif line.startswith("V"):
                     velocity = _read_velocity(line)
-                    state = _make_orbit_state(time_gps, position, velocity)
-                    orbit_states.append(state)
+                    orbit_states.append(
+                        {
+                            "time": time_gps,
+                            "frame": "ITRF",
+                            "position_m": position,
+                            "velocity_m_s": velocity,
+                        }
+                    )
 
     times_utc = gps_times_to_utc([state["time"] for state in orbit_states])
     for state, time_utc in zip(orbit_states, times_utc):

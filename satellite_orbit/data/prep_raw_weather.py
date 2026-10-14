@@ -5,9 +5,9 @@ from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
 from satellite_orbit.data.load_space_weather import load_space_weather
-from satellite_orbit.data.prep_raw_common import file_signature, time_to_us
+from satellite_orbit.data.prep_raw_identifiers import file_signature, time_to_us
 
-WEATHER_PREPARATION_VERSION = "2"
+WEATHER_PREPARATION_VERSION = "3"
 
 
 def weather_days(weather_file):
@@ -15,14 +15,30 @@ def weather_days(weather_file):
     Output: (first day, last day) with complete data"""
     first_day = None
     last_day = None
+    missing_ap1_days = []
 
     with Path(weather_file).open(encoding="utf-8", newline="") as file:
         for row in csv.DictReader(file):
-            if row["AP1"]:
-                day = datetime.fromisoformat(row["DATE"]).date()
-                if first_day is None:
-                    first_day = day
-                last_day = day
+            if not row["AP1"]:
+                if first_day is not None:
+                    missing_ap1_days.append(row["DATE"])
+                continue
+            if missing_ap1_days:
+                raise ValueError(
+                    "Space-weather row has missing or invalid Ap data: "
+                    f"{missing_ap1_days[0]}"
+                )
+            try:
+                for slot in range(1, 9):
+                    float(row[f"AP{slot}"])
+            except (KeyError, ValueError) as error:
+                raise ValueError(
+                    "Space-weather row has missing or invalid Ap data: "
+                    f"{row['DATE']}"
+                ) from error
+            day = datetime.fromisoformat(row["DATE"]).date()
+            first_day = first_day or day
+            last_day = day
 
     if first_day is None:
         raise ValueError("No complete space-weather row was found.")
@@ -46,19 +62,22 @@ def write_space_weather(connection, weather_file):
     Output: number of new 3-hour rows"""
     weather_file = Path(weather_file)
     signature = file_signature(weather_file)
-    old_signature = connection.execute(
-        "SELECT value FROM metadata WHERE name = 'weather_signature'"
-    ).fetchone()
-    old_version = connection.execute(
-        "SELECT value FROM metadata WHERE name = 'weather_preparation_version'"
-    ).fetchone()
-    if (
-        old_signature is not None
-        and old_signature[0] == signature
-        and old_version is not None
-        and old_version[0] == WEATHER_PREPARATION_VERSION
-    ):
-        return 0
+    metadata = dict(
+        connection.execute(
+            "SELECT name, value FROM metadata "
+            "WHERE name IN ('weather_signature', 'weather_preparation_version')"
+        )
+    )
+    if metadata:
+        if metadata == {
+            "weather_signature": signature,
+            "weather_preparation_version": WEATHER_PREPARATION_VERSION,
+        }:
+            return 0
+        raise ValueError(
+            "Space-weather source or preparation version changed. "
+            "Rebuild a fresh database instead of replacing raw rows."
+        )
 
     first_day, last_day = weather_days(weather_file)
     current_time = datetime.combine(first_day, time.min, tzinfo=timezone.utc)
@@ -67,16 +86,14 @@ def write_space_weather(connection, weather_file):
 
     while current_time <= end_time:
         try:
-            state = load_space_weather({"time": current_time}, weather_file)
+            rows.append(weather_row(load_space_weather({"time": current_time}, weather_file)))
         except (KeyError, ValueError):
-            current_time += timedelta(hours=3)
-            continue
-        rows.append(weather_row(state))
+            pass
         current_time += timedelta(hours=3)
 
     connection.executemany(
         """
-        INSERT OR REPLACE INTO space_weather (
+        INSERT OR IGNORE INTO space_weather (
             time_us, f107_sfu, f107a_sfu, f107a_last81_sfu,
             ap_daily, ap_now, ap_3h, ap_6h, ap_9h,
             ap_12_to_33h_avg, ap_36_to_57h_avg, f107_data_type
@@ -84,12 +101,11 @@ def write_space_weather(connection, weather_file):
         """,
         rows,
     )
-    connection.execute(
-        "INSERT OR REPLACE INTO metadata VALUES ('weather_signature', ?)",
-        (signature,),
-    )
-    connection.execute(
-        "INSERT OR REPLACE INTO metadata VALUES ('weather_preparation_version', ?)",
-        (WEATHER_PREPARATION_VERSION,),
+    connection.executemany(
+        "INSERT OR REPLACE INTO metadata VALUES (?, ?)",
+        [
+            ("weather_signature", signature),
+            ("weather_preparation_version", WEATHER_PREPARATION_VERSION),
+        ],
     )
     return len(rows)

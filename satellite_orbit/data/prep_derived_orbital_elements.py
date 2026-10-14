@@ -6,19 +6,13 @@ from importlib.metadata import version
 from pathlib import Path
 
 from satellite_orbit.calculation.calc_coordinates import itrf_states_to_gcrf
-from satellite_orbit.calculation.calc_forces import MU_M3_S2
-from satellite_orbit.calculation.calc_orbital_response import calculate_semi_major_axis
-from satellite_orbit.data.load_sqlite_states import load_sqlite_states
-from satellite_orbit.data.prep_raw_common import time_to_us
+from satellite_orbit.calculation.calc_orbital_response import (
+    MU_M3_S2,
+    calculate_semi_major_axis,
+)
 
 DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
 ALGORITHM_NAME = "two_body_specific_energy_gcrf_v1"
-
-
-def us_to_time(time_us):
-    """Input: Unix time in microseconds
-    Output: UTC datetime"""
-    return datetime.fromtimestamp(time_us / 1_000_000, tz=timezone.utc)
 
 
 def create_orbital_element_table(connection):
@@ -36,80 +30,69 @@ def create_orbital_element_table(connection):
     )
 
 
-def source_ranges(connection):
-    """Input: SQLite connection
-    Output: [(first_time_us, last_time_us, state_count), ...] per source file"""
-    return connection.execute(
-        """
-        SELECT MIN(time_us), MAX(time_us), COUNT(*)
-        FROM swarm_a_states
-        GROUP BY source_id
-        ORDER BY source_id
-        """
-    ).fetchall()
+def source_states(connection, source_id):
+    """Input: SQLite connection and raw POD source id
+    Output: [(time_us, ITRF state), ...]"""
+    return [
+        (
+            row[0],
+            {
+                "time": datetime.fromtimestamp(row[0] / 1_000_000, timezone.utc),
+                "frame": "ITRF",
+                "position_m": row[1:4],
+                "velocity_m_s": row[4:7],
+            },
+        )
+        for row in connection.execute(
+            """
+            SELECT time_us, x_m, y_m, z_m, vx_m_s, vy_m_s, vz_m_s
+            FROM swarm_a_states
+            WHERE source_id = ?
+            ORDER BY time_us
+            """,
+            (source_id,),
+        )
+    ]
 
 
-def source_range_is_written(connection, source_range):
-    """Input: {SQLite connection, POD source range}
-    Output: True when all states already have an element row"""
-    first_time_us, last_time_us, state_count = source_range
-    element_count = connection.execute(
-        """
-        SELECT COUNT(*) FROM swarm_a_orbital_elements
-        WHERE time_us >= ? AND time_us <= ?
-        """,
-        (first_time_us, last_time_us),
-    ).fetchone()[0]
-    return element_count == state_count
-
-
-def element_row(state):
-    """Input: one GCRF state
+def element_row(time_us, state):
+    """Input: raw time_us and one GCRF state
     Output: (time_us, semi_major_axis_m, rejection_reason)"""
     try:
         semi_major_axis_m = calculate_semi_major_axis(state)
     except ValueError as error:
         # Keep the reason so one bad POD point does not stop all later days.
-        return time_to_us(state["time"]), None, str(error)
-    return time_to_us(state["time"]), semi_major_axis_m, None
+        return time_us, None, str(error)
+    return time_us, semi_major_axis_m, None
 
 
-def write_source_range(connection, database_path, source_range):
-    """Input: {SQLite connection, database path, POD source range}
+def write_source(connection, source_id):
+    """Input: SQLite connection and raw POD source id
     Output: (written rows, rejected rows)"""
-    first_time_us, last_time_us, _ = source_range
-    states_itrf = load_sqlite_states(
-        us_to_time(first_time_us),
-        us_to_time(last_time_us),
-        database_path,
-    )
-    states_gcrf = itrf_states_to_gcrf(states_itrf)
-    rows = []
-    for state in states_gcrf:
-        rows.append(element_row(state))
+    source_rows = source_states(connection, source_id)
+    states_gcrf = itrf_states_to_gcrf([state for _, state in source_rows])
+    rows = [
+        element_row(time_us, state)
+        for (time_us, _), state in zip(source_rows, states_gcrf)
+    ]
 
     connection.executemany(
-        "INSERT OR REPLACE INTO swarm_a_orbital_elements VALUES (?, ?, ?)",
+        "INSERT INTO swarm_a_orbital_elements VALUES (?, ?, ?)",
         rows,
     )
-    rejected_rows = 0
-    for row in rows:
-        if row[2] is not None:
-            rejected_rows += 1
-    return len(rows), rejected_rows
+    return len(rows), sum(row[2] is not None for row in rows)
 
 
 def write_metadata(connection):
     """Input: SQLite connection
     Output: calculation settings are stored"""
-    settings = [
-        ("orbital_element_algorithm", ALGORITHM_NAME),
-        ("orbital_element_mu_m3_s2", str(MU_M3_S2)),
-        ("astropy_iers_data_version", version("astropy-iers-data")),
-    ]
     connection.executemany(
         "INSERT OR REPLACE INTO metadata VALUES (?, ?)",
-        settings,
+        [
+            ("orbital_element_algorithm", ALGORITHM_NAME),
+            ("orbital_element_mu_m3_s2", str(MU_M3_S2)),
+            ("astropy_iers_data_version", version("astropy-iers-data")),
+        ],
     )
 
 
@@ -122,30 +105,32 @@ def write_orbital_elements(database_path=DEFAULT_DATABASE):
 
     with sqlite3.connect(database_path) as connection:
         create_orbital_element_table(connection)
-        write_metadata(connection)
-        all_source_ranges = source_ranges(connection)
-        missing_source_ranges = []
-        for source_range in all_source_ranges:
-            if not source_range_is_written(connection, source_range):
-                missing_source_ranges.append(source_range)
+        source_ids = [
+            row[0]
+            for row in connection.execute(
+                "SELECT DISTINCT source_id FROM swarm_a_states ORDER BY source_id"
+            )
+        ]
+        connection.execute("DELETE FROM swarm_a_orbital_elements")
 
-        for source_number, source_range in enumerate(missing_source_ranges, start=1):
-            source_rows, source_rejections = write_source_range(
+        for source_number, source_id in enumerate(source_ids, start=1):
+            source_rows, source_rejections = write_source(
                 connection,
-                database_path,
-                source_range,
+                source_id,
             )
             stored_rows += source_rows
             rejected_rows += source_rejections
             connection.commit()
             print(
-                f"POD source files: {source_number}/{len(missing_source_ranges)}",
+                f"POD source files: {source_number}/{len(source_ids)}",
                 flush=True,
             )
 
+        write_metadata(connection)
+
     return {
-        "source_files": len(all_source_ranges),
-        "new_source_files": len(missing_source_ranges),
+        "source_files": len(source_ids),
+        "new_source_files": len(source_ids),
         "stored_rows": stored_rows,
         "rejected_rows": rejected_rows,
     }
@@ -156,7 +141,7 @@ def main():
     Output: orbital-element write summary"""
     result = write_orbital_elements()
     print(f"POD source files: {result['source_files']}")
-    print(f"Missing POD source files written: {result['new_source_files']}")
+    print(f"POD source files rebuilt: {result['new_source_files']}")
     print(f"Orbital-element rows written: {result['stored_rows']}")
     print(f"Rows rejected: {result['rejected_rows']}")
 

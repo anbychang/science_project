@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from satellite_orbit.data.load_swarm_pod import load_swarm_pod
-from satellite_orbit.data.prep_raw_common import file_signature, time_to_us
+from satellite_orbit.data.prep_raw_identifiers import file_signature, time_to_us
 
 
 def weather_block_time(time_utc):
@@ -38,19 +38,15 @@ def prepare_source_file(connection, zip_path):
     if old_row is not None and old_row[1] == signature:
         return None
     if old_row is None:
-        cursor = connection.execute(
+        return connection.execute(
             "INSERT INTO source_files (file_name, signature) VALUES (?, ?)",
             (zip_path.name, signature),
-        )
-        return cursor.lastrowid
+        ).lastrowid
 
-    source_id = old_row[0]
-    connection.execute("DELETE FROM swarm_a_states WHERE source_id = ?", (source_id,))
-    connection.execute(
-        "UPDATE source_files SET signature = ? WHERE source_id = ?",
-        (signature, source_id),
+    raise ValueError(
+        f"Raw POD source {zip_path.name} has a different signature. "
+        "Rebuild a fresh database instead of replacing raw states."
     )
-    return source_id
 
 
 def write_pod_file(connection, zip_path, weather_times):
@@ -66,11 +62,12 @@ def write_pod_file(connection, zip_path, weather_times):
         if time_to_us(weather_block_time(state["time"])) in weather_times
     ]
 
+    changes_before_write = connection.total_changes
     connection.executemany(
-        "INSERT OR REPLACE INTO swarm_a_states VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT OR IGNORE INTO swarm_a_states VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         rows,
     )
-    return len(rows)
+    return connection.total_changes - changes_before_write
 
 
 def write_pod_folder(connection, pod_folder, weather_times):

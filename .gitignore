@@ -1,5 +1,6 @@
 __pycache__/
 *.py[cod]
+.orekitvenv/
 data/swarm_a_pod/
 data/swarm_density_acc/
 data/geomagnetic/

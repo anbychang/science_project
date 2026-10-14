@@ -5,8 +5,10 @@ from math import sqrt
 
 import numpy as np
 
-from satellite_orbit.calculation.calc_forces import MU_M3_S2
-from satellite_orbit.calculation.calc_orbital_response import calculate_semi_major_axis
+from satellite_orbit.calculation.calc_orbital_response import (
+    MU_M3_S2,
+    calculate_semi_major_axis,
+)
 
 
 class SemiMajorAxisTest(unittest.TestCase):

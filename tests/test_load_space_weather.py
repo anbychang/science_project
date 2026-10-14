@@ -42,6 +42,31 @@ class LoadSpaceWeatherTest(unittest.TestCase):
 
         self.assertEqual(state["f107a_last81_sfu"], 103.0)
 
+    def test_reloads_a_changed_weather_file_at_the_same_path(self):
+        """Input: same weather path with changed CSV content
+        Output: later load uses the new trailing average"""
+        with tempfile.TemporaryDirectory() as temporary_folder:
+            weather_file = Path(temporary_folder) / "weather.csv"
+            header = (
+                "DATE,AP1,AP2,AP3,AP4,AP5,AP6,AP7,AP8,AP_AVG,"
+                "F10.7_OBS,F10.7_OBS_CENTER81,F10.7_OBS_LAST81,F10.7_DATA_TYPE\n"
+            )
+            first_day = datetime(2024, 5, 1).date()
+            rows = header
+            for day_offset in range(4):
+                rows += raw_weather_row(first_day + timedelta(days=day_offset), 100)
+            weather_file.write_text(rows, encoding="utf-8")
+            state_time = datetime(2024, 5, 4, 12, tzinfo=timezone.utc)
+            load_space_weather({"time": state_time}, weather_file)
+
+            rows = header
+            for day_offset in range(4):
+                rows += raw_weather_row(first_day + timedelta(days=day_offset), 200)
+            weather_file.write_text(rows, encoding="utf-8")
+            state = load_space_weather({"time": state_time}, weather_file)
+
+        self.assertEqual(state["f107a_last81_sfu"], 200.0)
+
 
 if __name__ == "__main__":
     unittest.main()

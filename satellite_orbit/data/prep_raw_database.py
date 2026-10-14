@@ -16,12 +16,6 @@ DEFAULT_GEOMAGNETIC_FOLDER = Path("data/geomagnetic")
 DEFAULT_DENSITY_FOLDER = Path("data/swarm_density_acc")
 
 
-def available_weather_times(connection):
-    """Input: SQLite connection
-    Output: {weather time_us, ...}"""
-    return {row[0] for row in connection.execute("SELECT time_us FROM space_weather")}
-
-
 def write_sqlite_database(
     database_path=DEFAULT_DATABASE,
     pod_folder=DEFAULT_POD_FOLDER,
@@ -39,7 +33,9 @@ def write_sqlite_database(
         weather_rows = write_space_weather(connection, weather_file)
         sym_h_rows = write_sym_h(connection, geomagnetic_folder)
         ae_rows = write_ae(connection, geomagnetic_folder)
-        known_weather_times = available_weather_times(connection)
+        known_weather_times = {
+            row[0] for row in connection.execute("SELECT time_us FROM space_weather")
+        }
 
         pod_files, state_rows = write_pod_folder(
             connection,
@@ -64,7 +60,7 @@ def write_sqlite_database(
 
 
 def main():
-    """Input: python -m satellite_orbit.data.prep_raw_sqlite
+    """Input: python -m satellite_orbit.data.prep_raw_database
     Output: database update summary"""
     result = write_sqlite_database()
     print(f"Database: {result['database_path']}")

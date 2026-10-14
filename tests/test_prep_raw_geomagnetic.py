@@ -38,6 +38,28 @@ class GeomagneticSQLiteTest(unittest.TestCase):
             self.assertEqual(row, (-45.0, 300.0))
             connection.close()
 
+    def test_does_not_replace_an_existing_sym_h_observation(self):
+        """Input: same time with a different SYM-H value
+        Output: original raw SYM-H observation remains stored"""
+        with tempfile.TemporaryDirectory() as temp_folder:
+            folder = Path(temp_folder)
+            file_path = folder / "sym_h_test.csv"
+            file_path.write_text("2024-05-10T12:00:00Z,-45,1\n", encoding="utf-8")
+            connection = sqlite3.connect(":memory:")
+            create_tables(connection)
+            write_sym_h(connection, folder)
+            file_path.write_text("2024-05-10T12:00:00Z,-99,2\n", encoding="utf-8")
+
+            write_sym_h(connection, folder)
+
+            self.assertEqual(
+                connection.execute(
+                    "SELECT sym_h_nt, sym_h_version FROM geomagnetic"
+                ).fetchone(),
+                (-45.0, 1),
+            )
+            connection.close()
+
 
 if __name__ == "__main__":
     unittest.main()

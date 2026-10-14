@@ -68,6 +68,9 @@ def download_file(source_file, data_folder):
     data_folder.mkdir(parents=True, exist_ok=True)
     download_url = f"{ESA_SERVER}?do=download&file={quote(source_file['path'])}"
     urlretrieve(download_url, output_path)
+    if output_path.stat().st_size != source_file["size"]:
+        output_path.unlink()
+        raise ValueError(f"Incomplete POD download for {source_file['name']}.")
     return output_path
 
 

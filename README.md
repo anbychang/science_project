@@ -13,8 +13,14 @@ satellite_orbit/
 ├─ data/          [下載 | 讀取 | SQLite]
 └─ calculation/   [座標 | 物理 | 數值]
 
-data/             原始檔與工作 SQLite
-plans/            現行規格與封存提案
+data/
+├─ swarm_a_pod/        raw POD ZIP
+├─ geomagnetic/        raw SYM-H / AE CSV
+├─ space_weather/      raw F10.7 / Ap CSV
+├─ swarm_density_acc/  raw DNSAACC density ZIP；目前不進主分析
+└─ swarm_a_data.sqlite 可重建的 working database；含 raw 與 derived table
+
+plans/            現行規格、階段證據與歷史報告
 ```
 
 ## 資料流
@@ -35,7 +41,6 @@ plans/            現行規格與封存提案
 | `prep_raw_*` | 原始資料寫入 raw table |
 | `prep_derived_*` | raw table 產生 derived table |
 | `calc_*` | 物理與數值計算 |
-| `prep_feature_alignment.py` | P1.6 時間對齊規則 |
 
 raw table 不可修改。每個 calculation 建立自己的 derived table，以原始 `time_us` 追溯來源。
 
@@ -68,9 +73,11 @@ orbit_series = [state, ...]
 ## 重建 raw SQLite
 
 ```powershell
-python -m satellite_orbit.data.prep_raw_sqlite
+python -m satellite_orbit.data.prep_raw_database
 ```
 
 輸出：`data/swarm_a_data.sqlite`。可由原始檔重建，不提交 Git。
 
 下一步拆分與停止條件：[P1.4 至 P1.7 執行計畫](plans/phase_1_data_preparation/P1.4_TO_P1.7_EXECUTION_PLAN.md)。
+
+資料血緣入口：[Phase 1 data lineage](plans/phase_1_data_preparation/data_lineage/README.md)。

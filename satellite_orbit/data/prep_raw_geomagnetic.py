@@ -3,19 +3,18 @@
 from pathlib import Path
 
 from satellite_orbit.data.load_geomagnetic import load_geomagnetic_file
-from satellite_orbit.data.prep_raw_common import time_to_us
+from satellite_orbit.data.prep_raw_identifiers import time_to_us
 
 def geomagnetic_rows(file_path):
     """Input: local SYM-H or AE CSV path
     Output: [(time_us, value_nt, version), ...]"""
-    observations = load_geomagnetic_file(file_path)
     return [
         (
             time_to_us(observation["time"]),
             observation["value_nt"],
             observation["version"],
         )
-        for observation in observations
+        for observation in load_geomagnetic_file(file_path)
     ]
 
 
@@ -33,6 +32,7 @@ def write_sym_h(connection, geomagnetic_folder):
             ON CONFLICT(time_us) DO UPDATE SET
                 sym_h_nt = excluded.sym_h_nt,
                 sym_h_version = excluded.sym_h_version
+            WHERE geomagnetic.sym_h_nt IS NULL
             """,
             rows,
         )
@@ -55,6 +55,7 @@ def write_ae(connection, geomagnetic_folder):
             ON CONFLICT(time_us) DO UPDATE SET
                 ae_nt = excluded.ae_nt,
                 ae_version = excluded.ae_version
+            WHERE geomagnetic.ae_nt IS NULL
             """,
             rows,
         )
