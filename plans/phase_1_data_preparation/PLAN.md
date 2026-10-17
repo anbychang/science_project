@@ -151,12 +151,12 @@ semi_major_axis_m = -earth_mu_m3_s2 / (2 * specific_energy_m2_s2)
 
 ### P1.4 品質控制與連續區間
 
-在平滑前套用品質規則。保留 `is_usable` 與機器可讀的 `rejection_reason`，不刪除被拒絕的原始列。遇到 provenance/frame/cadence/time-gap change、maneuver candidate 或 quality failure 時切開 chunk。
+在平滑前套用品質規則。保留 `is_usable` 與機器可讀的 `rejection_reason`，不刪除被拒絕的原始列。遇到 product stream、provenance frame、cadence、time gap 或 quality failure 時切開 chunk。Q4 maneuver candidate 目前只做 audit，不切 chunk。
 
 完成條件：每個保留的 10 分鐘 row 都來自一個連續 usable chunk，並報告每種 `rejection_reason` 的數量。
 
 完成：P1.4-A/B 產生 14,558,400 quality rows 與 4 個 final `chunk_id`；P1.4-C 將 SP3
-provenance 寫入 `source_files`，Q3 是 `quality_source: unavailable`；P1.4-D 完成 residual
+provenance 寫入 `swarm_a_pod_source_provenance`，Q3 是 `quality_source: unavailable`；P1.4-D 完成 residual
 audit，Q4 明確採 audit-only，保留 rows、不設未校準 rejection threshold。細節見
 `P1.4_QUALITY_CONTROL.md`；完成證據見 `PHASE_1_EXECUTION_PLAN.md`。
 
@@ -166,7 +166,7 @@ audit，Q4 明確採 audit-only，保留 rows、不設未校準 rejection thresh
 2. 只使用同一個連續 chunk 內、有至少 56 筆有效 POD observation 的 bin；記錄 `pod_count` 與最大 source-time gap。
 3. 先做已驗證的 short-period treatment；不得直接對 osculating 半長軸做 Savitzky-Golay
    或 B-spline 再把導數當 decay。
-4. 每個 valid chunk 分開處理，不可跨 gap 或 maneuver candidate；只在通過 P1.5-A 的
+4. 每個 valid chunk 分開處理，不可跨 gap；只在通過 P1.5-A 的
    較慢 series 上計算平滑值與一階導數。
 5. 儲存 `semi_major_axis_smooth_m`、`da_dt_smooth_m_s` 與正值代表下降的
    `decay_rate_smooth_m_day`。
@@ -285,14 +285,15 @@ SP3 可能沒有逐 epoch 的單一 `good` flag。實作 Q3 前先確認 ESA pro
 | Constant two-body state sequence | stable semi-major axis；平滑後 decay rate 接近零 |
 | Synthetic linear semi-major-axis decrease | derivative 大小正確，且 decay-rate sign convention 正確 |
 | One missing POD block | 形成兩個 chunk；derived row 與 smoothing 不可跨 block |
-| One injected state jump | 成為 maneuver candidate；切開 chunk |
+| One injected state jump | 成為 maneuver candidate；記錄 residual，不切 chunk |
 | SYM-H source gap | 不可跨 gap interpolation |
 | Ap boundary at 03:00 UTC | value 只在 official block boundary 改變 |
 
 ## 暫緩議題：POD reference-frame transition
 
-下載的 Swarm-A SP3 檔跨越 `IGb14`、`IGS20`、`IGb20` 與 `IGc20`。`source_files` 已保存
-SP3 frame label、coverage、epoch count、cadence 與 time system；loader 仍把 state 泛稱為
+下載的 Swarm-A SP3 檔跨越 `IGb14`、`IGS20`、`IGb20` 與 `IGc20`。
+`swarm_a_pod_source_provenance` 已保存 SP3 frame label、coverage、epoch count、cadence 與
+time system；loader 仍把 state 泛稱為
 `ITRF`。
 
 現在 POD inventory 不處理它。正式做跨時段 semi-major-axis、decay-rate 或比較前，要：

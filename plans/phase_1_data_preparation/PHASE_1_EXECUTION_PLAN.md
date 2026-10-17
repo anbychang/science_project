@@ -51,7 +51,7 @@ mean orbit、10-minute bin、smoothing、derivative 都不可跨 `chunk_id`。
 | P1.1/P1.2 raw intake | [done] | 1,685 POD ZIP；14,558,400 `swarm_a_states` |
 | P1.3 osculating element | [done] | 14,558,400 `swarm_a_orbital_elements` |
 | P1.4-A/B chunk rebuild | [done] | 14,558,400 quality rows；4 final chunks |
-| P1.4-C provenance + Q3 | [done] | `source_files` SP3 metadata；`quality_source: unavailable` |
+| P1.4-C provenance + Q3 | [done] | `swarm_a_pod_source_provenance` SP3 metadata；`quality_source: unavailable` |
 | P1.4-D Q4 residual audit | [done: audit-only] | synthetic jump sensitivity；不設 rejection threshold |
 | P1.5-A mean-orbit method | [done] | Brouwer-Lyddane；3 intervals suppression 99.33--99.45% |
 | P1.5 full mean batch | [done] | 14,558,400 mean rows；missing 0；rejection 0；SQLite integrity `ok` |
