@@ -3,7 +3,7 @@
 import unittest
 from datetime import datetime, timezone
 
-from satellite_orbit.calculation.calc_time import gps_times_to_utc
+from satellite_orbit.calculation.pod.calc_time import gps_times_to_utc
 
 
 class GpsTimeConversionTest(unittest.TestCase):

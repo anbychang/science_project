@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import numpy as np
 from astropy.utils.iers import IERSStaleWarning
 
-from satellite_orbit.calculation.calc_coordinates import itrf_states_to_gcrf
+from satellite_orbit.calculation.pod.calc_coordinates import itrf_states_to_gcrf
 
 
 class CoordinateConversionTest(unittest.TestCase):

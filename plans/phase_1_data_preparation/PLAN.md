@@ -14,6 +14,23 @@
 - 所有資料對齊都使用 UTC。
 - 衰減率定義為 `decay_rate_smooth_m_day = -da_dt_smooth_m_s * 86400`；正值代表半長軸下降。
 
+### Chunk 規則
+
+每個計算都在安全的 `chunk_id` 內完成。`source_id` 或每日 ZIP 改變本身不是 boundary；
+只要 product stream、SP3 frame、cadence
+或時間連續性有任何改變或不確定性，就結束舊 chunk、開始新 chunk。多切可以接受；少切
+不可以。只保存 `chunk_id`，不保存 `chunk_reason`。
+
+```text
+chunk_id
+  -> mean orbit
+  -> 10-minute bin
+  -> smoothing
+  -> derivative
+```
+
+任何一步都不可跨 chunk。
+
 ## 資料來源與原始解析度
 
 | 資料來源 | 原始解析度 | 原始儲存 | 目標 10 分鐘特徵 |
@@ -64,16 +81,24 @@ load SQLite raw data
 
 每一類 raw data 各有一份獨立文件：`data_lineage/DATA_LINEAGE_POD.md`、`data_lineage/DATA_LINEAGE_SPACE_WEATHER.md`、`data_lineage/DATA_LINEAGE_GEOMAGNETIC.md`、`data_lineage/DATA_LINEAGE_DENSITY.md`。入口是 `data_lineage/README.md`。
 
-每個處理 stage 固定使用下列欄位：
+每個處理 stage 固定使用一個 block：
 
 ```text
+### [N] input -> output
 資料：輸入資料或 shape
 程式：module.py -> function()
 動作：轉換、計算、filter、join 或停止條件
-輸出：檔案、SQLite table 或 planned table
-Shape：多行 {field, ...}；巢狀資料換行
-例：一個具體輸入 -> 輸出
+輸出：檔案、SQLite table、derived table 或 temporary state
+e.g.：一個具體輸入 -> 動作 -> 具體輸出
+
+### [N] current stored state
+path、table、fields、raw / derived / temporary
+
+### [STOP]
+未建立、未 join、禁止 operation
 ```
+
+`資料`、`輸出`、`e.g.` 的 `{}` 與 `[]` 使用多行；不以長句重述欄位。每類 raw data 各有一份文件，不在 README 或 memo 複製完整流程。
 
 未實作 stage 的 `程式` 必須寫「未建立」，不能用規格文件偽裝成現行程式。
 
@@ -90,7 +115,7 @@ Shape：多行 {field, ...}；巢狀資料換行
 
 ### P1.2 建立原始資料庫
 
-使用 `python -m satellite_orbit.data.prep_raw_database`。它把原始觀測寫到分開的 SQLite tables；POD row 只連到可用的 3 小時 weather block。
+使用 `python -m satellite_orbit.data.database.prep_raw_database`。它把原始觀測寫到分開的 SQLite tables；POD row 只連到可用的 3 小時 weather block。
 
 完成條件：已報告 row count、首尾 UTC、重複時間與 source provenance。原始觀測不可在原 table 中 resample。
 
@@ -126,32 +151,32 @@ semi_major_axis_m = -earth_mu_m3_s2 / (2 * specific_energy_m2_s2)
 
 ### P1.4 品質控制與連續區間
 
-在平滑前套用品質規則。保留 `is_usable` 與機器可讀的 `rejection_reason`，不刪除被拒絕的原始列。遇到 source-file boundary、time gap、maneuver candidate 或 quality failure 時切開區間。
+在平滑前套用品質規則。保留 `is_usable` 與機器可讀的 `rejection_reason`，不刪除被拒絕的原始列。遇到 provenance/frame/cadence/time-gap change、maneuver candidate 或 quality failure 時切開 chunk。
 
-完成條件：每個保留的 10 分鐘 row 都來自一個連續 usable interval，並報告每種 `rejection_reason` 的數量。
+完成條件：每個保留的 10 分鐘 row 都來自一個連續 usable chunk，並報告每種 `rejection_reason` 的數量。
 
-目前進度：P1.4-A 已建立 `swarm_a_pod_quality`，標記單筆資料的 Q1/Q5；P1.4-B
-已量測 10 秒 native cadence 並建立 `interval_id`。Q3 ESA quality flag 與 Q4
-maneuver candidate 尚未校準，因此 P1.4 尚未完成。細節見 `P1.4_QUALITY_CONTROL.md`。
-可執行工作拆分見 `P1.4_TO_P1.7_EXECUTION_PLAN.md`。
+完成：P1.4-A/B 產生 14,558,400 quality rows 與 4 個 final `chunk_id`；P1.4-C 將 SP3
+provenance 寫入 `source_files`，Q3 是 `quality_source: unavailable`；P1.4-D 完成 residual
+audit，Q4 明確採 audit-only，保留 rows、不設未校準 rejection threshold。細節見
+`P1.4_QUALITY_CONTROL.md`；完成證據見 `PHASE_1_EXECUTION_PLAN.md`。
 
 ### P1.5 Resample 並推導衰減率
 
 1. 定義 UTC 10 分鐘 bin boundary。
-2. 只使用同一個連續區間內、有足夠有效 POD observation 的 bin；記錄 `pod_count` 與最大 source-time gap。
+2. 只使用同一個連續 chunk 內、有至少 56 筆有效 POD observation 的 bin；記錄 `pod_count` 與最大 source-time gap。
 3. 先做已驗證的 short-period treatment；不得直接對 osculating 半長軸做 Savitzky-Golay
    或 B-spline 再把導數當 decay。
-4. 每個 valid interval 分開處理，不可跨 gap 或 maneuver candidate；只在通過 P1.5-A 的
+4. 每個 valid chunk 分開處理，不可跨 gap 或 maneuver candidate；只在通過 P1.5-A 的
    較慢 series 上計算平滑值與一階導數。
 5. 儲存 `semi_major_axis_smooth_m`、`da_dt_smooth_m_s` 與正值代表下降的
    `decay_rate_smooth_m_day`。
 
 smoothing method 與參數是要校準的決策，不是先驗事實；用 held-out interval 選擇，並把方法與數值記進 metadata。
 
-目前進度：direct B-spline 試跑與 direct raw Savitzky-Golay synthetic test 都會把強烈
-short-period variation 的導數誤當 decay，尚未產生 P1.5 資料集。接下來要驗證
-orbit-average；細節見 `P1.5_RESAMPLE_AND_DECAY.md`。不可跳過 short-period treatment
-而直接發布衰減率。
+完成：direct raw Savitzky-Golay 已淘汰；Brouwer-Lyddane mean-orbit method 通過 synthetic
+與 real-POD gate，並建立 14,558,400 mean rows。`swarm_a_orbit_10min` 有 242,640 列，
+每個連續 run 以 centered Savitzky-Golay {window: 73, order: 2} 產生 derivative；兩端各
+排除 36 列後，`swarm_a_analysis_10min` 有 242,352 列。
 
 完成條件：乾淨的 synthetic linear-decay input 可恢復正確 slope；輸出不可跨 source gap。
 
@@ -167,7 +192,9 @@ orbit-average；細節見 `P1.5_RESAMPLE_AND_DECAY.md`。不可跳過 short-peri
   不能用於禁止 future leakage 的分析資料。
 - 每個 feature 都保存原始 source timestamp。
 
-完成條件：join 不可使用 future value；00:00 UTC 與 3-hour Ap transition 必須有明確測試。
+完成：join 不使用 future value；00:00 UTC、3-hour Ap transition、SYM-H interpolation/gap
+與前一日 F10.7/F10.7A source time 均有 contract tests；P1.7 audit 也確認 final rows 無
+不合規 future reference。
 
 ### P1.7 發布衍生資料集
 
@@ -181,7 +208,7 @@ orbit-average；細節見 `P1.5_RESAMPLE_AND_DECAY.md`。不可跳過 short-peri
   decay_rate_smooth_m_day,
   pod_count,
   max_pod_gap_s,
-  interval_id,
+  chunk_id,
   sym_h_nt,
   sym_h_left_time,
   sym_h_right_time,
@@ -200,18 +227,19 @@ orbit-average；細節見 `P1.5_RESAMPLE_AND_DECAY.md`。不可跳過 short-peri
 
 POD 最終輸出欄位、行數限制與檢驗條件見 `POD_FINAL_OUTPUT_SPEC.md`。
 
-完成條件：產物可從 raw input 重建，metadata 足以重現結果。
+完成條件：產物可從 raw input fresh rebuild，metadata 足以重現結果。
 
 ## 完成檢查
 
-- [ ] POD coverage 與 native sampling interval 已 audit。
+- [x] POD coverage 與 native sampling interval 已 audit。
 - [x] Raw SQLite database 已成功 rebuilt。
 - [x] GCRF orbital-element calculation 已驗證。
-- [ ] Quality rules 已校準並產生 rejection report。
+- [x] Quality rules 已完成；Q4 明確 audit-only，rejection 0。
 - [x] Direct raw Savitzky-Golay candidate 已用 synthetic data 淘汰。
-- [ ] Orbit-average / mean-element method 已用 synthetic data 驗證。
-- [ ] 10-minute feature join 已在 boundary 與 gap 驗證。
-- [ ] Derived dataset 與 metadata 可重建。
+- [x] Mean-element method 已用 synthetic 與 real-POD data 驗證；全庫 14,558,400 列完成。
+- [x] 10-minute feature join 已在 boundary 與 gap 驗證。
+- [x] 現有 SQLite 的 derived dataset 與 metadata 已建立；P1.7 integrity / foreign-key / causality audit 通過。
+- [ ] weather preparation v2/v3 修正後，從 raw files fresh rebuild 並重新通過 P1.7 audit。
 
 ## 暫緩決定
 
@@ -231,24 +259,24 @@ POD 最終輸出欄位、行數限制與檢驗條件見 `POD_FINAL_OUTPUT_SPEC.m
 | ID | 規則 | 初步動作 | 狀態 |
 | --- | --- | --- | --- |
 | Q1 | 缺失、non-finite 或時間不遞增的 POD `state` | reject row | fixed |
-| Q2 | 相鄰 POD 時間差超過量測到的 cadence tolerance | close interval；不可跨它內插 | 由 inventory 校準 |
-| Q3 | ESA POD 有官方 quality/accuracy flag 且不符合最高可用品質 | reject row | 先確認 product metadata |
-| Q4 | `state` jump 與相鄰 observation 不一致 | flag maneuver candidate 並 close interval | 由 residual 校準 |
+| Q2 | provenance/frame/cadence change，或相鄰 POD 時間 gap | close chunk；不可跨它內插 | fixed |
+| Q3 | ESA POD 有官方 quality/accuracy flag 且不符合最高可用品質 | `quality_source: unavailable`；不杜撰 filter | 已確認本機 SP3xCOM 無可用欄位 |
+| Q4 | `state` jump 與相鄰 observation 不一致 | audit-only；記錄 residual，不拒絕 row、不切 chunk | fixed audit-only |
 | Q5 | energy 無效：non-finite、`specific_energy_m2_s2 >= 0` 或 radius 無效 | reject row | fixed |
-| Q6 | 10-minute bin observation 不足或跨 interval boundary | exclude derived bin | 校準最小數量 |
+| Q6 | `pod_count <= 55` 或跨 chunk boundary | exclude derived bin | fixed |
 | Q7 | feature 缺失或需要 future value | 保留 orbit row；標記 feature missing | fixed |
 
 ### 門檻決定
 
 不要把 `decay_rate_smooth_m_day > 0.3` 當 raw-data acceptance rule。它會刪掉弱但有效的衰減，也會偏向只留下 active period。若研究後來只看 strong-decay window，應在完成 QC 後當成 analysis selection。
 
-不要把 `delta_v < 10 m/s` 當完成的 maneuver test。先量測 clean interval 的 epoch-to-epoch residual，再選文件化的 robust threshold；同時看 position 與 velocity，並檢查 file boundary 附近的 candidate。
+不要把 `delta_v < 10 m/s` 當 maneuver rejection rule。現階段只量測 clean interval 的 epoch-to-epoch residual、position 與 velocity；沒有 external maneuver labels 前不設定 threshold，也不改變 chunk。
 
 SP3 可能沒有逐 epoch 的單一 `good` flag。實作 Q3 前先確認 ESA product field 與 quality document；若沒有可用 flag，要明確記錄並改用可重現的一致性檢查。
 
 ### 必要報告
 
-每一版產物都要報告 raw/usable POD row count、每種 `rejection_reason`、continuous interval coverage、POD cadence/gap、maneuver residual 與 derived-feature missingness。
+每一版產物都要報告 raw/usable POD row count、每種 `rejection_reason`、continuous chunk coverage、POD cadence/gap、maneuver residual 與 derived-feature missingness。
 
 ### 最小驗證案例
 
@@ -256,20 +284,22 @@ SP3 可能沒有逐 epoch 的單一 `good` flag。實作 Q3 前先確認 ESA pro
 | --- | --- |
 | Constant two-body state sequence | stable semi-major axis；平滑後 decay rate 接近零 |
 | Synthetic linear semi-major-axis decrease | derivative 大小正確，且 decay-rate sign convention 正確 |
-| One missing POD block | 形成兩個 interval；derived row 與 smoothing 不可跨 block |
-| One injected state jump | 成為 maneuver candidate；切開 interval |
+| One missing POD block | 形成兩個 chunk；derived row 與 smoothing 不可跨 block |
+| One injected state jump | 成為 maneuver candidate；切開 chunk |
 | SYM-H source gap | 不可跨 gap interpolation |
 | Ap boundary at 03:00 UTC | value 只在 official block boundary 改變 |
 
 ## 暫緩議題：POD reference-frame transition
 
-下載的 Swarm-A SP3 檔跨越 `IGb14`、`IGS20`、`IGb20` 與 `IGc20`。SQLite 保留 source ZIP 名稱，但沒有存 SP3 frame label；loader 把全部 state 都標成 `ITRF`。
+下載的 Swarm-A SP3 檔跨越 `IGb14`、`IGS20`、`IGb20` 與 `IGc20`。`source_files` 已保存
+SP3 frame label、coverage、epoch count、cadence 與 time system；loader 仍把 state 泛稱為
+`ITRF`。
 
 現在 POD inventory 不處理它。正式做跨時段 semi-major-axis、decay-rate 或比較前，要：
 
-1. 讀取並依 source ZIP 儲存 SP3 frame label。
+1. [done] 讀取並依 source ZIP 儲存 SP3 frame label。
 2. 決定並記錄是否需要 realization-specific transformation。
-3. 檢查每個 transition date 的 semi-major-axis continuity。
+3. [done] 報告每個 transition 前後的 semi-major-axis median；不套用人為 offset。
 
 ## 暫緩議題：IERS 時間與地球方向資料
 

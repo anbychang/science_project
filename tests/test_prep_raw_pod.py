@@ -5,9 +5,15 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
-from satellite_orbit.data.prep_raw_pod import prepare_source_file, weather_block_time
-from satellite_orbit.data.prep_raw_schema import create_tables
+from satellite_orbit.data.database.prep_raw_identifiers import time_to_us
+from satellite_orbit.data.database.prep_raw_schema import create_tables
+from satellite_orbit.data.pod.prep_raw_pod import (
+    prepare_source_file,
+    weather_block_time,
+    write_pod_file,
+)
 
 
 class PodWeatherBlockTest(unittest.TestCase):
@@ -40,7 +46,8 @@ class PodWeatherBlockTest(unittest.TestCase):
             connection = sqlite3.connect(":memory:")
             create_tables(connection)
             connection.execute(
-                "INSERT INTO source_files VALUES (1, 'POD.ZIP', 'old-signature')"
+                "INSERT INTO source_files (source_id, file_name, signature) "
+                "VALUES (1, 'POD.ZIP', 'old-signature')"
             )
             connection.execute(
                 "INSERT INTO swarm_a_states VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1)"
@@ -56,6 +63,88 @@ class PodWeatherBlockTest(unittest.TestCase):
             self.assertEqual(
                 connection.execute("SELECT COUNT(*) FROM swarm_a_states").fetchone()[0],
                 1,
+            )
+            connection.close()
+
+    def test_rejects_when_loaded_state_count_differs_from_sp3_inventory(self):
+        """Input: SP3 inventory with two epochs but one loaded state
+        Output: failure and no partial raw POD records"""
+        with tempfile.TemporaryDirectory() as temp_folder:
+            zip_path = Path(temp_folder) / "POD.ZIP"
+            zip_path.write_bytes(b"test pod")
+            time_utc = datetime(2026, 1, 1, tzinfo=timezone.utc)
+            connection = sqlite3.connect(":memory:")
+            create_tables(connection)
+
+            with (
+                patch(
+                    "satellite_orbit.data.pod.prep_raw_pod.load_swarm_pod",
+                    return_value=[
+                        {
+                            "time": time_utc,
+                            "position_m": [1.0, 2.0, 3.0],
+                            "velocity_m_s": [4.0, 5.0, 6.0],
+                        }
+                    ],
+                ),
+                patch(
+                    "satellite_orbit.data.pod.prep_raw_pod.load_sp3_inventory",
+                    return_value={"epoch_count": 2},
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "inventory=2, loaded=1"):
+                    write_pod_file(connection, zip_path, {time_to_us(time_utc)})
+
+            self.assertEqual(
+                connection.execute("SELECT COUNT(*) FROM source_files").fetchone()[0],
+                0,
+            )
+            self.assertEqual(
+                connection.execute("SELECT COUNT(*) FROM swarm_a_states").fetchone()[0],
+                0,
+            )
+            connection.close()
+
+    def test_rejects_when_kept_state_is_already_stored(self):
+        """Input: one loaded state whose time already exists
+        Output: clear count failure instead of silent INSERT OR IGNORE"""
+        with tempfile.TemporaryDirectory() as temp_folder:
+            zip_path = Path(temp_folder) / "POD.ZIP"
+            zip_path.write_bytes(b"test pod")
+            time_utc = datetime(2026, 1, 1, tzinfo=timezone.utc)
+            connection = sqlite3.connect(":memory:")
+            create_tables(connection)
+            connection.execute(
+                "INSERT INTO swarm_a_states VALUES (?, 1, 1, 1, 1, 1, 1, ?, 1)",
+                (1, 1),
+            )
+
+            with (
+                patch(
+                    "satellite_orbit.data.pod.prep_raw_pod.load_swarm_pod",
+                    return_value=[
+                        {
+                            "time": time_utc,
+                            "position_m": [1.0, 2.0, 3.0],
+                            "velocity_m_s": [4.0, 5.0, 6.0],
+                        }
+                    ],
+                ),
+                patch(
+                    "satellite_orbit.data.pod.prep_raw_pod.load_sp3_inventory",
+                    return_value={"epoch_count": 1},
+                ),
+                patch(
+                    "satellite_orbit.data.pod.prep_raw_pod.pod_row",
+                    return_value=(1, 1, 1, 1, 1, 1, 1, 1, 2),
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "kept=1, inserted=0"):
+                    write_pod_file(connection, zip_path, {time_to_us(time_utc)})
+
+            self.assertEqual(
+                connection.execute("SELECT COUNT(*) FROM source_files").fetchone()[0],
+                0,
             )
             connection.close()
 

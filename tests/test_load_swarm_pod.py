@@ -3,7 +3,7 @@
 import unittest
 from datetime import datetime
 
-from satellite_orbit.data.load_swarm_pod import _read_time
+from satellite_orbit.data.pod.load_swarm_pod import _read_time
 
 
 class PodTimeParseTest(unittest.TestCase):

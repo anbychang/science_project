@@ -7,8 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from satellite_orbit.data.prep_raw_schema import create_tables
-from satellite_orbit.data.prep_raw_weather import write_space_weather
+from satellite_orbit.data.database.prep_raw_schema import create_tables
+from satellite_orbit.data.space_weather.prep_raw_weather import write_space_weather
 
 
 def weather_state(state, _file_path):
@@ -41,7 +41,7 @@ class SpaceWeatherSQLiteTest(unittest.TestCase):
             connection = sqlite3.connect(":memory:")
             create_tables(connection)
             with patch(
-                "satellite_orbit.data.prep_raw_weather.load_space_weather",
+                "satellite_orbit.data.space_weather.prep_raw_weather.load_space_weather",
                 side_effect=weather_state,
             ):
                 write_space_weather(connection, weather_file)
@@ -139,7 +139,7 @@ class SpaceWeatherSQLiteTest(unittest.TestCase):
             create_tables(connection)
 
             with patch(
-                "satellite_orbit.data.prep_raw_weather.load_space_weather",
+                "satellite_orbit.data.space_weather.prep_raw_weather.load_space_weather",
                 side_effect=weather_state,
             ):
                 self.assertEqual(write_space_weather(connection, weather_file), 8)

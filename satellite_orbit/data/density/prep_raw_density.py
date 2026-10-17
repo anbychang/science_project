@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from satellite_orbit.data.load_swarm_density import load_swarm_density
-from satellite_orbit.data.prep_raw_identifiers import time_to_us
+from satellite_orbit.data.database.prep_raw_identifiers import time_to_us
+from satellite_orbit.data.density.load_swarm_density import load_swarm_density
 
 
 def density_row(density_point, file_name):

@@ -5,7 +5,7 @@ from math import sqrt
 
 import numpy as np
 
-from satellite_orbit.calculation.calc_orbital_response import (
+from satellite_orbit.calculation.pod.calc_orbital_response import (
     MU_M3_S2,
     calculate_semi_major_axis,
 )

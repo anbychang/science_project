@@ -1,92 +1,125 @@
 # Space Weather Data Lineage
 
-範圍：CelesTrak `SW-All.csv` -> 3-hour `space_weather` rows -> P1.6 solar / Ap features。
+```text
+SW-All.csv -> daily values -> 3-hour WeatherRecord -> SQLite
+```
 
-狀態：raw table 完成；P1.6 join 未建立。
-
-## 1. 下載 daily CSV
-
-資料：CelesTrak `SW-All.csv`。
-
-程式：`down_space_weather.py` -> `download_space_weather()`。
-
-動作：下載 daily CSV；已有本機檔時直接返回。
-
-輸出：`data/space_weather/SW-All.csv`。
-
-Shape：
+## [1] local CSV -> daily weather rows
 
 ```text
-weather_day = {
-  day,
-  f107_obs,
-  f107_center81,
-  f107_last81,
-  ap_daily,
-  ap_slots: [ap_00, ap_03, ap_06, ap_09, ap_12, ap_15, ap_18, ap_21],
-  f107_data_type
+load_space_weather.py -> _load_weather_file()
+prep_raw_weather.py -> weather_days()
+
+check AP1..AP8
+```
+
+```text
+{
+  DATE: 2024-05-10,
+  F10.7_OBS: 150.2,
+  F10.7_OBS_CENTER81: 145.8,
+  AP_AVG: 8,
+  AP1: 6,
+  ...,
+  AP8: 12
 }
 ```
 
-例：一個 `weather_day` 會展開為 `00:00` 到 `21:00 UTC` 的 8 個 rows。
-
-## 2. daily row -> 3-hour raw row
-
-資料：`weather_day`；前一日 `weather_day`；過去 57 小時 Ap slots。
-
-程式：`prep_raw_database.py` -> `write_sqlite_database()`；`prep_raw_weather.py` -> `write_space_weather()` -> `weather_row()`；`load_space_weather.py` -> `load_space_weather()`。
-
-動作：daily row 展開為 8 個 official 3-hour blocks；計算 Ap history；前日 `f107_obs` -> `f107_sfu`；保存 centered / trailing 81-day values。
-
-輸出：`space_weather`。
-
-Shape：
-
 ```text
-space_weather_row = {
-  time_us,
-  f107_sfu,
-  f107a_sfu,
-  f107a_last81_sfu,
-  ap_values: [
-    daily,
-    now,
-    minus_3h,
-    minus_6h,
-    minus_9h,
-    avg_12_to_33h,
-    avg_36_to_57h
-  ],
-  f107_data_type
-}
-```
-
-例：target `2024-05-10 14:20 UTC` -> 使用 `12:00 UTC` 的 `space_weather_row`；它的 `f107_sfu` 來自 `2024-05-09`。
-
-## 3. 未建立：P1.6 solar / Ap feature
-
-資料：`swarm_a_orbit_10min_row + space_weather_row`。
-
-程式：未建立；規則在 `P1.6_ANALYSIS_SCHEMA.md`。
-
-動作：Ap 用 target 所在 official 3-hour block；F10.7 與 F10.7A 都用前一日 source；analysis F10.7A 用 `f107a_last81_sfu`，不用 centered `f107a_sfu`。
-
-預計輸出：
-
-```text
-solar_ap_feature = {
-  ap: {
-    ap_now,
-    ap_source_time_us
+[
+  {
+    day: 2024-05-10 UTC,
+    f107: 150.2 sfu,
+    f107a: 145.8 sfu,
+    ap_slots: [6, 8, 10, 12, 9, 7, 5, 12]
   },
-  solar: {
-    f107_sfu,
-    f107_source_time_us,
-    f107a_sfu,
-    f107a_source_time_us,
-    f107_data_type
-  }
+  ...
+]
+```
+
+## [2] one 3-hour time -> one WeatherRecord
+
+```text
+load_space_weather.py -> load_space_weather()
+
+previous-day F10.7
+previous-day causal F10.7A
+current / previous Ap slots
+```
+
+```text
+{time: 2024-05-10 12:00:00 UTC}
+```
+
+```text
+{
+  time: 2024-05-10 12:00:00 UTC,
+  f107: 149.4 sfu,
+  f107a: 145.8 sfu,
+  ap: [8, 10, 8, 6, 5, 7.5, 6.1],
+  f107_data_type: "OBS"
 }
 ```
 
-缺資料：weather feature -> `NULL`；orbit row 保留。
+## [3] [WeatherRecord, ...] -> SQLite
+
+```text
+prep_raw_weather.py -> write_space_weather()
+time_to_us() -> time_us
+```
+
+```text
+[
+  {time: 2024-05-10 12:00:00 UTC, f107: 149.4 sfu, f107a: 145.8 sfu, ap: [...]},
+  ...
+]
+```
+
+```text
+SQLite
+{
+  space_weather:
+  [
+    {
+      time: 2024-05-10 12:00:00 UTC,
+      f107: 149.4 sfu,
+      f107a: 145.8 sfu,
+      ap: [8, 10, 8, 6, 5, 7.5, 6.1]
+    },
+    ...
+  ]
+}
+```
+
+## [4] WeatherRecord -> analysis feature fields
+
+```text
+prep_derived_analysis_10min.py
+
+Ap -> target official 3-hour block
+F10.7 / F10.7A -> previous-day source_time
+source_time <= orbit_time
+```
+
+```text
+{
+  time: 2024-05-10 12:00:00 UTC,
+  f107: 149.4 sfu,
+  f107a: 145.8 sfu,
+  ap: [8, 10, 8, 6, 5, 7.5, 6.1]
+}
+```
+
+```text
+{
+  orbit_time: 2024-05-10 14:30:00 UTC,
+  ap_now: 8,
+  ap_source_time: 2024-05-10 12:00:00 UTC,
+  f107_sfu: 149.4 sfu,
+  f107_source_time: 2024-05-09 00:00:00 UTC,
+  f107a_sfu: 145.8 sfu,
+  f107a_source_time: 2024-05-09 00:00:00 UTC
+}
+```
+
+Current database has this causal join. weather v2/v3 fresh rebuild is pending; see `../PHASE_1_FINAL_REPORT.md`.

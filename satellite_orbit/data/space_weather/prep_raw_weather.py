@@ -4,8 +4,8 @@ import csv
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
-from satellite_orbit.data.load_space_weather import load_space_weather
-from satellite_orbit.data.prep_raw_identifiers import file_signature, time_to_us
+from satellite_orbit.data.database.prep_raw_identifiers import file_signature, time_to_us
+from satellite_orbit.data.space_weather.load_space_weather import load_space_weather
 
 WEATHER_PREPARATION_VERSION = "3"
 

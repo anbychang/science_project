@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from satellite_orbit.data.down_geomagnetic import (
+from satellite_orbit.data.geomagnetic.down_geomagnetic import (
     MAX_DOWNLOAD_DAYS,
     _check_download_coverage,
     download_geomagnetic,

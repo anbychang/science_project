@@ -1,13 +1,12 @@
 """Build the local SQLite database from downloaded files."""
 
-import sqlite3
 from pathlib import Path
 
-from satellite_orbit.data.prep_raw_density import write_density_folder
-from satellite_orbit.data.prep_raw_geomagnetic import write_ae, write_sym_h
-from satellite_orbit.data.prep_raw_pod import write_pod_folder
-from satellite_orbit.data.prep_raw_schema import create_tables
-from satellite_orbit.data.prep_raw_weather import write_space_weather
+from satellite_orbit.data.database.prep_raw_schema import connect_database, create_tables
+from satellite_orbit.data.density.prep_raw_density import write_density_folder
+from satellite_orbit.data.geomagnetic.prep_raw_geomagnetic import write_ae, write_sym_h
+from satellite_orbit.data.pod.prep_raw_pod import write_pod_folder
+from satellite_orbit.data.space_weather.prep_raw_weather import write_space_weather
 
 DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
 DEFAULT_POD_FOLDER = Path("data/swarm_a_pod")
@@ -28,7 +27,7 @@ def write_sqlite_database(
     database_path = Path(database_path)
     database_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with sqlite3.connect(database_path) as connection:
+    with connect_database(database_path) as connection:
         create_tables(connection)
         weather_rows = write_space_weather(connection, weather_file)
         sym_h_rows = write_sym_h(connection, geomagnetic_folder)
@@ -60,7 +59,7 @@ def write_sqlite_database(
 
 
 def main():
-    """Input: python -m satellite_orbit.data.prep_raw_database
+    """Input: python -m satellite_orbit.data.database.prep_raw_database
     Output: database update summary"""
     result = write_sqlite_database()
     print(f"Database: {result['database_path']}")

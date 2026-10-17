@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from satellite_orbit.data.load_geomagnetic import load_geomagnetic_file
-from satellite_orbit.data.prep_raw_identifiers import time_to_us
+from satellite_orbit.data.database.prep_raw_identifiers import time_to_us
+from satellite_orbit.data.geomagnetic.load_geomagnetic import load_geomagnetic_file
 
 def geomagnetic_rows(file_path):
     """Input: local SYM-H or AE CSV path

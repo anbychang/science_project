@@ -1,158 +1,225 @@
 # POD Data Lineage
 
-範圍：ESA Swarm-A POD ZIP -> raw orbit state -> 瞬時半長軸 -> POD quality。
+```text
+ESA -> ZIP -> SP3 -> State -> SQLite -> mean orbit -> 10-minute analysis
+```
 
-狀態：P1.4 完成；P1.5 10-minute orbit table 未建立。
-
-## 1. 下載 POD
-
-資料：`ESA POD product = {day, version, ZIP}`。
-
-程式：`down_swarm_pod.py` -> `download_swarm_a_pod_since()`。
-
-動作：同一天只取最高 `version`；檢查 ZIP size。
-
-輸出：`data/swarm_a_pod/*.ZIP`。
-
-Shape：
+## [1] ESA file list -> local ZIP files
 
 ```text
-pod_file = {
-  path,
-  source_day,
-  product_version,
-  ZIP: {SP3}
+down_swarm_pod.py
+  -> list_swarm_pod_files()
+  -> select_latest_files()
+  -> download_file()
+
+same day -> highest version
+same file + same size -> keep local ZIP
+```
+
+```text
+[
+  {day: 2024-05-10, version: 0101},
+  {day: 2024-05-10, version: 0102}
+]
+```
+
+```text
+[
+  {
+    file_name: "SW_OPER_SP3ACOM_2__20240510...0102.ZIP",
+    ZIP: {orbit.sp3}
+  },
+  ...
+]
+```
+
+## [2] one ZIP -> SP3 records
+
+```text
+load_swarm_pod.py -> load_swarm_pod()
+
+"*" -> GPS_time
+"P" -> P [km]
+"V" -> V [dm/s]
+```
+
+```text
+{
+  file_name: "SW_OPER_SP3ACOM_2__20240510...0102.ZIP",
+  ZIP: {orbit.sp3}
 }
 ```
 
-例：同日有 version `0101`、`0102` -> 只下載 `0102`。
+```text
+[
+  {
+    GPS_time: 2024-05-10 14:20:20,
+    P: [6871.0, 0.0, 0.0] km,
+    V: [0.0, 75000.0, 0.0] dm/s
+  },
+  ...
+]
+```
 
-## 2. SP3 -> ITRF state
-
-資料：
+## [3] one SP3 record -> one State
 
 ```text
-sp3_epoch = {
-  gps_time,
-  P: [x_km, y_km, z_km],
-  V: [vx_dm_s, vy_dm_s, vz_dm_s]
+load_swarm_pod.py
+calc_time.py -> gps_times_to_utc()
+
+GPS -> UTC
+P [km] -> position [m]
+V [dm/s] -> velocity [m/s]
+```
+
+```text
+{
+  GPS_time: 2024-05-10 14:20:20,
+  P: [6871.0, 0.0, 0.0] km,
+  V: [0.0, 75000.0, 0.0] dm/s
 }
 ```
 
-程式：`load_swarm_pod.py` -> `load_swarm_pod()`；`calc_time.py` -> `gps_times_to_utc()`。
-
-動作：`GPS -> UTC`；`km -> m`；`dm/s -> m/s`。
-
-輸出：`orbit_series = [state, ...]`。
-
-Shape：
-
 ```text
-state = {
-  time,
+{
+  time: 2024-05-10 14:20:02 UTC,
   frame: ITRF,
-  position_m: [x, y, z],
-  velocity_m_s: [vx, vy, vz]
+  position: [6871000.0, 0.0, 0.0] m,
+  velocity: [0.0, 7500.0, 0.0] m/s
 }
 ```
 
-例：`P:[6871, 0, 0] km` -> `position_m:[6871000, 0, 0]`。
-
-## 3. state -> raw SQLite
-
-資料：`state`。
-
-程式：`prep_raw_database.py` -> `write_sqlite_database()`；`prep_raw_pod.py` -> `write_pod_folder()` -> `write_pod_file()` -> `pod_row()`。
-
-動作：`time -> time_us`；找 state 所在 3-hour weather block；沒有 weather block 的 row 不寫入。
-
-輸出：`swarm_a_states`；`source_files`。
-
-Shape：
+## [4] [State, ...] -> SQLite
 
 ```text
-swarm_a_states_row = {
-  time_us,
-  position_m: [x_m, y_m, z_m],
-  velocity_m_s: [vx_m_s, vy_m_s, vz_m_s],
-  weather_time_us,
-  source_id
-}
+prep_raw_database.py -> write_pod_folder()
+prep_raw_pod.py -> write_pod_file()
 
-source_files_row = {
-  source_id,
-  file_name,
-  signature: size:mtime
-}
+file_signature() -> source_files
+time_to_us() -> time_us
+weather_block_time() -> weather_time
 ```
-
-例：`14:20:02 UTC` -> `time_us:1715350802000000`；它在 `12:00 UTC` block -> `weather_time_us:1715342400000000`。
-
-## 4. raw state -> 瞬時半長軸
-
-資料：`swarm_a_states_row`。
-
-程式：`prep_derived_orbital_elements.py` -> `write_orbital_elements()`；`calc_coordinates.py` -> `itrf_states_to_gcrf()`；`calc_orbital_response.py` -> `calculate_semi_major_axis()`。
-
-動作：`ITRF -> GCRF`；two-body specific energy -> `semi_major_axis_m`。
-
-輸出：`swarm_a_orbital_elements`。
-
-Shape：
 
 ```text
-orbital_element_row = {
-  time_us,
-  semi_major_axis_m,
-  rejection_reason
-}
+[
+  {
+    time: 2024-05-10 14:20:02 UTC,
+    frame: ITRF,
+    position: [6871000.0, 0.0, 0.0] m,
+    velocity: [0.0, 7500.0, 0.0] m/s
+  },
+  ...
+]
 ```
-
-例：unbound energy -> `{semi_major_axis_m: NULL, rejection_reason: ...}`。
-
-## 5. 半長軸 -> quality / interval
-
-資料：`swarm_a_states_row + orbital_element_row`。
-
-程式：`prep_derived_pod_quality.py` -> `write_pod_quality()`；`quality_row()`；`starts_new_interval()`。
-
-動作：檢查 finite state、有效半長軸、時間遞增；source boundary、rejected row、`gap > native_cadence` -> 新 interval。
-
-輸出：`swarm_a_pod_quality`。
-
-Shape：
 
 ```text
-pod_quality_row = {
-  time_us,
-  is_usable,
-  rejection_reason,
-  interval_id
+SQLite
+{
+  source_files:
+  [
+    {
+      source_id: 17,
+      file_name: "SW_OPER_SP3ACOM_2__20240510...0102.ZIP",
+      frame: "IGS20",
+      coverage: [2024-05-10 00:00:02, 2024-05-10 23:59:52] UTC,
+      cadence: 10 s,
+      epoch_count: 8640
+    },
+    ...
+  ],
+
+  swarm_a_states:
+  [
+    {
+      time: 2024-05-10 14:20:02 UTC,
+      position: [6871000.0, 0.0, 0.0] m,
+      velocity: [0.0, 7500.0, 0.0] m/s,
+      weather_time: 2024-05-10 12:00:00 UTC,
+      source_id: 17
+    },
+    ...
+  ]
 }
 ```
 
-例：一個 40 s gap 出現在 10 s native cadence 中 -> gap 後的 row 取得新的 `interval_id`。
-
-## 6. 未建立：P1.5 10-minute orbit data
-
-資料：`pod_quality_row` 中 `{is_usable:1}` 且相同 `interval_id` 的 series。
-
-程式：未建立。
-
-動作：orbit-average / mean-element；short-period treatment；smoothing；不跨 interval。
-
-預計輸出：
+## [5] raw State -> derived mean orbit + quality
 
 ```text
-swarm_a_orbit_10min_row = {
-  time_us,
-  semi_major_axis_smooth_m,
-  da_dt_smooth_m_s,
-  decay_rate_smooth_m_day,
-  pod_count,
-  max_pod_gap_s,
-  interval_id
+prep_derived_orbital_elements.py
+  -> instantaneous semi-major axis [m]
+prep_derived_pod_quality.py
+  -> usable + chunk_id
+prep_derived_mean_orbit.py
+  -> mean semi-major axis [m]
+```
+
+```text
+{
+  time: 2024-05-10 14:20:02 UTC,
+  position: [6871000.0, 0.0, 0.0] m,
+  velocity: [0.0, 7500.0, 0.0] m/s
 }
 ```
 
-限制：不能直接把每 10 s `semi_major_axis_m` 當 decay rate。J2 short-period variation 會造成假訊號。
+```text
+{
+  instantaneous_semi_major_axis: 6791172.2 m,
+  quality: {usable: true, chunk_id: 2},
+  mean_semi_major_axis: 6791100.4 m
+}
+```
+
+## [6] mean State list -> UTC 10-minute orbit
+
+```text
+prep_derived_orbit_10min.py
+
+[end - 600 s, end)
+same chunk only
+pod_count >= 56
+```
+
+```text
+[
+  {time: 2024-05-10 14:20:02 UTC, mean_semi_major_axis: 6791100.4 m, chunk_id: 2},
+  ...
+]
+```
+
+```text
+{
+  time: 2024-05-10 14:30:00 UTC,
+  semi_major_axis_orbit_mean_m: 6791100.4 m,
+  pod_count: 60,
+  max_pod_gap_s: 10 s,
+  chunk_id: 2
+}
+```
+
+## [7] Orbit10Minute list -> decay / analysis row
+
+```text
+prep_derived_decay_rate.py
+  -> centered Savitzky-Golay {73 samples, order 2}
+prep_derived_analysis_10min.py
+  -> causal weather + geomagnetic join
+```
+
+```text
+{
+  time: 2024-05-10 14:30:00 UTC,
+  semi_major_axis_orbit_mean_m: 6791100.4 m,
+  chunk_id: 2
+}
+```
+
+```text
+{
+  time: 2024-05-10 14:30:00 UTC,
+  decay_rate_smooth_m_day: 0.864 m/day,
+  chunk_id: 2,
+  quality_flags: "ok"
+}
+```
+
+Current database has completed steps [1]--[7]. weather v2/v3 fresh rebuild is pending; see `../PHASE_1_FINAL_REPORT.md`.

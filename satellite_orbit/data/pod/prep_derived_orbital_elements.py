@@ -1,15 +1,15 @@
 """Calculate and store Swarm-A instantaneous semi-major axes."""
 
-import sqlite3
 from datetime import datetime, timezone
 from importlib.metadata import version
 from pathlib import Path
 
-from satellite_orbit.calculation.calc_coordinates import itrf_states_to_gcrf
-from satellite_orbit.calculation.calc_orbital_response import (
+from satellite_orbit.calculation.pod.calc_coordinates import itrf_states_to_gcrf
+from satellite_orbit.calculation.pod.calc_orbital_response import (
     MU_M3_S2,
     calculate_semi_major_axis,
 )
+from satellite_orbit.data.database.prep_raw_schema import connect_database
 
 DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
 ALGORITHM_NAME = "two_body_specific_energy_gcrf_v1"
@@ -103,7 +103,7 @@ def write_orbital_elements(database_path=DEFAULT_DATABASE):
     stored_rows = 0
     rejected_rows = 0
 
-    with sqlite3.connect(database_path) as connection:
+    with connect_database(database_path) as connection:
         create_orbital_element_table(connection)
         source_ids = [
             row[0]
@@ -137,7 +137,7 @@ def write_orbital_elements(database_path=DEFAULT_DATABASE):
 
 
 def main():
-    """Input: python -m satellite_orbit.data.prep_derived_orbital_elements
+    """Input: python -m satellite_orbit.data.pod.prep_derived_orbital_elements
     Output: orbital-element write summary"""
     result = write_orbital_elements()
     print(f"POD source files: {result['source_files']}")

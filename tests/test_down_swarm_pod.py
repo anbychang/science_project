@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from satellite_orbit.data.down_swarm_pod import download_file
+from satellite_orbit.data.pod.down_swarm_pod import download_file
 
 
 class PodDownloadTest(unittest.TestCase):
@@ -24,7 +24,7 @@ class PodDownloadTest(unittest.TestCase):
                 Path(output_path).write_bytes(b"short")
 
             with patch(
-                "satellite_orbit.data.down_swarm_pod.urlretrieve",
+                "satellite_orbit.data.pod.down_swarm_pod.urlretrieve",
                 side_effect=write_short_file,
             ):
                 with self.assertRaisesRegex(ValueError, "Incomplete POD download"):

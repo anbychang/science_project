@@ -1,24 +1,33 @@
-"""Mark basic POD quality without changing raw observations."""
+"""Mark basic POD quality and safe calculation chunks without changing raw data."""
 
 import sqlite3
-from collections import Counter
+import sys
 from math import isfinite
 from pathlib import Path
 
+from satellite_orbit.data.database.prep_raw_schema import connect_database
+
 DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
 BATCH_SIZE = 10_000
+MICROSECONDS_PER_SECOND = 1_000_000
+QUALITY_COLUMNS = {"time_us", "is_usable", "rejection_reason", "chunk_id"}
 
 
 def create_quality_table(connection):
     """Input: SQLite connection
     Output: POD quality table exists"""
+    existing_columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(swarm_a_pod_quality)")
+    }
+    if existing_columns and existing_columns != QUALITY_COLUMNS:
+        connection.execute("DROP TABLE swarm_a_pod_quality")
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS swarm_a_pod_quality (
             time_us INTEGER PRIMARY KEY,
             is_usable INTEGER NOT NULL,
             rejection_reason TEXT,
-            interval_id INTEGER,
+            chunk_id INTEGER,
             FOREIGN KEY (time_us) REFERENCES swarm_a_states(time_us)
         )
         """
@@ -27,7 +36,7 @@ def create_quality_table(connection):
 
 def quality_row(row, previous_time_us):
     """Input: one POD row and the previous time
-    Output: (time_us, is_usable, rejection_reason, interval_id)"""
+    Output: (time_us, is_usable, rejection_reason, chunk_id)"""
     time_us = row["time_us"]
     state_values = [
         row["x_m"],
@@ -51,7 +60,7 @@ def quality_row(row, previous_time_us):
     return time_us, 1, None, None
 
 
-def quality_source_rows(connection):
+def quality_source_rows(connection, after_time_us=None):
     """Input: SQLite connection
     Output: POD rows with their orbital-element result"""
     return connection.execute(
@@ -65,70 +74,92 @@ def quality_source_rows(connection):
             state.vy_m_s,
             state.vz_m_s,
             state.source_id,
+            source.file_name,
+            provenance.sp3_frame_label,
+            provenance.cadence_s,
             element.semi_major_axis_m,
             element.rejection_reason AS orbital_rejection_reason
         FROM swarm_a_states AS state
+        LEFT JOIN source_files AS source
+            ON source.source_id = state.source_id
+        LEFT JOIN swarm_a_pod_source_provenance AS provenance
+            ON provenance.source_id = state.source_id
         LEFT JOIN swarm_a_orbital_elements AS element
             ON element.time_us = state.time_us
+        WHERE state.time_us > COALESCE(?, -1)
         ORDER BY state.time_us
         """
+        ,
+        (after_time_us,),
     )
 
 
-def measure_native_cadence_us(connection):
-    """Input: SQLite connection
-    Output: most common within-source time difference in microseconds"""
-    time_rows = connection.execute(
-        "SELECT time_us, source_id FROM swarm_a_states ORDER BY time_us"
-    )
-    difference_counts = Counter()
-    previous_time_us = None
-    previous_source_id = None
-
-    for time_us, source_id in time_rows:
-        if source_id == previous_source_id and time_us > previous_time_us:
-            difference_us = time_us - previous_time_us
-            difference_counts[difference_us] += 1
-        previous_time_us = time_us
-        previous_source_id = source_id
-
-    return max(difference_counts, key=difference_counts.get, default=None)
+def product_stream(file_name):
+    """Input: source ZIP file name
+    Output: stable product stream before the ``__`` separator or None"""
+    if file_name is None:
+        return None
+    stream, separator, _ = file_name.partition("__")
+    if not separator or not stream:
+        return None
+    return stream
 
 
-def starts_new_interval(
-    row,
-    previous_quality_row,
-    cadence_us,
-):
+def row_provenance(row):
+    """Input: POD row joined to its source-file metadata
+    Output: {stream, frame, cadence_us} or None when chunk safety is unknown"""
+    stream = product_stream(row["file_name"])
+    frame = row["sp3_frame_label"]
+    cadence_s = row["cadence_s"]
+    if (
+        stream is None
+        or frame is None
+        or not frame
+        or cadence_s is None
+        or not isfinite(cadence_s)
+        or cadence_s <= 0
+    ):
+        return None
+    cadence_us = round(cadence_s * MICROSECONDS_PER_SECOND)
+    if cadence_us <= 0:
+        return None
+    return {"stream": stream, "frame": frame, "cadence_us": cadence_us}
+
+
+def starts_new_chunk(row, previous_quality_row):
     """Input: current and previous POD quality context
-    Output: True when a new continuous interval starts"""
+    Output: True when a new safe calculation chunk starts"""
     if previous_quality_row is None:
-        return True
-    if row["source_id"] != previous_quality_row["source_id"]:
         return True
     if not previous_quality_row["is_usable"]:
         return True
-    return row["time_us"] - previous_quality_row["time_us"] > cadence_us
+    current_provenance = row_provenance(row)
+    previous_provenance = previous_quality_row["provenance"]
+    if current_provenance is None or previous_provenance is None:
+        return True
+    if current_provenance != previous_provenance:
+        return True
+    return row["time_us"] - previous_quality_row["time_us"] != current_provenance["cadence_us"]
 
 
-def write_pod_quality(database_path=DEFAULT_DATABASE):
+def write_pod_quality(database_path=DEFAULT_DATABASE, resume=False):
     """Input: SQLite database path
-    Output: {raw_rows, usable_rows, interval_count, rejection_counts}"""
+    Output: {raw_rows, usable_rows, chunk_count, rejection_counts}"""
     database_path = Path(database_path)
     raw_rows = 0
     usable_rows = 0
     rejection_counts = {}
 
-    with sqlite3.connect(database_path) as connection:
+    with connect_database(database_path) as connection:
         connection.row_factory = sqlite3.Row
         create_quality_table(connection)
-        connection.execute("DELETE FROM swarm_a_pod_quality")
-        cadence_us = measure_native_cadence_us(connection)
-        if cadence_us is None:
-            raise ValueError("Cannot measure POD cadence from the raw states.")
-        source_rows = quality_source_rows(connection)
-        previous_quality_row = None
-        interval_id = 0
+        previous_quality_row, chunk_id = resume_context(connection) if resume else (None, 0)
+        if not resume:
+            connection.execute("DELETE FROM swarm_a_pod_quality")
+        source_rows = quality_source_rows(
+            connection,
+            None if previous_quality_row is None else previous_quality_row["time_us"],
+        )
 
         try:
             while True:
@@ -149,18 +180,14 @@ def write_pod_quality(database_path=DEFAULT_DATABASE):
                     )
                     is_usable = result[1] == 1
                     if is_usable:
-                        if starts_new_interval(
-                            row,
-                            previous_quality_row,
-                            cadence_us,
-                        ):
-                            interval_id += 1
-                        result = result[:3] + (interval_id,)
+                        if starts_new_chunk(row, previous_quality_row):
+                            chunk_id += 1
+                        result = result[:3] + (chunk_id,)
                     quality_rows.append(result)
                     previous_quality_row = {
                         "time_us": time_us,
-                        "source_id": row["source_id"],
                         "is_usable": is_usable,
+                        "provenance": row_provenance(row),
                     }
                     raw_rows += 1
                     if is_usable:
@@ -182,20 +209,44 @@ def write_pod_quality(database_path=DEFAULT_DATABASE):
     return {
         "raw_rows": raw_rows,
         "usable_rows": usable_rows,
-        "interval_count": interval_id,
-        "native_cadence_s": cadence_us / 1_000_000,
+        "chunk_count": chunk_id,
         "rejection_counts": rejection_counts,
     }
 
 
+def resume_context(connection):
+    """Input: SQLite connection with partial quality output
+    Output: (previous quality context, last chunk ID)"""
+    last_quality = connection.execute(
+        """
+        SELECT time_us, is_usable, chunk_id
+        FROM swarm_a_pod_quality
+        ORDER BY time_us DESC LIMIT 1
+        """
+    ).fetchone()
+    if last_quality is None:
+        return None, 0
+    connection.row_factory = sqlite3.Row
+    last_row = quality_source_rows(connection, last_quality[0] - 1).fetchone()
+    if last_row is None or last_row["time_us"] != last_quality[0]:
+        raise ValueError("Cannot resume without the last raw POD state.")
+    return (
+        {
+            "time_us": last_quality[0],
+            "is_usable": last_quality[1] == 1,
+            "provenance": row_provenance(last_row),
+        },
+        last_quality[2] or 0,
+    )
+
+
 def main():
-    """Input: python -m satellite_orbit.data.prep_derived_pod_quality
+    """Input: python -m satellite_orbit.data.pod.prep_derived_pod_quality
     Output: POD quality summary"""
-    result = write_pod_quality()
+    result = write_pod_quality(resume="--resume" in sys.argv)
     print(f"POD rows checked: {result['raw_rows']}")
     print(f"Usable POD rows: {result['usable_rows']}")
-    print(f"Native cadence (s): {result['native_cadence_s']}")
-    print(f"Continuous intervals: {result['interval_count']}")
+    print(f"Safe calculation chunks: {result['chunk_count']}")
     for reason, count in result["rejection_counts"].items():
         print(f"{reason}: {count}")
 

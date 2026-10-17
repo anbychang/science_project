@@ -1,9 +1,20 @@
 """Create the SQLite tables used by the local data store."""
 
+import sqlite3
+
+
+def connect_database(database_path):
+    """Input: SQLite database path
+    Output: connection with foreign-key enforcement enabled"""
+    connection = sqlite3.connect(database_path)
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
+
 
 def create_tables(connection):
     """Input: SQLite connection
     Output: required tables exist"""
+    connection.execute("PRAGMA foreign_keys = ON")
     connection.executescript(
         """
         CREATE TABLE IF NOT EXISTS space_weather (
@@ -55,6 +66,17 @@ def create_tables(connection):
             source_id INTEGER PRIMARY KEY,
             file_name TEXT NOT NULL UNIQUE,
             signature TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS swarm_a_pod_source_provenance (
+            source_id INTEGER PRIMARY KEY,
+            sp3_frame_label TEXT NOT NULL,
+            coverage_start_time_us INTEGER NOT NULL,
+            coverage_end_time_us INTEGER NOT NULL,
+            epoch_count INTEGER NOT NULL,
+            cadence_s REAL NOT NULL,
+            time_system TEXT NOT NULL,
+            FOREIGN KEY (source_id) REFERENCES source_files(source_id)
         );
 
         CREATE TABLE IF NOT EXISTS metadata (

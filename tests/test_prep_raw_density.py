@@ -7,8 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from satellite_orbit.data.prep_raw_density import write_density_folder
-from satellite_orbit.data.prep_raw_schema import create_tables
+from satellite_orbit.data.database.prep_raw_schema import create_tables
+from satellite_orbit.data.density.prep_raw_density import write_density_folder
 
 
 class DensitySQLiteTest(unittest.TestCase):
@@ -32,7 +32,7 @@ class DensitySQLiteTest(unittest.TestCase):
                 "local_solar_time_h": 3.0,
             }
             with patch(
-                "satellite_orbit.data.prep_raw_density.load_swarm_density",
+                "satellite_orbit.data.density.prep_raw_density.load_swarm_density",
                 return_value=[first_point],
             ):
                 write_density_folder(connection, folder)
@@ -40,7 +40,7 @@ class DensitySQLiteTest(unittest.TestCase):
             (folder / "second.ZIP").write_bytes(b"second")
             revised_point = first_point | {"density_kg_m3": 9.0}
             with patch(
-                "satellite_orbit.data.prep_raw_density.load_swarm_density",
+                "satellite_orbit.data.density.prep_raw_density.load_swarm_density",
                 return_value=[revised_point],
             ):
                 write_density_folder(connection, folder)

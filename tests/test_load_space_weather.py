@@ -5,7 +5,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from satellite_orbit.data.load_space_weather import load_space_weather
+from satellite_orbit.data.space_weather.load_space_weather import load_space_weather
 
 
 def raw_weather_row(day, last81_value):

@@ -127,7 +127,7 @@ def main():
     Output: printed {sym_h_path, ae_path}"""
     if len(sys.argv) != 3:
         raise SystemExit(
-            "Usage: python -m satellite_orbit.data.down_geomagnetic FIRST_DAY LAST_DAY"
+            "Usage: python -m satellite_orbit.data.geomagnetic.down_geomagnetic FIRST_DAY LAST_DAY"
         )
 
     file_paths = download_geomagnetic(sys.argv[1], sys.argv[2])

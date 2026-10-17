@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from zipfile import ZipFile
 
-from satellite_orbit.calculation.calc_time import gps_times_to_utc
+from satellite_orbit.calculation.pod.calc_time import gps_times_to_utc
 
 KM_TO_M = 1000.0
 DM_S_TO_M_S = 0.1

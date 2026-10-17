@@ -1,6 +1,8 @@
 # Swarm-A 軌道衰減研究時間紀錄
 
-最後更新：2026-09-30
+最後更新：2026-10-17
+
+Current status：現有 SQLite 的 Phase 1 working output 已通過 audit；weather preparation v2/v3 修正後的 fresh rebuild 尚未完成。詳細交付與限制見 `plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md`。
 
 這份檔案只記錄時間順序：某一天做了什麼、量到什麼、得到什麼結論。它不放長期規則或完整技術定義；那些放在 `plans/phase_1_data_preparation/PLAN.md` 與各階段規格。
 
@@ -275,12 +277,126 @@ Brouwer-Lyddane conversion 是下一個合理選項，但本機沒有 Java、Ore
 
 **決定**：raw source 的 complete coverage 必須先驗證，才允許寫入 metadata。只在確定的資料完整性與時間解析邊界補最小修正，不重構尚未進入主線的 module。
 
-## 下一個時間紀錄應記錄的實驗
+## 2026-10-17：P1.5-A 選定並驗證 Brouwer-Lyddane mean orbit
 
-下一個工作只能從以下可驗證項目選擇：
+**目的**：將 POD 的 osculating state 轉成可分析長期變化的 mean orbit；不把 raw
+`semi_major_axis_m` 的短週期項誤當 orbital decay。
 
-1. P1.4-C：盤點 SP3 source 的真實 frame label 與 official quality information。
-2. P1.4-D：從正常 interval 的 position/velocity residual 校準 maneuver candidate，並以 synthetic jump 驗證。
-3. P1.5-A：建立並驗證 orbit-average synthetic input，檢驗候選方法能否回收已知 slope。
+**做了什麼**：
 
-每次新增紀錄都要寫：原始輸入、實際操作、量測結果、結論、下一步；不可只寫「完成某功能」。
+1. 建立 `calc_mean_orbit.py`：GCRF `{UTC, position_m, velocity_m_s}` 經 Orekit
+   `CartesianOrbit` 與 `BrouwerLyddanePropagator.computeMeanOrbit()` 產生 mean semi-major axis。
+2. 使用 repository 內 `.orekitvenv` 的 `orekit-jpype 13.1.8.0`、內建 `jdk4py` Java runtime
+   與 `orekit-data`；不需要系統 Java。
+3. 建立 `prep_derived_mean_orbit.py`，輸出獨立
+   `swarm_a_mean_orbital_elements {time_us, mean_semi_major_axis_m, rejection_reason}`；不修改 raw
+   POD、P1.3 或 P1.4 table。
+4. 新增 fixed synthetic regression、ITRF frame guard、SQLite two-row integration test。
+5. read-only 驗證 interval `1`、`843`、`1,685`，每段都是 `8,640` 個 usable 10-second POD rows。
+
+**量到或確認的事**：
+
+| interval | raw 46.452-minute amplitude m | mean amplitude m | reduction |
+| ---: | ---: | ---: | ---: |
+| 1 | 9,535.35 | 52.65 | 99.45% |
+| 843 | 7,395.07 | 48.89 | 99.34% |
+| 1,685 | 9,675.05 | 64.54 | 99.33% |
+
+完整 test suite：`37 tests passed`。Brouwer-Lyddane 只用 J2--J5 gravity terms，`M2 = 0.0`；
+它不是 drag model，也沒有產生 `decay_rate`。
+
+**結論**：P1.5-A 的 short-period method gate 通過。P1.4-C frame audit 與 P1.4-D maneuver
+calibration 尚未完成，因此不重建全庫、不建立 10-minute table、不進入 smoothing、derivative 或
+P1.6 final join。
+
+## 2026-10-17：P1.4-C SP3 provenance 與 Q3 policy
+
+**原始輸入**：1,685 個 `data/swarm_a_pod/*.ZIP`、`source_files`、
+`swarm_a_orbital_elements`、`swarm_a_pod_quality`。
+
+**實際操作**：逐 ZIP 讀取 SP3 header，將固定 metadata 寫入每個 source 的
+`source_files {sp3_frame_label, coverage_start_time_us, coverage_end_time_us,
+epoch_count, cadence_s, time_system}`。新增 transition report，對每個 frame boundary
+前後各三個 source 的 usable semi-major axis 做 read-only median 比較。
+
+**量測結果**：四個 frame group 是 `IGb14: 331`、`IGS20: 798`、`IGb20: 343`、
+`IGc20: 213`；所有 source 都是 `{epoch_count: 8640, cadence_s: 10.0, time_system: GPS}`。
+transition median difference 分別是 `-72.242 m`、`-164.760 m`、`-196.648 m`。這些值混有
+真實軌道演化，不是 frame offset，沒有修正。
+
+**Q3 結論**：ESA `SP3xCOM_2_` 的 quality indicator 是獨立 `SP3xVAL_2_`。目前本機
+SP3xCOM ZIP 沒有已驗證可用的 official per-epoch quality；policy 是
+`quality_source: unavailable`，只能使用 finite / bound / cadence / gap。證據在
+`plans/phase_1_data_preparation/RESEARCH_P1.4_C_SP3_QUALITY.md`。
+
+**下一步**：P1.4-D 以 position/velocity residual 建立 maneuver candidate 分布與
+synthetic jump test；不得因本次 median comparison 直接套用 frame offset。
+
+## 2026-10-17：P1.4-D maneuver residual audit
+
+**原始輸入**：固定十個 source 的 usable POD state；每個 residual 使用同 source、同 frame、
+連續 10 秒的三點 window。
+
+**實際操作**：新增 pure `centered_residuals()` 與 read-only audit command。synthetic
+position jump、velocity jump、source/frame/gap boundary 都有測試。
+
+**量測結果**：86,380 個 valid window；curvature median/MAD 是
+`427.103403 / 2.588821 m`，velocity residual median/MAD 是
+`0.160260 / 0.001692 m/s`。sample 沒有異常 tail。
+
+**結論**：計算工具已驗證，但尚無可辯護的 Q4 rejection threshold。維持現有 quality table，
+不把 `median + 10 * MAD` 誤寫成正式 maneuver rule。
+
+## 2026-10-17：Phase 1 chunk 與 10-minute bin contract
+
+**決定**：final analysis 不再把每日 ZIP / `source_id` 當作自動 boundary。同一 product
+stream 可跨 ZIP；只要 product stream、SP3 frame、cadence、時間連續性有改變或不確定，
+就關閉舊 chunk、建立新 `chunk_id`。多切可以接受；少切不可以。不保存 `chunk_reason`。
+
+**決定**：10-minute bin 的完整預期是 60 筆 POD；`pod_count >= 56` 可以輸出，
+`pod_count <= 55` 排除。gap 兩側屬於不同 chunk，不能湊成同一 bin；56--59 筆只可能
+出現在 chunk 邊緣。
+
+**影響**：mean orbit、bin、smoothing、derivative 都不可跨 `chunk_id`。原本以每日
+source boundary 推導的 240,955 row 上限作廢，待 final chunk rebuild 後重新量測。
+
+## 2026-10-17：P1.4 final chunk rebuild
+
+**結果**：`swarm_a_pod_quality` 已由 provisional `interval_id` 重建為 final `chunk_id`。
+14,558,400 raw POD 都有 quality row，全部 usable，final chunk count 是 4。
+
+```text
+chunk 1: 2,859,840 rows
+chunk 2: 6,894,720 rows
+chunk 3: 2,963,520 rows
+chunk 4: 1,840,320 rows
+```
+
+**決定落實**：同 stream 跨日 ZIP 不再切開；frame/product-stream/cadence/gap 改變或
+metadata 不明才切新 chunk。raw table 未改動。
+
+## 2026-10-17：P1.5 full mean-orbit batch resumed
+
+**實際操作**：從既有 2,021,760 row checkpoint 繼續計算 `swarm_a_mean_orbital_elements`。
+這一次性的 full-batch runner 使用 3 個 Orekit calculator process 與 1 個 SQLite writer；
+worker 不寫 SQLite。完成後刪除平行 runner code，恢復單線 source-by-source writer。
+
+**下一步**：完整 mean table 的 count、UTC coverage、missing 與 rejection 驗證通過後，才建立
+不跨 `chunk_id` 的 `swarm_a_orbit_10min`。之後才可做 P1.6 join 與 P1.7 release。
+
+## 2026-10-17：Phase 1 release
+
+**輸出**：`swarm_a_mean_orbital_elements` 14,558,400 rows；
+`swarm_a_orbit_10min` 242,640 rows；`swarm_a_orbit_decay_10min` 與
+`swarm_a_analysis_10min` 各 242,352 rows。
+
+**規則**：4 個 `chunk_id`；10-minute `pod_count` 58--60、最大 gap 10 s；每個 chunk
+以 73-sample Savitzky-Golay 產生中心 decay rows，前後各排除 36 rows。P1.6 僅使用
+causal weather / geomagnetic source time；density 不進 core analysis table。
+
+**驗證**：`integrity_check = ok`；foreign-key violations 0；analysis/decay key 與 chunk
+完全一致；feature flags 全為 `ok`；future source reference 0。P1.7 manifest、raw signature
+aggregate、coverage、Git revision、row counts、missingness 與 rebuild commands 已寫入
+SQLite `metadata`。
+
+**限制**：這是 current-database audit。weather preparation v2/v3 修正後，尚未從 raw files fresh rebuild 並重跑完整 audit；不可將本次結果稱為 frozen release。

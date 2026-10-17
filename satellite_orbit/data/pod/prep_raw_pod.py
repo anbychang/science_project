@@ -2,8 +2,9 @@
 
 from pathlib import Path
 
-from satellite_orbit.data.load_swarm_pod import load_swarm_pod
-from satellite_orbit.data.prep_raw_identifiers import file_signature, time_to_us
+from satellite_orbit.data.database.prep_raw_identifiers import file_signature, time_to_us
+from satellite_orbit.data.pod.load_sp3_inventory import load_sp3_inventory
+from satellite_orbit.data.pod.load_swarm_pod import load_swarm_pod
 
 
 def weather_block_time(time_utc):
@@ -52,22 +53,46 @@ def prepare_source_file(connection, zip_path):
 def write_pod_file(connection, zip_path, weather_times):
     """Input: {SQLite connection, POD ZIP path, weather times}
     Output: number of stored orbit states"""
-    source_id = prepare_source_file(connection, zip_path)
-    if source_id is None:
-        return 0
+    connection.execute("SAVEPOINT pod_import")
+    try:
+        source_id = prepare_source_file(connection, zip_path)
+        if source_id is None:
+            connection.execute("RELEASE pod_import")
+            return 0
 
-    rows = [
-        pod_row(state, source_id)
-        for state in load_swarm_pod(zip_path)
-        if time_to_us(weather_block_time(state["time"])) in weather_times
-    ]
+        states = load_swarm_pod(zip_path)
+        inventory_count = load_sp3_inventory(zip_path)["epoch_count"]
+        loaded_count = len(states)
+        if loaded_count != inventory_count:
+            raise ValueError(
+                f"POD import count mismatch for {Path(zip_path).name}: "
+                f"inventory={inventory_count}, loaded={loaded_count}."
+            )
 
-    changes_before_write = connection.total_changes
-    connection.executemany(
-        "INSERT OR IGNORE INTO swarm_a_states VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        rows,
-    )
-    return connection.total_changes - changes_before_write
+        rows = [
+            pod_row(state, source_id)
+            for state in states
+            if time_to_us(weather_block_time(state["time"])) in weather_times
+        ]
+        kept_count = len(rows)
+        changes_before_write = connection.total_changes
+        connection.executemany(
+            "INSERT OR IGNORE INTO swarm_a_states VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            rows,
+        )
+        inserted_count = connection.total_changes - changes_before_write
+        if inserted_count != kept_count:
+            raise ValueError(
+                f"POD import count mismatch for {Path(zip_path).name}: "
+                f"inventory={inventory_count}, loaded={loaded_count}, "
+                f"kept={kept_count}, inserted={inserted_count}."
+            )
+    except Exception:
+        connection.execute("ROLLBACK TO pod_import")
+        connection.execute("RELEASE pod_import")
+        raise
+    connection.execute("RELEASE pod_import")
+    return inserted_count
 
 
 def write_pod_folder(connection, pod_folder, weather_times):
