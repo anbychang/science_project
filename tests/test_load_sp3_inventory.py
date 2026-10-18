@@ -7,7 +7,7 @@ from zipfile import ZipFile
 
 from satellite_orbit.data.database.prep_raw_schema import create_tables
 from satellite_orbit.data.pod.load_sp3_inventory import load_sp3_inventory
-from satellite_orbit.data.pod.prep_source_provenance import write_source_provenance
+from satellite_orbit.data.pod.prep_02_source_provenance import write_source_provenance
 
 
 HEADER = "\n".join(

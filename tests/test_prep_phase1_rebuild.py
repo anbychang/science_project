@@ -4,12 +4,32 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from satellite_orbit.phase1.prep_phase1_rebuild import write_phase1_rebuild
+from satellite_orbit.phase1.prep_phase1_rebuild import default_stages, write_phase1_rebuild
 
 
 class Phase1RebuildTest(unittest.TestCase):
     """Input: clean target path and injectable Phase 1 stages
     Output: ordered rebuild without touching an existing database"""
+
+    def test_default_stages_follow_the_numbered_pod_pipeline(self):
+        """Input: clean rebuild evidence
+        Output: default stages use the documented linear order"""
+        stage_names = [name for name, _ in default_stages({"entry_point": "test"})]
+
+        self.assertEqual(
+            stage_names,
+            [
+                "01_raw",
+                "02_provenance",
+                "03_orbital_elements",
+                "04_quality",
+                "05_mean_orbit",
+                "06_orbit_10min",
+                "07_signed_rate",
+                "08_analysis",
+                "09_release_audit",
+            ],
+        )
 
     def test_rejects_an_existing_target_before_any_stage_runs(self):
         """Input: existing target SQLite path

@@ -137,7 +137,7 @@ def write_orbital_elements(database_path=DEFAULT_DATABASE):
 
 
 def main():
-    """Input: python -m satellite_orbit.data.pod.prep_derived_orbital_elements
+    """Input: python -m satellite_orbit.data.pod.prep_03_orbital_elements
     Output: orbital-element write summary"""
     result = write_orbital_elements()
     print(f"POD source files: {result['source_files']}")

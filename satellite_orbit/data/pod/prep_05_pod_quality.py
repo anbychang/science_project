@@ -1,7 +1,10 @@
 """Mark basic POD quality and safe calculation chunks without changing raw data."""
 
+import json
 import sqlite3
 import sys
+from contextlib import closing
+from datetime import datetime, timezone
 from math import isfinite
 from pathlib import Path
 
@@ -11,6 +14,69 @@ DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
 BATCH_SIZE = 10_000
 MICROSECONDS_PER_SECOND = 1_000_000
 QUALITY_COLUMNS = {"time_us", "is_usable", "rejection_reason", "chunk_id"}
+UTC = timezone.utc
+OFFICIAL_SWARM_A_ORBIT_EVENTS = (
+    (
+        "SWA_ORBIT_CONTROL_2022-01-13",
+        "orbit_control_manoeuvre",
+        int(datetime(2022, 1, 13, tzinfo=UTC).timestamp() * MICROSECONDS_PER_SECOND),
+        int(datetime(2022, 1, 14, tzinfo=UTC).timestamp() * MICROSECONDS_PER_SECOND),
+    ),
+    (
+        "SWA_C_ORBIT_RAISE_2022",
+        "orbit_raise_campaign",
+        int(datetime(2022, 5, 3, tzinfo=UTC).timestamp() * MICROSECONDS_PER_SECOND),
+        int(datetime(2022, 7, 9, tzinfo=UTC).timestamp() * MICROSECONDS_PER_SECOND),
+    ),
+    (
+        "SWA_CAM_2023-01-06",
+        "collision_avoidance_manoeuvre",
+        int(datetime(2023, 1, 6, tzinfo=UTC).timestamp() * MICROSECONDS_PER_SECOND),
+        int(datetime(2023, 1, 7, tzinfo=UTC).timestamp() * MICROSECONDS_PER_SECOND),
+    ),
+    (
+        "SWA_C_ORBIT_RAISE_2023_PHASE_II",
+        "orbit_raise_campaign",
+        int(datetime(2023, 4, 26, tzinfo=UTC).timestamp() * MICROSECONDS_PER_SECOND),
+        int(datetime(2023, 6, 8, tzinfo=UTC).timestamp() * MICROSECONDS_PER_SECOND),
+    ),
+    (
+        "SWA_C_ORBIT_RAISE_2026",
+        "orbit_raise_campaign",
+        int(datetime(2026, 7, 21, tzinfo=UTC).timestamp() * MICROSECONDS_PER_SECOND),
+        int(datetime(2026, 8, 1, tzinfo=UTC).timestamp() * MICROSECONDS_PER_SECOND),
+    ),
+)
+EVENT_REJECTION_REASONS = {
+    "orbit_control_manoeuvre": "official_orbit_control_manoeuvre",
+    "orbit_raise_campaign": "planned_orbit_raise_campaign",
+    "collision_avoidance_manoeuvre": "official_collision_avoidance_manoeuvre",
+}
+QUALITY_POLICY_VERSION = "official_swarm_a_orbit_event_exclusion_v1"
+DOWNSTREAM_DERIVED_TABLES = (
+    "swarm_a_mean_orbital_elements",
+    "swarm_a_orbit_10min",
+    "swarm_a_orbit_decay_10min",
+    "swarm_a_analysis_10min",
+)
+
+
+def official_orbit_event_at(time_us):
+    """Input: Unix microseconds
+    Output: (official event ID, event kind), or None outside known events"""
+    for event_id, event_kind, start_time_us, stop_time_us in OFFICIAL_SWARM_A_ORBIT_EVENTS:
+        if start_time_us <= time_us < stop_time_us:
+            return event_id, event_kind
+    return None
+
+
+def planned_orbit_raise_campaign_id(time_us):
+    """Input: Unix microseconds
+    Output: official campaign ID, or None outside campaign intervals"""
+    event = official_orbit_event_at(time_us)
+    if event is None or event[1] != "orbit_raise_campaign":
+        return None
+    return event[0]
 
 
 def create_quality_table(connection):
@@ -34,10 +100,55 @@ def create_quality_table(connection):
     )
 
 
+def require_no_downstream_output(connection):
+    """Input: SQLite connection
+    Output: quality rebuild is safe to start without stale derived rows"""
+    populated_tables = []
+    for table_name in DOWNSTREAM_DERIVED_TABLES:
+        table_exists = connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table_name,),
+        ).fetchone()
+        if table_exists and connection.execute(
+            f"SELECT 1 FROM {table_name} LIMIT 1"
+        ).fetchone():
+            populated_tables.append(table_name)
+    if populated_tables:
+        raise ValueError(
+            "POD quality rebuild would invalidate downstream output: "
+            f"{', '.join(populated_tables)}. "
+            "Use a new target with write_phase1_rebuild."
+        )
+
+
+def write_quality_metadata(connection):
+    """Input: SQLite connection
+    Output: reproducible official-event quality policy metadata"""
+    event_rows = [
+        {
+            "event_id": event_id,
+            "event_kind": event_kind,
+            "start_time_us": start_time_us,
+            "stop_time_us": stop_time_us,
+        }
+        for event_id, event_kind, start_time_us, stop_time_us in OFFICIAL_SWARM_A_ORBIT_EVENTS
+    ]
+    connection.executemany(
+        "INSERT OR REPLACE INTO metadata VALUES (?, ?)",
+        [
+            ("p1_4_quality_policy_version", QUALITY_POLICY_VERSION),
+            ("p1_4_official_orbit_events", json.dumps(event_rows, sort_keys=True)),
+        ],
+    )
+
+
 def quality_row(row, previous_time_us):
     """Input: one POD row and the previous time
     Output: (time_us, is_usable, rejection_reason, chunk_id)"""
     time_us = row["time_us"]
+    orbit_event = official_orbit_event_at(time_us)
+    if orbit_event is not None:
+        return time_us, 0, EVENT_REJECTION_REASONS[orbit_event[1]], None
     state_values = [
         row["x_m"],
         row["y_m"],
@@ -150,8 +261,9 @@ def write_pod_quality(database_path=DEFAULT_DATABASE, resume=False):
     usable_rows = 0
     rejection_counts = {}
 
-    with connect_database(database_path) as connection:
+    with closing(connect_database(database_path)) as connection:
         connection.row_factory = sqlite3.Row
+        require_no_downstream_output(connection)
         create_quality_table(connection)
         previous_quality_row, chunk_id = resume_context(connection) if resume else (None, 0)
         if not resume:
@@ -205,6 +317,8 @@ def write_pod_quality(database_path=DEFAULT_DATABASE, resume=False):
                 connection.commit()
         finally:
             source_rows.close()
+        write_quality_metadata(connection)
+        connection.commit()
 
     return {
         "raw_rows": raw_rows,
@@ -241,7 +355,7 @@ def resume_context(connection):
 
 
 def main():
-    """Input: python -m satellite_orbit.data.pod.prep_derived_pod_quality
+    """Input: python -m satellite_orbit.data.pod.prep_05_pod_quality
     Output: POD quality summary"""
     result = write_pod_quality(resume="--resume" in sys.argv)
     print(f"POD rows checked: {result['raw_rows']}")

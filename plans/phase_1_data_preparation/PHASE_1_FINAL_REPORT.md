@@ -2,9 +2,9 @@
 
 ## 狀態
 
-現有 `data/swarm_a_data.sqlite` 已建立並通過 P1.7 current-database audit。
-
-WARNING: weather preparation v2/v3 修正後，尚未從 raw files fresh rebuild 再重跑 P1.3--P1.7。Phase 1 的資料處理設計與 working output 已完成；frozen / fully reproducible release 尚未完成。
+`data/swarm_a_phase1_contract_cached_release.sqlite` 已從已驗證的 P1.3 與 mean-orbit cache 接續重建，並通過 P1.7 release audit。
+metadata 為 `status = frozen`、`rebuild_status = verified_mean_orbit_cache_reuse`、`audit_outcome = pass`。
+`data/swarm_a_data.sqlite` 保留為 legacy working database，不能取代這個 frozen release。
 
 ## 範圍與排除項目
 
@@ -14,27 +14,34 @@ Phase 1 的交付物是可追溯的 10 分鐘分析 table。
 - 排除：ML、atmospheric drag propagator、XYZ prediction、DNSAACC density core join、Q4 maneuver rejection rule。
 - Density 保留 raw `swarm_a_density`，供後續 Phase 2 獨立研究。
 
-## Current canonical output
+## Frozen canonical output
 
 ```text
 swarm_a_states                    14,558,400
   -> swarm_a_orbital_elements     14,558,400
-  -> swarm_a_pod_quality          14,558,400 usable rows; 4 chunks
+  -> swarm_a_pod_quality          13,495,680 usable rows; 9 chunks
   -> swarm_a_mean_orbital_elements
-                                  14,558,400
-  -> swarm_a_orbit_10min             242,640
-  -> swarm_a_orbit_decay_10min       242,352
-  -> swarm_a_analysis_10min          242,352
+                                  13,495,680 usable rows
+  -> swarm_a_orbit_10min             224,928
+  -> swarm_a_orbit_decay_10min       224,280
+  -> swarm_a_analysis_10min          224,280
 ```
 
-`swarm_a_analysis_10min` UTC coverage：`2022-01-01 06:10` 至 `2026-08-12 18:00`。
+frozen target 的 mean table 只含 13,495,680 個 usable rows。legacy working DB 的 mean table
+早於 campaign date-level exclusion 而有 14,558,400 列；其下游 bin 仍以
+`quality.is_usable = 1` join，所以不曾使用 campaign rows，但該資料庫不作交付依據。
+
+`swarm_a_analysis_10min` UTC coverage：`2022-01-01 12:10` 至 `2026-08-13 00:00`，中間有
+frame transition 與兩段公告 orbit-raise campaign 的排除區間。
 
 | chunk | rows | UTC coverage |
 | ---: | ---: | --- |
-| 1 | 47,592 | 2022-01-01 06:10 to 2022-11-27 18:00 |
-| 2 | 114,840 | 2022-11-28 06:10 to 2025-02-02 18:00 |
-| 3 | 49,320 | 2025-02-03 06:10 to 2026-01-11 18:00 |
-| 4 | 30,600 | 2026-01-12 06:10 to 2026-08-12 18:00 |
+| 1 | 17,496 | 2022-01-01 12:10 to 2022-05-03 00:00 |
+| 2 | 20,376 | 2022-07-09 12:10 to 2022-11-28 00:00 |
+| 3 | 21,384 | 2022-11-28 12:10 to 2023-04-26 00:00 |
+| 4 | 87,192 | 2023-06-08 12:10 to 2025-02-03 00:00 |
+| 5 | 49,320 | 2025-02-03 12:10 to 2026-01-12 00:00 |
+| 6 | 30,600 | 2026-01-12 12:10 to 2026-08-13 00:00 |
 
 ## Raw-to-derived pipeline
 
@@ -45,7 +52,7 @@ POD ZIP
   -> swarm_a_pod_quality {finite/bound/cadence/gap; chunk_id}
   -> swarm_a_mean_orbital_elements {Orekit Brouwer-Lyddane mean a}
   -> swarm_a_orbit_10min {UTC [end-600 s, end); arithmetic mean}
-  -> swarm_a_orbit_decay_10min {chunk-local centered Savitzky-Golay}
+  -> swarm_a_orbit_decay_10min {chunk-local 3h/6h/12h backward differences}
   -> swarm_a_analysis_10min {causal SYM-H, Ap, F10.7, F10.7A}
 ```
 
@@ -65,37 +72,39 @@ pod_count >= 56
 max_pod_gap_s = 10
 
 decay
-73 samples, order 2, centered Savitzky-Golay
-each continuous run removes 36 rows at each edge
+for H in {3h, 6h, 12h}: (a(t) - a(t - H)) / H * 86400
+each continuous run removes its first 72 10-minute rows
 
 causal features
 Ap / F10.7 / F10.7A source_time <= orbit_time
 SYM-H exact or <= 2-minute bounded interpolation
 ```
 
-Q4 is audit-only: residuals are evidence, not an acceptance threshold. Q4 does not reject rows and does not split chunks.
+Q4 residual candidate is audit-only. ESA-published orbit-raise campaigns are separately marked
+`planned_orbit_raise_campaign` and split chunks.
 
-## Current-database 品質證據
+## Frozen release 品質證據
 
 - SQLite `integrity_check = ok`.
 - Foreign-key check has no violations.
 - Final decay/analysis keys and `chunk_id` agree one-to-one.
 - `swarm_a_orbit_10min` has `pod_count = 58..60`; `max_pod_gap_s = 10 s`.
-- Final tables have no NULL, NaN, or infinity in required derived fields.
-- All 242,352 final rows have `quality_flags = ok`.
+- Required derived fields have no NULL, NaN, or infinity. Optional feature groups must be wholly present or wholly NULL and agree with `quality_flags`.
+- `quality_flags` has 226,367 `ok` rows and one `missing_sym_h` row; it is retained without future-value filling.
 - Ap, F10.7, F10.7A and SYM-H causal-source audit found no prohibited future reference.
-- P1.5 method gate: Brouwer-Lyddane reduced representative raw short-period amplitude by 99.33--99.45%; direct raw smoothing was rejected.
+- P1.3 與 P1.5 以 exact source/state match 驗證 cache 後直接重用；本次不重算 mean orbit。
 
-這些證據只證明 current database，不能證明 weather v2/v3 後的 fresh rebuild。
+上述條件均在 cached target 的 P1.7 audit 驗證。所有 missingness、future-reference、
+chunk continuity、foreign-key 與 integrity failure count 都是 0。
 
 ## 未校準的 decay-rate 異常
 
-`decay_rate_smooth_m_day` 全部是 finite，但這不等於物理品質已校準。
+`da_dt_12h_backward_m_day` 全部是 finite，但這不等於物理品質已校準。
 
 ```text
-range: -14,436.50 .. +239.69 m/day
-abs(rate) > 10 m/day:  42,099 rows
-abs(rate) > 100 m/day: 20,307 rows
+range: -5,312.47 .. +712.99 m/day
+abs(rate) > 10 m/day:  217,679 rows
+abs(rate) > 100 m/day: 141,094 rows
 ```
 
 Q4 目前是 audit-only；沒有 external maneuver labels 或已校準 rejection rule，這些 rows 必須保留。
@@ -103,26 +112,23 @@ Q4 目前是 audit-only；沒有 external maneuver labels 或已校準 rejection
 
 ## Provenance 與可重建性
 
-`metadata` records raw signature aggregate, coverage, Git revision, row counts, missingness, frame policy, algorithms, rebuild commands, and a SHA-256 content digest of the Phase 1 implementation files. The current status is `working_audit_pass`; it is not a frozen release.
+P1.7 audit 在 `metadata` 記錄 raw signature aggregate、coverage、Git revision、row counts、missingness、frame policy、algorithms、rebuild commands 與 implementation SHA-256 digest。frozen target 的 status 是 `frozen`，且 cache reuse 已驗證。
 
 `source_files` is immutable raw history. Parsed SP3 frame, cadence, coverage, epoch count, and time system live in derived `swarm_a_pod_source_provenance`, keyed by `source_id`.
 
-Raw tables are immutable. Derived calculations write separate tables. The working SQLite database is intentionally not committed to Git.
+Raw tables are immutable. Derived calculations write separate tables. 兩個 SQLite database 都不提交至 Git。
 
-## 必要的 fresh-rebuild gate
+## Cached-rebuild 證據
 
-1. Create a new SQLite target from local raw files using weather preparation v3:
+已執行：
 
    ```powershell
-   python -m satellite_orbit.phase1.prep_phase1_rebuild data/swarm_a_phase1_rebuild.sqlite
+   python -m satellite_orbit.phase1.prep_phase1_rebuild data/swarm_a_phase1_contract_cached_release.sqlite data/swarm_a_phase1_rebuild.sqlite
    ```
 
-   The target path must not exist; the command refuses to overwrite the working database.
-2. Rebuild raw tables, P1.3/P1.4, mean-orbit, 10-minute orbit/decay, and P1.6 causal analysis in order.
-3. Run the P1.7 audit again: counts, UTC coverage, chunks, finite values, foreign keys, source-time causality, metadata, and raw signatures.
-4. Compare the rebuild outputs with the canonical counts and document any intentional difference before calling the result frozen.
-
-Until this passes, do not claim that the current output has a verified clean rebuild.
+P1.3 與 mean-orbit 在 source/state exact-match 驗證後重用 cache；P1.4 之後重跑 10-minute orbit、
+3/6/12h decay、P1.6 causal analysis 與 P1.7 audit。輸出為 9 chunks、224,928 orbit rows、
+224,280 decay/analysis rows；UTC coverage 為 `2022-01-01 12:10:00Z` 至 `2026-08-13 00:00:00Z`。
 
 ## Phase 2 handoff
 
@@ -130,7 +136,7 @@ Phase 2 starts from `swarm_a_analysis_10min`, not raw 10-second osculating semi-
 
 - Select storm windows and define the scientific comparison.
 - Decide whether density becomes a separate aligned product; do not silently join it into the core table.
-- Calibrate or label the extreme `decay_rate_smooth_m_day` rows before using it for scientific inference.
+- Calibrate or label the extreme `da_dt_12h_backward_m_day` rows before using it for scientific inference.
 - If maneuver labels become available, define a new Q4 version and rebuild chunks; do not retroactively interpret audit residuals as rejection evidence.
 
 ## 文件地圖
@@ -141,7 +147,7 @@ Phase 2 starts from `swarm_a_analysis_10min`, not raw 10-second osculating semi-
 | [P1.4 quality control](P1.4_QUALITY_CONTROL.md) | Q1--Q4 evidence and policy |
 | [P1.5 resample and decay](P1.5_RESAMPLE_AND_DECAY.md) | Method gates and decay design |
 | [P1.6 schema](P1.6_ANALYSIS_SCHEMA.md) | Final feature columns and causal rules |
-| [SQLite lineage](data_lineage/DATA_LINEAGE_SQLITE.md) | Current table shapes |
-| [Data lineage index](data_lineage/README.md) | Source-to-table documents |
+| [SQLite lineage](../../data_lineage/orbit_analysis.md) | Current table shapes |
+| [Data lineage index](../../data_lineage/README.md) | Cross-phase source-to-table documents |
 | [TIMELOG.md](../../TIMELOG.md) | Dated historical evidence |
 | [P1.4 to P1.7 plan](P1.4_TO_P1.7_EXECUTION_PLAN.md) | Superseded historical execution plan |

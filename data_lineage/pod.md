@@ -93,7 +93,7 @@ V [dm/s] -> velocity [m/s]
 
 ```text
 prep_raw_database.py -> write_pod_folder()
-prep_raw_pod.py -> write_pod_file()
+prep_01_raw_pod.py -> write_pod_file()
 
 file_signature() -> source_files
 time_to_us() -> time_us
@@ -145,12 +145,12 @@ SQLite
 ## [5] raw State -> derived mean orbit + quality
 
 ```text
-prep_derived_orbital_elements.py
+prep_03_orbital_elements.py
   -> instantaneous semi-major axis [m]
-prep_derived_pod_quality.py
-  -> usable + chunk_id
-prep_derived_mean_orbit.py
+prep_04_mean_orbit.py
   -> mean semi-major axis [m]
+prep_05_pod_quality.py
+  -> usable + chunk_id
 ```
 
 ```text
@@ -172,7 +172,7 @@ prep_derived_mean_orbit.py
 ## [6] mean State list -> UTC 10-minute orbit
 
 ```text
-prep_derived_orbit_10min.py
+prep_06_orbit_10min.py
 
 [end - 600 s, end)
 same chunk only
@@ -196,12 +196,13 @@ pod_count >= 56
 }
 ```
 
-## [7] Orbit10Minute list -> decay / analysis row
+## [7] Orbit10Minute list -> signed rate / analysis row
 
 ```text
-prep_derived_decay_rate.py
-  -> centered Savitzky-Golay {73 samples, order 2}
-prep_derived_analysis_10min.py
+prep_07_decay_rate.py
+  -> signed backward differences {a(t), a(t - 3 h), a(t - 6 h), a(t - 12 h)}
+  -> all predecessor rows share chunk_id and are exactly 600 s-spaced
+prep_08_analysis_10min.py
   -> causal weather + geomagnetic join
 ```
 
@@ -216,10 +217,12 @@ prep_derived_analysis_10min.py
 ```text
 {
   time: 2024-05-10 14:30:00 UTC,
-  decay_rate_smooth_m_day: 0.864 m/day,
+  da_dt_3h_backward_m_day: -0.864 m/day,
+  da_dt_6h_backward_m_day: -0.864 m/day,
+  da_dt_12h_backward_m_day: -0.864 m/day,
   chunk_id: 2,
   quality_flags: "ok"
 }
 ```
 
-Current database has completed steps [1]--[7]. weather v2/v3 fresh rebuild is pending; see `../PHASE_1_FINAL_REPORT.md`.
+新 release 的 step [7] 使用 3/6/12 小時 contract；P1.7 必須逐列驗證三個 predecessor 與 m/day 單位換算。

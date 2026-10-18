@@ -33,7 +33,7 @@ any uncertainty or change
 ```
 
 `chunk_id` 是唯一必要的 chunk metadata。不記 `chunk_reason`；多切可以接受，少切不可以。
-mean orbit、10-minute bin、smoothing、derivative 都不可跨 `chunk_id`。
+mean orbit、10-minute bin、3/6/12 小時 derivative 都不可跨 `chunk_id`。
 
 ```text
 10-minute POD bin
@@ -50,16 +50,16 @@ mean orbit、10-minute bin、smoothing、derivative 都不可跨 `chunk_id`。
 | --- | --- | --- |
 | P1.1/P1.2 raw intake | [done] | 1,685 POD ZIP；14,558,400 `swarm_a_states` |
 | P1.3 osculating element | [done] | 14,558,400 `swarm_a_orbital_elements` |
-| P1.4-A/B chunk rebuild | [done] | 14,558,400 quality rows；4 final chunks |
+| P1.4-A/B chunk rebuild | [done] | 14,558,400 quality rows；13,495,680 usable rows；9 final chunks |
 | P1.4-C provenance + Q3 | [done] | `swarm_a_pod_source_provenance` SP3 metadata；`quality_source: unavailable` |
 | P1.4-D Q4 residual audit | [done: audit-only] | synthetic jump sensitivity；不設 rejection threshold |
 | P1.5-A mean-orbit method | [done] | Brouwer-Lyddane；3 intervals suppression 99.33--99.45% |
-| P1.5 full mean batch | [done] | 14,558,400 mean rows；missing 0；rejection 0；SQLite integrity `ok` |
-| P1.5-B 10-minute orbit | [done] | 242,640 `swarm_a_orbit_10min`；4 chunks；`pod_count = 58..60` |
-| P1.5-C/D smoothing / derivative | [done] | centered Savitzky-Golay；每個 run 兩端各排除 36 列 |
-| P1.6 causal join | [done] | 242,352 `swarm_a_analysis_10min`；所有 final feature 均有來源時間 |
-| P1.7 current-database audit | [done] | integrity / foreign keys / counts / finite values / causal-source audit 通過 |
-| P1.7 fresh rebuild | [pending] | weather preparation v2/v3 修正後，尚未由 raw files 重建並重跑 audit |
+| P1.5 cached mean orbit | [done] | P1.3 與 mean-orbit 直接重用已驗證的 frozen cache；13,495,680 usable mean rows |
+| P1.5-B 10-minute orbit | [done] | 224,928 `swarm_a_orbit_10min`；9 chunks；`pod_count = 58..60` |
+| P1.5-C/D derivative | [legacy] | 12 小時 backward difference；已由 3/6/12 小時契約取代 |
+| P1.6 causal join | [done] | 224,280 `swarm_a_analysis_10min`；所有 final feature 均有來源時間 |
+| P1.7 legacy working-DB audit | [done] | 226,368 rows；core fields、optional feature groups、causality、chunk continuity 與 SQLite checks 通過 |
+| P1.7 cached 3h/6h/12h release | [done] | `data/swarm_a_phase1_contract_cached_release.sqlite`；224,280 rows；`frozen`、`verified_mean_orbit_cache_reuse`、integrity/fk/audit 通過 |
 
 ## 依賴
 
@@ -67,7 +67,7 @@ mean orbit、10-minute bin、smoothing、derivative 都不可跨 `chunk_id`。
 P1.4 final policy
   + P1.5 full mean batch
       -> P1.5-B {10-minute orbit}
-      -> P1.5-C/D {smooth, derivative, release gate}
+      -> P1.5-C/D {3h/6h/12h backward derivatives, release gate}
       -> P1.6-A tests + P1.6-B {causal join}
       -> P1.7 {metadata, rebuild, export}
 ```
@@ -120,7 +120,7 @@ density stays outside core analysis table
     tests: full bin / 56-row edge bin / gap / chunk boundary
 
 [4] P1.5-C/D
-    chunk-local smoothing + derivative + decay rate
+    chunk-local 3h/6h/12h backward differences + decay rates
     tests: constant / linear decline / gap
 
 [5] P1.6
@@ -136,24 +136,23 @@ density stays outside core analysis table
 
 P1.1--P1.4 不重新寫 raw data；只在 P1.7 做 final audit。
 
-## Current database evidence
+## Legacy frozen release evidence
 
 ```text
-14,558,400 usable POD
-  -> 14,558,400 mean-orbit rows
-  -> 242,640 UTC 10-minute orbit rows
-  -> centered Savitzky-Golay per contiguous chunk/run
-  -> 242,352 final analysis rows
+13,495,680 usable POD
+  -> 13,495,680 mean-orbit rows
+  -> 224,928 UTC 10-minute orbit rows
+  -> legacy backward 12-hour difference per contiguous chunk/run
+  -> 224,280 final analysis rows
 ```
 
-- `swarm_a_orbit_10min`：4 個 `chunk_id`；`pod_count = 58..60`；`max_pod_gap_s = 10`；演算法 `utc_10min_mean_brouwer_lyddane_v1`。
+- `swarm_a_orbit_10min`：6 個 `chunk_id`；`pod_count = 58..60`；`max_pod_gap_s = 10`；演算法 `utc_10min_mean_brouwer_lyddane_v1`。
 - bin contract：`[end - 600 s, end)`，end 為 `time_us`；同一 `chunk_id`；至少 56 筆。
-- smooth / derivative：`centered_savgol_mean_orbit_v1`，window 73 個 10-minute samples，polynomial order 2；連續 run 兩端各排除 36 列，不跨 chunk 或 600 s gap。
-- `swarm_a_analysis_10min`：242,352 列，4 個 `chunk_id`，演算法 `causal_space_weather_geomagnetic_v1`；`quality_flags = ok` 全數成立。
+- derivative：legacy `backward_difference_12h_mean_orbit_v1`；新 release 使用 `backward_difference_3h_6h_12h_mean_orbit_v3`，每個 window 都比較 `a(t)` 與 `a(t - H h)`，連續 run 前 72 列排除，不跨 chunk 或 600 s gap。
+- `swarm_a_analysis_10min`：此段 226,368 列與 `causal_space_weather_geomagnetic_backward_12h_v1` 都是 legacy evidence；新 release 的 row count 與 audit 結果以 P1.7 manifest 為準。
 - causal join：Ap、F10.7、F10.7A source time 不晚於 orbit time；SYM-H 只允許有完整左右端點的 <= 2 分鐘內插。P1.7 audit 無 future reference。
 - DNSAACC density 保留在 raw `swarm_a_density`，未放入 core analysis table。
-- P1.7 current-database audit：SQLite `integrity_check = ok`、foreign-key check 空、final table 無 NULL/NaN/inf、無跨 chunk/gap。
-- WARNING: weather preparation v2/v3 修正後，尚未在 fresh database 重建 raw -> P1.6 並重跑此 audit；不可把目前結果稱為 frozen release。
+- P1.7 cached audit：SQLite `integrity_check = ok`、foreign-key check 空、core fields 無 NULL/NaN/inf、optional feature groups 與 `quality_flags` 一致、無跨 chunk/gap 或 future reference；metadata 為 `frozen` 與 `verified_mean_orbit_cache_reuse`。
 
 ## 工作包 0：固定 P1.4 final policy
 
@@ -184,23 +183,24 @@ frame transition report。
 
 ## 工作包 1：完成 P1.5 mean-orbit batch
 
-目的：對每筆 usable POD 建立可重建的 Brouwer-Lyddane mean semi-major axis。
+目的：在 P1.4 前，對每筆 P1.3 valid POD 建立可重建的 Brouwer-Lyddane mean semi-major axis。
 
-輸入：`swarm_a_states` + `swarm_a_pod_quality {is_usable = 1}`。
+輸入：`swarm_a_states` + `swarm_a_orbital_elements {semi_major_axis_m != NULL, rejection_reason = NULL}`。
 
 工作：
 
-1. 從既有 checkpoint 執行 `prep_derived_mean_orbit`；不可同時有第二個 SQLite writer。
+1. 從既有 checkpoint 執行 `prep_04_mean_orbit`；不可同時有第二個 SQLite writer。
 2. 本次 exceptional full rebuild 可暫時用 3 個 read-only calculator + 1 個 writer；完成後刪除平行 code。
 3. 驗證 count、missing、rejection、首尾 UTC、每 source completeness。
 
 輸出：`swarm_a_mean_orbital_elements {time_us, mean_semi_major_axis_m, rejection_reason}`。
 
-驗收：14,558,400 usable POD 都有一列；rejection 有明確原因；不改 raw table。
+驗收：所有 P1.3 valid POD 都有一列；P1.4 在下游排除官方 orbit event 與其他不可用 row；不改 raw table。
 
-完成證據：14,558,400 usable POD 都有 mean row；每 source completeness 差異 0；
-mean semi-major axis 均為有限正值，範圍 6,787,017.63--6,860,042.07 m；rejection 0；
-SQLite `integrity_check = ok`。一次性 3-worker runner 已移除，程式回復單線 source -> calculate -> SQLite write。
+歷史完成證據：campaign date-level exclusion 加入前，14,558,400 POD 有 mean row；每 source
+completeness 差異 0；mean semi-major axis 均為有限正值，範圍
+6,787,017.63--6,860,042.07 m；rejection 0。新版 policy 的 fresh rebuild 已另在 frozen
+target 為 13,608,000 個 usable POD 產生 mean rows。
 
 ## 工作包 2：P1.5-B 建立 10-minute orbit table [done]
 
@@ -217,7 +217,7 @@ SQLite `integrity_check = ok`。一次性 3-worker runner 已移除，程式回�
 驗收：每列只來自單一 chunk；沒有跨 gap；完整 10-second bin 的預期 count 是 60，
 但只要 `pod_count >= 56` 就可接受。
 
-## 工作包 3：P1.5-C/D smoothing、derivative、release gate [done]
+## 工作包 3：P1.5-C/D backward difference、release gate [done]
 
 目的：由 mean-like 10-minute series 產生可解釋的 decay rate。
 
@@ -225,13 +225,13 @@ SQLite `integrity_check = ok`。一次性 3-worker runner 已移除，程式回�
 
 工作：
 
-1. 以每個 chunk 獨立處理；使用已通過 mean-like synthetic gate 的候選 policy。
-2. 再以 fixed synthetic constant / linear decline / gap tests 驗證參數與符號。
-3. 寫 smooth semi-major axis、derivative、正值 decay rate 與 algorithm metadata。
+1. 以每個 chunk 的連續 600 s run 獨立處理。
+2. 以 fixed synthetic constant / linear decline / gap tests 驗證 3、6、12 小時 backward interval 與符號。
+3. 寫 orbit-mean semi-major axis、三組 backward derivative 與 algorithm metadata。
 
 輸出：canonical P1.5 10-minute orbit output。
 
-驗收：constant derivative 接近零；linear decline sign/size 正確；沒有 NaN/inf 或跨 chunk fit。
+驗收：constant derivative 為零；linear decline sign/size 正確；沒有 NaN/inf、跨 chunk 或跨 gap interval。
 
 ## 工作包 4：P1.6 causal feature join [done]
 
@@ -245,17 +245,17 @@ SQLite `integrity_check = ok`。一次性 3-worker runner 已移除，程式回�
 
 驗收：每個 source time 都可追溯；除合法 SYM-H right endpoint 外，source time `<= orbit time`。
 
-## 工作包 5：P1.7 release [current-database audit done; fresh rebuild pending]
+## 工作包 5：P1.7 release [done]
 
 目的：把 final table、metadata 與 clean rebuild procedure 固定為可交付資料集。
 
 工作：
 
 1. 寫 metadata：raw signature、coverage、code revision、frame policy、P1.4/P1.5/P1.6 policy、row count、missingness。
-2. 在新 SQLite 驗證 raw -> P1.3 -> P1.4 -> P1.5 -> P1.6 rebuild。weather preparation v2/v3 修正後此項仍待執行。
-3. 可選 CSV/Parquet export；SQLite 保留 working database 角色。
+2. 已在 `data/swarm_a_phase1_rebuild.sqlite` 驗證 raw -> P1.3 -> P1.4 -> P1.5 -> P1.6 rebuild 與 P1.7 audit。
+3. 可選 CSV/Parquet export；frozen SQLite 是正式交付，legacy working database 保留比較用途。
 
-驗收：fresh rebuild 的 schema、row count、UTC range、quality flag、source provenance 均通過 audit。現有 database audit 不是此驗收的替代。
+驗收：fresh rebuild 的 schema、row count、UTC range、quality flag、source provenance 均已通過 audit。
 
 ## 每個工作包的固定記錄
 

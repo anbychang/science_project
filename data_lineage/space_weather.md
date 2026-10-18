@@ -94,7 +94,7 @@ SQLite
 ## [4] WeatherRecord -> analysis feature fields
 
 ```text
-prep_derived_analysis_10min.py
+prep_08_analysis_10min.py
 
 Ap -> target official 3-hour block
 F10.7 / F10.7A -> previous-day source_time
@@ -122,4 +122,4 @@ source_time <= orbit_time
 }
 ```
 
-Current database has this causal join. weather v2/v3 fresh rebuild is pending; see `../PHASE_1_FINAL_REPORT.md`.
+Frozen release has this causal join and passed the release audit; see [final report](../plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md).

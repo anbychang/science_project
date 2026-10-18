@@ -1,4 +1,4 @@
-"""Write causal P1.6 features beside qualified 10-minute orbit rows."""
+"""Write causal P1.6 features beside qualified multi-window orbit rates."""
 
 import sqlite3
 import sys
@@ -13,19 +13,53 @@ from satellite_orbit.data.database.prep_raw_schema import connect_database
 
 
 DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
-ALGORITHM_VERSION = "causal_space_weather_geomagnetic_v1"
+ALGORITHM_VERSION = "causal_space_weather_geomagnetic_backward_3h_6h_12h_v3"
+ANALYSIS_COLUMNS = {
+    "time_us",
+    "semi_major_axis_orbit_mean_m",
+    "da_dt_3h_backward_m_s",
+    "da_dt_3h_backward_m_day",
+    "da_dt_6h_backward_m_s",
+    "da_dt_6h_backward_m_day",
+    "da_dt_12h_backward_m_s",
+    "da_dt_12h_backward_m_day",
+    "pod_count",
+    "max_pod_gap_s",
+    "chunk_id",
+    "sym_h_nt",
+    "sym_h_left_time_us",
+    "sym_h_right_time_us",
+    "ap_now",
+    "ap_source_time_us",
+    "f107_sfu",
+    "f107_source_time_us",
+    "f107a_sfu",
+    "f107a_source_time_us",
+    "f107_data_type",
+    "quality_flags",
+    "algorithm_version",
+}
 
 
 def create_analysis_10min_table(connection):
     """Input: SQLite connection
     Output: P1.6 analysis table exists"""
+    existing_columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(swarm_a_analysis_10min)")
+    }
+    if existing_columns and existing_columns != ANALYSIS_COLUMNS:
+        connection.execute("DROP TABLE swarm_a_analysis_10min")
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS swarm_a_analysis_10min (
             time_us INTEGER PRIMARY KEY,
-            semi_major_axis_smooth_m REAL NOT NULL,
-            da_dt_smooth_m_s REAL NOT NULL,
-            decay_rate_smooth_m_day REAL NOT NULL,
+            semi_major_axis_orbit_mean_m REAL NOT NULL,
+            da_dt_3h_backward_m_s REAL NOT NULL,
+            da_dt_3h_backward_m_day REAL NOT NULL,
+            da_dt_6h_backward_m_s REAL NOT NULL,
+            da_dt_6h_backward_m_day REAL NOT NULL,
+            da_dt_12h_backward_m_s REAL NOT NULL,
+            da_dt_12h_backward_m_day REAL NOT NULL,
             pod_count INTEGER NOT NULL,
             max_pod_gap_s REAL NOT NULL,
             chunk_id INTEGER NOT NULL,
@@ -54,9 +88,13 @@ def orbit_rows(connection):
         """
         SELECT
             decay.time_us,
-            decay.semi_major_axis_smooth_m,
-            decay.da_dt_smooth_m_s,
-            decay.decay_rate_smooth_m_day,
+            decay.semi_major_axis_orbit_mean_m,
+            decay.da_dt_3h_backward_m_s,
+            decay.da_dt_3h_backward_m_day,
+            decay.da_dt_6h_backward_m_s,
+            decay.da_dt_6h_backward_m_day,
+            decay.da_dt_12h_backward_m_s,
+            decay.da_dt_12h_backward_m_day,
             orbit.pod_count,
             orbit.max_pod_gap_s,
             decay.chunk_id
@@ -131,9 +169,13 @@ def analysis_rows(orbits, observations, weather):
         weather_features = align_space_weather(target_time_us, weather)
         yield (
             target_time_us,
-            orbit["semi_major_axis_smooth_m"],
-            orbit["da_dt_smooth_m_s"],
-            orbit["decay_rate_smooth_m_day"],
+            orbit["semi_major_axis_orbit_mean_m"],
+            orbit["da_dt_3h_backward_m_s"],
+            orbit["da_dt_3h_backward_m_day"],
+            orbit["da_dt_6h_backward_m_s"],
+            orbit["da_dt_6h_backward_m_day"],
+            orbit["da_dt_12h_backward_m_s"],
+            orbit["da_dt_12h_backward_m_day"],
             orbit["pod_count"],
             orbit["max_pod_gap_s"],
             orbit["chunk_id"],
@@ -168,7 +210,7 @@ def write_analysis_metadata(connection):
 
 
 def write_analysis_10min(database_path=DEFAULT_DATABASE):
-    """Input: SQLite path with P1.5 decay and raw feature tables
+    """Input: SQLite path with P1.5 signed orbit-rate and raw feature tables
     Output: {input_rows, stored_rows}"""
     database_path = Path(database_path)
     connection = connect_database(database_path)
@@ -182,7 +224,7 @@ def write_analysis_10min(database_path=DEFAULT_DATABASE):
             connection.executemany(
                 """
                 INSERT INTO swarm_a_analysis_10min VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                 )
                 """,
                 analysis_rows(orbits, sym_h_rows(connection), weather),
@@ -195,12 +237,12 @@ def write_analysis_10min(database_path=DEFAULT_DATABASE):
 
 
 def main():
-    """Input: python -m satellite_orbit.phase1.prep_derived_analysis_10min
+    """Input: python -m satellite_orbit.phase1.prep_08_analysis_10min
     Output: P1.6 write summary"""
     if sys.argv[1:]:
         raise ValueError("Usage: no arguments")
     result = write_analysis_10min()
-    print(f"Decay-rate input rows: {result['input_rows']}")
+    print(f"Semi-major-axis-rate input rows: {result['input_rows']}")
     print(f"Analysis rows written: {result['stored_rows']}")
 
 

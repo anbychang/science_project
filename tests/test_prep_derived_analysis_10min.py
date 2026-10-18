@@ -8,9 +8,9 @@ from pathlib import Path
 
 from satellite_orbit.data.database.prep_raw_identifiers import time_to_us
 from satellite_orbit.data.database.prep_raw_schema import create_tables
-from satellite_orbit.data.pod.prep_derived_decay_rate import create_decay_rate_table
-from satellite_orbit.data.pod.prep_derived_orbit_10min import create_orbit_10min_table
-from satellite_orbit.phase1.prep_derived_analysis_10min import write_analysis_10min
+from satellite_orbit.data.pod.prep_06_orbit_10min import create_orbit_10min_table
+from satellite_orbit.data.pod.prep_07_decay_rate import create_decay_rate_table
+from satellite_orbit.phase1.prep_08_analysis_10min import write_analysis_10min
 
 
 def utc_time_us(hour, minute=0, day=10):
@@ -47,8 +47,19 @@ def add_orbit_rows(connection, times):
             (time_us, 6_850_000.0, 60, 10.0, 1, "p1.5"),
         )
         connection.execute(
-            "INSERT INTO swarm_a_orbit_decay_10min VALUES (?, ?, ?, ?, ?, ?)",
-            (time_us, 6_850_000.0, -0.001, 86.4, 1, f"p1.5-{index}"),
+            "INSERT INTO swarm_a_orbit_decay_10min VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                time_us,
+                6_850_000.0,
+                -0.001,
+                -86.4,
+                -0.001,
+                -86.4,
+                -0.001,
+                -86.4,
+                1,
+                f"p1.5-{index}",
+            ),
         )
 
 

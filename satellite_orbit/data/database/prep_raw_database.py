@@ -5,7 +5,7 @@ from pathlib import Path
 from satellite_orbit.data.database.prep_raw_schema import connect_database, create_tables
 from satellite_orbit.data.density.prep_raw_density import write_density_folder
 from satellite_orbit.data.geomagnetic.prep_raw_geomagnetic import write_ae, write_sym_h
-from satellite_orbit.data.pod.prep_raw_pod import write_pod_folder
+from satellite_orbit.data.pod.prep_01_raw_pod import write_pod_folder
 from satellite_orbit.data.space_weather.prep_raw_weather import write_space_weather
 
 DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")

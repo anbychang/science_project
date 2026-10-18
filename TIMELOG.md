@@ -1,8 +1,8 @@
 # Swarm-A 軌道衰減研究時間紀錄
 
-最後更新：2026-10-17
+最後更新：2026-10-18
 
-Current status：現有 SQLite 的 Phase 1 working output 已通過 audit；weather preparation v2/v3 修正後的 fresh rebuild 尚未完成。詳細交付與限制見 `plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md`。
+Current status：`data/swarm_a_phase1_rebuild_v4.sqlite` 是現行 Phase 1 working output，已通過 audit；它是由 v3 從 signed-rate stage 往下重建，並非 full fresh rebuild。詳細交付與限制見 `plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md`。
 
 這份檔案只記錄時間順序：某一天做了什麼、量到什麼、得到什麼結論。它不放長期規則或完整技術定義；那些放在 `plans/phase_1_data_preparation/PLAN.md` 與各階段規格。
 
@@ -263,7 +263,7 @@ Brouwer-Lyddane conversion 是下一個合理選項，但本機沒有 Java、Ore
 
 **結果**：將原本單一 data-lineage 文件拆成 POD、space weather、geomagnetic、density 四份。每份固定記錄 `資料`、`程式`、`動作`、`輸出`、`Shape`、`例`；資料 shape 用多行 `{}` 與 `[]`，不把巢狀欄位塞成長句。
 
-**證據**：`plans/phase_1_data_preparation/data_lineage/` 內的 `DATA_LINEAGE_POD.md` 追到 `swarm_a_pod_quality`；`DATA_LINEAGE_SPACE_WEATHER.md` 追到 `space_weather`；`DATA_LINEAGE_GEOMAGNETIC.md` 追到 `geomagnetic`；`DATA_LINEAGE_DENSITY.md` 追到 `swarm_a_density`。P1.5/P1.6 都標為未建立。
+**證據**：POD lineage 追到 `swarm_a_pod_quality`；space-weather lineage 追到 `space_weather`；geomagnetic lineage 追到 `geomagnetic`；density lineage 追到 `swarm_a_density`。P1.5/P1.6 都標為未建立。2026-10-18 已集中至 `data_lineage/`，作為獨立 target 與實際資料產品記錄。
 
 **決定**：資料血緣是程式與資料表之間的追溯文件，不是研究計畫替代品。新增來源或改變 writer 時，必須同步更新對應 lineage 文件與本格式規則。
 
@@ -400,3 +400,68 @@ aggregate、coverage、Git revision、row counts、missingness 與 rebuild comma
 SQLite `metadata`。
 
 **限制**：這是 current-database audit。weather preparation v2/v3 修正後，尚未從 raw files fresh rebuild 並重跑完整 audit；不可將本次結果稱為 frozen release。
+
+## 2026-10-18：補齊 Swarm-A 官方 orbit event 排除
+
+**發現**：原本三段 orbit-raise campaign 不足以涵蓋所有有官方證據、會污染 Swarm-A
+12-hour semi-major-axis difference 的操作日。官方文件確認兩個漏項：
+
+| event | UTC exclusion | 證據 | 對舊輸出的影響 |
+| --- | --- | --- | --- |
+| `SWA_ORBIT_CONTROL_2022-01-13` | `[2022-01-13, 2022-01-14)` | ESA-prepared CGMS report | 舊版 campaign 外最大上升：`2022-01-14T00:00:00Z` 的 12-hour `delta_a = +273.788 m`，輸出為 `-547.576 m/day`。 |
+| `SWA_CAM_2023-01-06` | `[2023-01-06, 2023-01-07)` | ESA-prepared CGMS report | 沒有同級數值上升，但屬已確認 Swarm-A maneuver，不能留在自然衰減樣本。 |
+
+**做了什麼**：
+
+1. 對既有 2022、2023、2026 campaign 加上上述兩個單日 event，建立
+   `OFFICIAL_SWARM_A_ORBIT_EVENTS {id, kind, start, stop}`。
+2. P1.4 依 event kind 標記 `planned_orbit_raise_campaign`、
+   `official_orbit_control_manoeuvre` 或 `official_collision_avoidance_manoeuvre`，並切開
+   chunk。
+3. 完成官方 catalog 稽核；沒有找到 2024--2025 或 `2026-08-13` 前另一段可精確指向
+   Swarm-A 的公開 raise/CAM 日期。
+4. 將所有官方 event 與已檢查觀測時段記入
+   `plans/phase_1_data_preparation/ORBIT_RAISE_CAMPAIGN_MEMORY.md`；詳細證據在
+   `plans/phase_1_data_preparation/RESEARCH_SWARM_A_ORBIT_RAISE_CATALOG_AUDIT.md`。
+
+**流程決定**：Brouwer-Lyddane mean orbit 僅依 P1.3 valid state 計算，執行順序改為
+`P1.3 -> P1.5 mean orbit -> P1.4 quality -> 10-minute -> backward 12h`。P1.4 只決定哪些
+既有 mean row 可進下游。新增官方 event 時，從 P1.4 往下重建即可，不再重算 Orekit
+mean orbit。
+
+**結果**：現行 `data/swarm_a_phase1_rebuild_v3.sqlite` 從 P1.4 往下重建完成。P1.4 有
+`13,495,680` usable rows、`1,045,440` campaign rows、兩種單日 maneuver 各 `8,640` rows，
+final chunk count 為 `9`。P1.5/P1.6 各輸出 `224,280` decay / analysis rows；所有 official
+event 的 final analysis row count 為 `0`。先前 `>700 m/day` 的 campaign uplift 已不在 final
+output；最大剩餘正半長軸變化是 `2022-10-10T14:20:00Z` 的 `522.574 m/day`，沒有對應的
+官方 Swarm-A event 證據，維持 audit-only。
+
+**驗證**：P1.7 audit pass，SQLite integrity 與 foreign key 均為 0 failure；analysis/decay
+key、chunk、time continuity、feature source time 與 missingness 全部通過。
+
+**狀態**：舊 `data/swarm_a_phase1_rebuild.sqlite` 已被 supersede，不可作正式交付。先前
+v2 與全量 v3 均在發現流程可縮短後停止並移除。現行 v3 是從既有 raw/P1.3/mean 資料複製後
+做 P1.4--P1.7 partial rebuild，因此狀態為 `working_audit_pass`，不是 `frozen`；它沒有偽稱
+為完整 fresh rebuild。
+
+## 2026-10-18：自然符號 rate 與編號 pipeline
+
+**決定**：不再輸出反號的 `decay_rate_12h_backward_m_day`。正式欄位改為
+`da_dt_12h_backward_m_day = da_dt_12h_backward_m_s * 86400`；負值代表半長軸下降，與
+`da_dt_12h_backward_m_s` 及外部文獻的自然符號一致。
+
+**做了什麼**：
+
+1. 更新 signed-rate table、analysis table、release audit、schema 文件與測試；舊欄位不再存在。
+2. POD processing module 改為 `prep_01` 至 `prep_07`，analysis 與 release audit 為
+   `prep_08`、`prep_09`；順序寫入 `plans/phase_1_data_preparation/POD_PIPELINE.md`。
+3. 從 v3 複製建立 `data/swarm_a_phase1_rebuild_v4.sqlite`，只重建 rate、analysis、audit；
+   mean orbit 沒有重算，v3 保留。
+
+**結果**：v4 有 `224,280` analysis rows。首列舊 `+146.856 m/day` 改為
+`-146.856 m/day`；末列舊 `-225.052 m/day` 改為 `+225.052 m/day`。所有數值絕對值、時間、
+chunk 與 feature 都保持不變。
+
+**驗證**：完整 test suite `95` tests 通過；新的 synthetic decline test 確認
+`-1.2 m/day` 下降輸出 `-1.2 m/day`；v4 schema 沒有舊欄位，且 status 是
+`working_audit_pass`。

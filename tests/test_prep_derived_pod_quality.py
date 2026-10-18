@@ -3,11 +3,14 @@
 import sqlite3
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from satellite_orbit.data.database.prep_raw_schema import create_tables
-from satellite_orbit.data.pod.prep_derived_pod_quality import (
+from satellite_orbit.data.pod.prep_05_pod_quality import (
     create_quality_table,
+    official_orbit_event_at,
+    planned_orbit_raise_campaign_id,
     quality_row,
     row_provenance,
     starts_new_chunk,
@@ -106,6 +109,92 @@ class PodQualityTest(unittest.TestCase):
         row["orbital_rejection_reason"] = "Orbit state is not bound to Earth."
         result = quality_row(row, None)
         self.assertEqual(result[2], "invalid_orbital_energy")
+
+    def test_rejects_official_orbit_raise_campaign_dates(self):
+        """Input: dates inside and outside official maneuver windows
+        Output: each official operation has its typed rejection reason"""
+        checks = [
+            (
+                datetime(2022, 1, 13, tzinfo=timezone.utc),
+                "official_orbit_control_manoeuvre",
+            ),
+            (datetime(2022, 1, 14, tzinfo=timezone.utc), None),
+            (datetime(2023, 4, 25, 23, 59, 59, tzinfo=timezone.utc), None),
+            (
+                datetime(2023, 4, 26, tzinfo=timezone.utc),
+                "planned_orbit_raise_campaign",
+            ),
+            (
+                datetime(2023, 6, 7, 23, 59, 59, tzinfo=timezone.utc),
+                "planned_orbit_raise_campaign",
+            ),
+            (datetime(2023, 6, 8, tzinfo=timezone.utc), None),
+            (
+                datetime(2023, 1, 6, tzinfo=timezone.utc),
+                "official_collision_avoidance_manoeuvre",
+            ),
+            (datetime(2023, 1, 7, tzinfo=timezone.utc), None),
+            (
+                datetime(2026, 7, 21, tzinfo=timezone.utc),
+                "planned_orbit_raise_campaign",
+            ),
+            (
+                datetime(2026, 7, 31, 23, 59, 59, tzinfo=timezone.utc),
+                "planned_orbit_raise_campaign",
+            ),
+            (datetime(2026, 8, 1, tzinfo=timezone.utc), None),
+        ]
+        for timestamp, expected_reason in checks:
+            with self.subTest(timestamp=timestamp):
+                row = valid_row()
+                row["time_us"] = int(timestamp.timestamp() * 1_000_000)
+                self.assertEqual(quality_row(row, None)[2], expected_reason)
+
+    def test_identifies_official_single_day_maneuvers(self):
+        """Input: maneuver dates and their exclusive stops
+        Output: stable ID and kind only inside the official date window"""
+        checks = [
+            (
+                datetime(2022, 1, 13, tzinfo=timezone.utc),
+                ("SWA_ORBIT_CONTROL_2022-01-13", "orbit_control_manoeuvre"),
+            ),
+            (datetime(2022, 1, 14, tzinfo=timezone.utc), None),
+            (
+                datetime(2023, 1, 6, tzinfo=timezone.utc),
+                ("SWA_CAM_2023-01-06", "collision_avoidance_manoeuvre"),
+            ),
+            (datetime(2023, 1, 7, tzinfo=timezone.utc), None),
+        ]
+        for timestamp, expected_event in checks:
+            with self.subTest(timestamp=timestamp):
+                time_us = int(timestamp.timestamp() * 1_000_000)
+                self.assertEqual(official_orbit_event_at(time_us), expected_event)
+
+    def test_identifies_campaign_at_its_half_open_boundaries(self):
+        """Input: campaign starts and stops
+        Output: only timestamps inside a campaign have its stable ID"""
+        checks = [
+            (
+                datetime(2022, 5, 3, tzinfo=timezone.utc),
+                "SWA_C_ORBIT_RAISE_2022",
+            ),
+            (
+                datetime(2023, 4, 26, tzinfo=timezone.utc),
+                "SWA_C_ORBIT_RAISE_2023_PHASE_II",
+            ),
+            (
+                datetime(2026, 7, 21, tzinfo=timezone.utc),
+                "SWA_C_ORBIT_RAISE_2026",
+            ),
+            (datetime(2026, 8, 1, tzinfo=timezone.utc), None),
+        ]
+        for timestamp, expected_campaign_id in checks:
+            with self.subTest(timestamp=timestamp):
+                time_us = int(timestamp.timestamp() * 1_000_000)
+                self.assertEqual(
+                    planned_orbit_raise_campaign_id(time_us),
+                    expected_campaign_id,
+                )
 
     def test_adjacent_sources_in_same_stream_keep_one_chunk(self):
         """Input: adjacent daily ZIPs with the same source conditions
@@ -211,6 +300,24 @@ class PodQualityTest(unittest.TestCase):
         self.assertEqual(result["raw_rows"], 2)
         self.assertEqual(quality_rows, [(0, 1), (10_000_000, 1)])
         self.assertEqual(columns, {"time_us", "is_usable", "rejection_reason", "chunk_id"})
+
+    def test_rebuild_refuses_to_invalidate_downstream_output(self):
+        """Input: populated mean-orbit output
+        Output: quality rebuild fails before changing its upstream contract"""
+        with tempfile.TemporaryDirectory() as temporary_folder:
+            database_path = Path(temporary_folder) / "quality.sqlite"
+            with sqlite3.connect(database_path) as connection:
+                create_tables(connection)
+                connection.execute(
+                    "CREATE TABLE swarm_a_mean_orbital_elements (time_us INTEGER PRIMARY KEY)"
+                )
+                connection.execute(
+                    "INSERT INTO swarm_a_mean_orbital_elements VALUES (1)"
+                )
+            connection.close()
+
+            with self.assertRaisesRegex(ValueError, "invalidate downstream output"):
+                write_pod_quality(database_path)
 
     def test_writer_keeps_adjacent_same_stream_sources_in_one_chunk(self):
         """Input: two adjacent daily source files in one stream

@@ -12,7 +12,7 @@
 - 專案內部使用 SI 單位：`m`, `m/s`, `m/s^2`, `s`, `kg/m^3`。
 - 原始 POD 使用 SP3 header 寫明的地球固定 IGS reference frame。現有 `loader` 暫時把它泛稱為 `ITRF`；跨時段正式分析前要處理下方的 frame issue。
 - 所有資料對齊都使用 UTC。
-- 衰減率定義為 `decay_rate_smooth_m_day = -da_dt_smooth_m_s * 86400`；正值代表半長軸下降。
+- 半長軸變化率同時保存 3、6、12 小時 window：`da_dt_Hh_backward_m_day = (a(t) - a(t - H h)) / H h * 86400`；負值代表半長軸下降。
 
 ### Chunk 規則
 
@@ -25,8 +25,7 @@
 chunk_id
   -> mean orbit
   -> 10-minute bin
-  -> smoothing
-  -> derivative
+  -> 3h, 6h, 12h backward differences
 ```
 
 任何一步都不可跨 chunk。
@@ -79,7 +78,7 @@ load SQLite raw data
 
 ## 資料血緣文件格式
 
-每一類 raw data 各有一份獨立文件：`data_lineage/DATA_LINEAGE_POD.md`、`data_lineage/DATA_LINEAGE_SPACE_WEATHER.md`、`data_lineage/DATA_LINEAGE_GEOMAGNETIC.md`、`data_lineage/DATA_LINEAGE_DENSITY.md`。入口是 `data_lineage/README.md`。
+資料沿革是 repository 的獨立 target，放在 [`data_lineage/`](../../data_lineage/README.md)。它按下載資料與資料產品記錄完整 flow，不按 phase 分類。
 
 每個處理 stage 固定使用一個 block：
 
@@ -151,13 +150,14 @@ semi_major_axis_m = -earth_mu_m3_s2 / (2 * specific_energy_m2_s2)
 
 ### P1.4 品質控制與連續區間
 
-在平滑前套用品質規則。保留 `is_usable` 與機器可讀的 `rejection_reason`，不刪除被拒絕的原始列。遇到 product stream、provenance frame、cadence、time gap 或 quality failure 時切開 chunk。Q4 maneuver candidate 目前只做 audit，不切 chunk。
+在平滑前套用品質規則。保留 `is_usable` 與機器可讀的 `rejection_reason`，不刪除被拒絕的原始列。遇到 product stream、provenance frame、cadence、time gap 或 quality failure 時切開 chunk。未標記的 Q4 maneuver candidate 只做 audit，不切 chunk；有官方證據的 Swarm-A orbit event 採 UTC date-level exclusion，必須切開 chunk。
 
 完成條件：每個保留的 10 分鐘 row 都來自一個連續 usable chunk，並報告每種 `rejection_reason` 的數量。
 
-完成：P1.4-A/B 產生 14,558,400 quality rows 與 4 個 final `chunk_id`；P1.4-C 將 SP3
-provenance 寫入 `swarm_a_pod_source_provenance`，Q3 是 `quality_source: unavailable`；P1.4-D 完成 residual
-audit，Q4 明確採 audit-only，保留 rows、不設未校準 rejection threshold。細節見
+完成：P1.4-A/B 產生 14,558,400 quality rows；P1.4-C 將 SP3 provenance 寫入
+`swarm_a_pod_source_provenance`，Q3 是 `quality_source: unavailable`；P1.4-D 完成 residual
+audit。未標記 Q4 保留 rows、不設未校準 rejection threshold；已確認的官方 event 依 canonical
+date interval 排除。細節見
 `P1.4_QUALITY_CONTROL.md`；完成證據見 `PHASE_1_EXECUTION_PLAN.md`。
 
 ### P1.5 Resample 並推導衰減率
@@ -166,17 +166,14 @@ audit，Q4 明確採 audit-only，保留 rows、不設未校準 rejection thresh
 2. 只使用同一個連續 chunk 內、有至少 56 筆有效 POD observation 的 bin；記錄 `pod_count` 與最大 source-time gap。
 3. 先做已驗證的 short-period treatment；不得直接對 osculating 半長軸做 Savitzky-Golay
    或 B-spline 再把導數當 decay。
-4. 每個 valid chunk 分開處理，不可跨 gap；只在通過 P1.5-A 的
-   較慢 series 上計算平滑值與一階導數。
-5. 儲存 `semi_major_axis_smooth_m`、`da_dt_smooth_m_s` 與正值代表下降的
-   `decay_rate_smooth_m_day`。
-
-smoothing method 與參數是要校準的決策，不是先驗事實；用 held-out interval 選擇，並把方法與數值記進 metadata。
+4. 每個 valid chunk 分開處理，不可跨 gap；分別比較同一 chunk 的 `a(t)` 與 `a(t - 3 h)`、`a(t - 6 h)`、`a(t - 12 h)`。
+5. 儲存 `semi_major_axis_orbit_mean_m`，以及每個 window 的 `da_dt_Hh_backward_m_s` 與同符號的
+   `da_dt_Hh_backward_m_day`。
 
 完成：direct raw Savitzky-Golay 已淘汰；Brouwer-Lyddane mean-orbit method 通過 synthetic
-與 real-POD gate，並建立 14,558,400 mean rows。`swarm_a_orbit_10min` 有 242,640 列，
-每個連續 run 以 centered Savitzky-Golay {window: 73, order: 2} 產生 derivative；兩端各
-排除 36 列後，`swarm_a_analysis_10min` 有 242,352 列。
+與 real-POD gate，並建立 14,558,400 legacy mean rows。fresh rebuild 僅為 13,608,000 usable
+POD 建立 mean rows。`swarm_a_orbit_10min` 有 226,800 列，
+每個連續 run 同時產生 3、6、12 小時 backward difference；為保留完整三組 rate，各 run 的前 72 列排除。
 
 完成條件：乾淨的 synthetic linear-decay input 可恢復正確 slope；輸出不可跨 source gap。
 
@@ -203,9 +200,10 @@ smoothing method 與參數是要校準的決策，不是先驗事實；用 held-
 ```text
 {
   time,
-  semi_major_axis_smooth_m,
-  da_dt_smooth_m_s,
-  decay_rate_smooth_m_day,
+  semi_major_axis_orbit_mean_m,
+  da_dt_3h_backward_m_s, da_dt_3h_backward_m_day,
+  da_dt_6h_backward_m_s, da_dt_6h_backward_m_day,
+  da_dt_12h_backward_m_s, da_dt_12h_backward_m_day,
   pod_count,
   max_pod_gap_s,
   chunk_id,
@@ -223,7 +221,7 @@ smoothing method 與參數是要校準的決策，不是先驗事實；用 held-
 }
 ```
 
-資料旁要保存 source signature、code revision、frame、Earth gravitational parameter、short-period treatment 與 smoothing configuration、日期範圍與 row count。CSV 或 Parquet 是可選 export；SQLite 是工作資料庫。
+資料旁要保存 source signature、code revision、frame、Earth gravitational parameter、short-period treatment、3/6/12 小時 interval contract、日期範圍與 row count。P1.7 必須逐列驗證每個 `H` 的 `da_dt_Hh_backward_m_s = (a(t) - a(t - Hh)) / Hh`，並驗證 m/day 欄位的單位換算。CSV 或 Parquet 是可選 export；SQLite 是工作資料庫。
 
 POD 最終輸出欄位、行數限制與檢驗條件見 `POD_FINAL_OUTPUT_SPEC.md`。
 
@@ -234,18 +232,18 @@ POD 最終輸出欄位、行數限制與檢驗條件見 `POD_FINAL_OUTPUT_SPEC.m
 - [x] POD coverage 與 native sampling interval 已 audit。
 - [x] Raw SQLite database 已成功 rebuilt。
 - [x] GCRF orbital-element calculation 已驗證。
-- [x] Quality rules 已完成；Q4 明確 audit-only，rejection 0。
+- [x] Quality rules 已完成；未標記 Q4 維持 audit-only；已確認官方 orbit event 採 date-level exclusion。
 - [x] Direct raw Savitzky-Golay candidate 已用 synthetic data 淘汰。
 - [x] Mean-element method 已用 synthetic 與 real-POD data 驗證；全庫 14,558,400 列完成。
 - [x] 10-minute feature join 已在 boundary 與 gap 驗證。
 - [x] 現有 SQLite 的 derived dataset 與 metadata 已建立；P1.7 integrity / foreign-key / causality audit 通過。
-- [ ] weather preparation v2/v3 修正後，從 raw files fresh rebuild 並重新通過 P1.7 audit。
+- [x] weather preparation v2/v3 修正後，從 raw files fresh rebuild 並重新通過 P1.7 audit；`data/swarm_a_phase1_rebuild.sqlite` 為 frozen release。
 
 ## 暫緩決定
 
 - 精確 date range 與目標 geomagnetic storm 數量。
-- Orbit-average definition、後續 smoothing parameter 與最小 usable bin count。
-- `decay_rate_smooth_m_day` 是後續分析 target 還是 intermediate feature。
+- Orbit-average definition 與最小 usable bin count。
+- 哪個 `da_dt_Hh_backward_m_day` 是後續分析 target，或三者都作為分析輸出。
 - 是否加入 AE 或其他 geomagnetic index。
 
 這些要根據真實 POD cadence 與初步 QC report 決定；現在硬選只是在猜。
@@ -261,16 +259,23 @@ POD 最終輸出欄位、行數限制與檢驗條件見 `POD_FINAL_OUTPUT_SPEC.m
 | Q1 | 缺失、non-finite 或時間不遞增的 POD `state` | reject row | fixed |
 | Q2 | provenance/frame/cadence change，或相鄰 POD 時間 gap | close chunk；不可跨它內插 | fixed |
 | Q3 | ESA POD 有官方 quality/accuracy flag 且不符合最高可用品質 | `quality_source: unavailable`；不杜撰 filter | 已確認本機 SP3xCOM 無可用欄位 |
-| Q4 | `state` jump 與相鄰 observation 不一致 | audit-only；記錄 residual，不拒絕 row、不切 chunk | fixed audit-only |
+| Q4 | 未標記 `state` jump 與相鄰 observation 不一致 | audit-only；記錄 residual，不拒絕 row、不切 chunk | fixed audit-only |
+| Q4-E | 有官方證據的 Swarm-A orbit event | UTC date-level exclusion；reject row 並切開 chunk | fixed |
 | Q5 | energy 無效：non-finite、`specific_energy_m2_s2 >= 0` 或 radius 無效 | reject row | fixed |
 | Q6 | `pod_count <= 55` 或跨 chunk boundary | exclude derived bin | fixed |
 | Q7 | feature 缺失或需要 future value | 保留 orbit row；標記 feature missing | fixed |
 
 ### 門檻決定
 
-不要把 `decay_rate_smooth_m_day > 0.3` 當 raw-data acceptance rule。它會刪掉弱但有效的衰減，也會偏向只留下 active period。若研究後來只看 strong-decay window，應在完成 QC 後當成 analysis selection。
+不要把任一 `da_dt_Hh_backward_m_day < -0.3` 當 raw-data acceptance rule。它會刪掉弱但有效的衰減，也會偏向只留下 active period。若研究後來只看 strong-decay window，應在完成 QC 後當成 analysis selection。
 
-不要把 `delta_v < 10 m/s` 當 maneuver rejection rule。現階段只量測 clean interval 的 epoch-to-epoch residual、position 與 velocity；沒有 external maneuver labels 前不設定 threshold，也不改變 chunk。
+不要把 `delta_v < 10 m/s` 當未標記 maneuver 的 rejection rule。現階段只量測 clean interval 的 epoch-to-epoch residual、position 與 velocity；沒有可查核 external label 前不設定 threshold，也不改變 chunk。
+
+### 官方 orbit event exclusion
+
+canonical event ID、kind 與 UTC half-open interval 只在
+`ORBIT_RAISE_CAMPAIGN_MEMORY.md` 維護；`OFFICIAL_SWARM_A_ORBIT_EVENTS` 必須完全相同。
+每次改動都要重建新的 SQLite target，並將 policy version 與 event list 寫入 P1.7 metadata。
 
 SP3 可能沒有逐 epoch 的單一 `good` flag。實作 Q3 前先確認 ESA product field 與 quality document；若沒有可用 flag，要明確記錄並改用可重現的一致性檢查。
 
@@ -282,9 +287,9 @@ SP3 可能沒有逐 epoch 的單一 `good` flag。實作 Q3 前先確認 ESA pro
 
 | 案例 | 預期結果 |
 | --- | --- |
-| Constant two-body state sequence | stable semi-major axis；平滑後 decay rate 接近零 |
+| Constant two-body state sequence | stable semi-major axis；3/6/12 小時 rates 接近零 |
 | Synthetic linear semi-major-axis decrease | derivative 大小正確，且 decay-rate sign convention 正確 |
-| One missing POD block | 形成兩個 chunk；derived row 與 smoothing 不可跨 block |
+| One missing POD block | 形成兩個 chunk；derived row 與任一 backward interval 不可跨 block |
 | One injected state jump | 成為 maneuver candidate；記錄 residual，不切 chunk |
 | SYM-H source gap | 不可跨 gap interpolation |
 | Ap boundary at 03:00 UTC | value 只在 official block boundary 改變 |

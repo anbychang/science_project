@@ -98,7 +98,7 @@ SQLite
 ## [4] GeomagneticRecord -> analysis feature fields
 
 ```text
-prep_derived_analysis_10min.py
+prep_08_analysis_10min.py
 
 exact minute -> direct
 otherwise bounded linear interpolation
@@ -122,4 +122,4 @@ left/right total gap <= 2 min
 }
 ```
 
-AE remains raw-only in the Phase 1 core table. Current database has the SYM-H join; weather v2/v3 fresh rebuild is pending; see `../PHASE_1_FINAL_REPORT.md`.
+AE remains raw-only in the orbit analysis table. Frozen release has the SYM-H join and passed the release audit; see [final report](../plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md).

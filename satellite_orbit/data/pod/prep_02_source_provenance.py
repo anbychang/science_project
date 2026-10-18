@@ -73,7 +73,7 @@ def write_database_provenance(database_path=DEFAULT_DATABASE, pod_folder=DEFAULT
 
 
 def main():
-    """Input: python -m satellite_orbit.data.pod.prep_source_provenance
+    """Input: python -m satellite_orbit.data.pod.prep_02_source_provenance
     Output: written source provenance row count"""
     print(f"POD source provenance rows written: {write_database_provenance()}")
 

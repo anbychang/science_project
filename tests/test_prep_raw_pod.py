@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from satellite_orbit.data.database.prep_raw_identifiers import time_to_us
 from satellite_orbit.data.database.prep_raw_schema import create_tables
-from satellite_orbit.data.pod.prep_raw_pod import (
+from satellite_orbit.data.pod.prep_01_raw_pod import (
     prepare_source_file,
     weather_block_time,
     write_pod_file,
@@ -78,7 +78,7 @@ class PodWeatherBlockTest(unittest.TestCase):
 
             with (
                 patch(
-                    "satellite_orbit.data.pod.prep_raw_pod.load_swarm_pod",
+                    "satellite_orbit.data.pod.prep_01_raw_pod.load_swarm_pod",
                     return_value=[
                         {
                             "time": time_utc,
@@ -88,7 +88,7 @@ class PodWeatherBlockTest(unittest.TestCase):
                     ],
                 ),
                 patch(
-                    "satellite_orbit.data.pod.prep_raw_pod.load_sp3_inventory",
+                    "satellite_orbit.data.pod.prep_01_raw_pod.load_sp3_inventory",
                     return_value={"epoch_count": 2},
                 ),
             ):
@@ -121,7 +121,7 @@ class PodWeatherBlockTest(unittest.TestCase):
 
             with (
                 patch(
-                    "satellite_orbit.data.pod.prep_raw_pod.load_swarm_pod",
+                    "satellite_orbit.data.pod.prep_01_raw_pod.load_swarm_pod",
                     return_value=[
                         {
                             "time": time_utc,
@@ -131,11 +131,11 @@ class PodWeatherBlockTest(unittest.TestCase):
                     ],
                 ),
                 patch(
-                    "satellite_orbit.data.pod.prep_raw_pod.load_sp3_inventory",
+                    "satellite_orbit.data.pod.prep_01_raw_pod.load_sp3_inventory",
                     return_value={"epoch_count": 1},
                 ),
                 patch(
-                    "satellite_orbit.data.pod.prep_raw_pod.pod_row",
+                    "satellite_orbit.data.pod.prep_01_raw_pod.pod_row",
                     return_value=(1, 1, 1, 1, 1, 1, 1, 1, 2),
                 ),
             ):

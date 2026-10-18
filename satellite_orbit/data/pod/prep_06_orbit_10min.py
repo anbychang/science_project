@@ -209,7 +209,7 @@ def write_orbit_10min(database_path=DEFAULT_DATABASE):
 
 
 def main():
-    """Input: python -m satellite_orbit.data.pod.prep_derived_orbit_10min
+    """Input: python -m satellite_orbit.data.pod.prep_06_orbit_10min
     Output: 10-minute orbit write summary"""
     if sys.argv[1:]:
         raise ValueError("Usage: no arguments")

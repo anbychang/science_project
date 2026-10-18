@@ -6,12 +6,12 @@ import unittest
 from pathlib import Path
 
 from satellite_orbit.data.database.prep_raw_schema import create_tables
-from satellite_orbit.data.pod.prep_derived_mean_orbit import create_mean_orbit_table
-from satellite_orbit.data.pod.prep_derived_orbit_10min import (
+from satellite_orbit.data.pod.prep_04_mean_orbit import create_mean_orbit_table
+from satellite_orbit.data.pod.prep_06_orbit_10min import (
     ALGORITHM_VERSION,
     write_orbit_10min,
 )
-from satellite_orbit.data.pod.prep_derived_pod_quality import create_quality_table
+from satellite_orbit.data.pod.prep_05_pod_quality import create_quality_table
 
 
 BIN_START_US = 1_800_000_000_000_000

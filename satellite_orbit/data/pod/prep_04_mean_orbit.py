@@ -1,4 +1,4 @@
-"""Calculate Brouwer-Lyddane mean semi-major axes from usable Swarm-A POD."""
+"""Calculate Brouwer-Lyddane mean semi-major axes from valid Swarm-A POD."""
 
 import hashlib
 import sys
@@ -14,7 +14,7 @@ from satellite_orbit.calculation.pod.calc_mean_orbit import (
 from satellite_orbit.data.database.prep_raw_schema import connect_database
 
 DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
-ALGORITHM_NAME = "orekit_brouwer_lyddane_j2_to_j5_m2_0_v1"
+ALGORITHM_NAME = "orekit_brouwer_lyddane_j2_to_j5_m2_0_v2"
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 IMPLEMENTATION_PATHS = (
     Path(__file__),
@@ -44,9 +44,9 @@ def create_mean_orbit_table(connection):
     )
 
 
-def usable_source_states(connection, source_id):
+def mean_orbit_source_states(connection, source_id):
     """Input: SQLite connection and POD source id
-    Output: [(time_us, ITRF state), ...] for usable rows"""
+    Output: [(time_us, ITRF state), ...] for valid P1.3 rows"""
     return [
         (
             row[0],
@@ -62,10 +62,11 @@ def usable_source_states(connection, source_id):
             SELECT state.time_us, state.x_m, state.y_m, state.z_m,
                    state.vx_m_s, state.vy_m_s, state.vz_m_s
             FROM swarm_a_states AS state
-            JOIN swarm_a_pod_quality AS quality
-                ON quality.time_us = state.time_us
+            JOIN swarm_a_orbital_elements AS element
+                ON element.time_us = state.time_us
             WHERE state.source_id = ?
-              AND quality.is_usable = 1
+              AND element.semi_major_axis_m IS NOT NULL
+              AND element.rejection_reason IS NULL
             ORDER BY state.time_us
             """,
             (source_id,),
@@ -86,7 +87,7 @@ def mean_orbit_row(time_us, state_gcrf):
 def write_source(connection, source_id):
     """Input: SQLite connection and POD source id
     Output: (written rows, rejected rows)"""
-    source_rows = usable_source_states(connection, source_id)
+    source_rows = mean_orbit_source_states(connection, source_id)
     states_gcrf = itrf_states_to_gcrf([state for _, state in source_rows])
     rows = [
         mean_orbit_row(time_us, state)
@@ -113,14 +114,15 @@ def write_source(connection, source_id):
 def source_is_written(connection, source_id):
     """Input: SQLite connection and POD source id
     Output: whether every usable source state has a mean-orbit row"""
-    usable_rows = connection.execute(
+    valid_rows = connection.execute(
         """
         SELECT count(*)
         FROM swarm_a_states AS state
-        JOIN swarm_a_pod_quality AS quality
-            ON quality.time_us = state.time_us
+        JOIN swarm_a_orbital_elements AS element
+            ON element.time_us = state.time_us
         WHERE state.source_id = ?
-          AND quality.is_usable = 1
+          AND element.semi_major_axis_m IS NOT NULL
+          AND element.rejection_reason IS NULL
         """,
         (source_id,),
     ).fetchone()[0]
@@ -134,7 +136,7 @@ def source_is_written(connection, source_id):
         """,
         (source_id,),
     ).fetchone()[0]
-    return stored_rows == usable_rows
+    return stored_rows == valid_rows
 
 
 def implementation_fingerprint():
@@ -153,6 +155,10 @@ def mean_orbit_metadata():
     add_project_orekit_site_packages()
     return [
         ("mean_orbit_algorithm", ALGORITHM_NAME),
+        (
+            "mean_orbit_input_policy",
+            "all valid P1.3 rows; P1.4 event exclusions apply downstream",
+        ),
         ("mean_orbit_input_frame", "GCRF"),
         ("mean_orbit_input_transform", "astropy_itrf_to_gcrf"),
         ("mean_orbit_gravity_field_degree_order", "5,0"),
@@ -253,7 +259,7 @@ def write_mean_orbits(
 
 
 def main():
-    """Input: python -m satellite_orbit.data.pod.prep_derived_mean_orbit [SOURCE_LIMIT]
+    """Input: python -m satellite_orbit.data.pod.prep_04_mean_orbit [SOURCE_LIMIT]
     Output: mean-orbit write summary"""
     arguments = sys.argv[1:]
     if len(arguments) > 1:

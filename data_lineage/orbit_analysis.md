@@ -1,6 +1,6 @@
-# SQLite Final Structure
+# Orbit Analysis Data Products
 
-這是現有 working database 的實際 shape。P1.7 current-database audit 已通過；weather preparation v2/v3 修正後的 fresh rebuild 尚待執行，不能把本頁當 frozen release 證明。
+新 release 的 analysis shape 使用 3/6/12 小時 backward decay definitions。P1.7 對每個 window 驗證同 chunk predecessor、差分與 m/day 換算；frozen metadata 只在 audit 通過後寫入。
 
 ```text
 SQLite
@@ -27,17 +27,18 @@ SQLite
 }
 ```
 
-已存在：raw 五類、五個 derived 類、`metadata`。
+歷史 frozen release 已存在 raw 五類、六個 derived 類與 `metadata`；新 release 的 row count 以 P1.7 manifest 為準。
 
 ```text
+legacy frozen release:
 14,558,400 State
-  -> 14,558,400 MeanOrbitElement
-  -> 242,640 Orbit10Minute
-  -> 242,352 Analysis10Minute
+  -> 13,495,680 usable MeanOrbitElement
+  -> 224,928 Orbit10Minute
+  -> 224,280 Analysis10Minute
 ```
 
-`Orbit10Minute` 使用 `utc_10min_mean_brouwer_lyddane_v1`；每個 contiguous run 的兩端各
-排除 36 列後，`Analysis10Minute` 使用 `causal_space_weather_geomagnetic_v1`。`chunk_id`
+`Orbit10Minute` 使用 `utc_10min_mean_brouwer_lyddane_v1`；每個 contiguous run 的前 72 列
+排除後，`Analysis10Minute` 使用 `causal_space_weather_geomagnetic_backward_3h_6h_12h_v3`。`chunk_id`
 是唯一的 chunk metadata；density 不 join core analysis table。
 
 ```text
@@ -45,7 +46,7 @@ swarm_a_orbital_elements: [{time, semi_major_axis_m, ...}, ...]
 swarm_a_pod_quality: [{time, is_usable, chunk_id, rejection_reason}, ...]
 swarm_a_mean_orbital_elements: [{time, mean_semi_major_axis_m, rejection_reason}, ...]
 swarm_a_orbit_10min: [{time, mean_a, pod_count, max_gap, chunk_id}, ...]
-swarm_a_orbit_decay_10min: [{time, smooth_a, da_dt, decay_rate, chunk_id}, ...]
+swarm_a_orbit_decay_10min: [{time, mean_a, da_dt_3h_backward, da_dt_6h_backward, da_dt_12h_backward, chunk_id}, ...]
 swarm_a_analysis_10min: [{orbit-decay fields, causal feature fields, quality_flags}, ...]
 metadata: [{name, value}, ...]
 ```
@@ -159,9 +160,13 @@ swarm_a_orbit_decay_10min:
 [
   {
     time: 2024-05-10 14:30:00 UTC,
-    semi_major_axis_smooth_m: 6791100.1 m,
-    da_dt_smooth_m_s: -0.00001 m/s,
-    decay_rate_smooth_m_day: 0.864 m/day,
+    semi_major_axis_orbit_mean_m: 6791100.1 m,
+    da_dt_3h_backward_m_s: -0.00001 m/s,
+    da_dt_3h_backward_m_day: -0.864 m/day,
+    da_dt_6h_backward_m_s: -0.00001 m/s,
+    da_dt_6h_backward_m_day: -0.864 m/day,
+    da_dt_12h_backward_m_s: -0.00001 m/s,
+    da_dt_12h_backward_m_day: -0.864 m/day,
     chunk_id: 2
   },
   ...
@@ -171,9 +176,13 @@ swarm_a_analysis_10min:
 [
   {
     time: 2024-05-10 14:30:00 UTC,
-    semi_major_axis_smooth_m: 6791100.1 m,
-    da_dt_smooth_m_s: -0.00001 m/s,
-    decay_rate_smooth_m_day: 0.864 m/day,
+    semi_major_axis_orbit_mean_m: 6791100.1 m,
+    da_dt_3h_backward_m_s: -0.00001 m/s,
+    da_dt_3h_backward_m_day: -0.864 m/day,
+    da_dt_6h_backward_m_s: -0.00001 m/s,
+    da_dt_6h_backward_m_day: -0.864 m/day,
+    da_dt_12h_backward_m_s: -0.00001 m/s,
+    da_dt_12h_backward_m_day: -0.864 m/day,
     pod_count: 60,
     max_pod_gap_s: 10 s,
     chunk_id: 2,
