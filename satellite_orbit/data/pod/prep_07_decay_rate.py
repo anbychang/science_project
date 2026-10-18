@@ -12,7 +12,7 @@ from satellite_orbit.data.pod.prep_06_orbit_10min import (
 )
 
 
-DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
+DEFAULT_DATABASE = Path("data/swarm_a_analysis.sqlite")
 BACKWARD_INTERVALS = ((3, 18), (6, 36), (12, 72))
 BACKWARD_INTERVAL_SAMPLES = BACKWARD_INTERVALS[-1][1]
 BACKWARD_INTERVAL_SECONDS = BACKWARD_INTERVAL_SAMPLES * BIN_DURATION_US / 1_000_000

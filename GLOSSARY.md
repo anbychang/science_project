@@ -41,6 +41,7 @@ One decay row plus causal SYM-H, Ap, F10.7, and F10.7A features. Density and AE 
 
 An audit of the current SQLite database. It may pass before a fresh raw-file rebuild has been executed.
 
-## Frozen release
+## Rebuild provenance
 
-A working audit backed by a successful fresh database rebuild and output comparison using the same code content.
+P1.7 manifest 的 `rebuild_status`。它說明現行 database 是 fresh rebuild 還是 verified cache reuse；
+它不表示不同資料值、不同研究版本或第二個 release。

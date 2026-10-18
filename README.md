@@ -1,13 +1,25 @@
 # Swarm-A 軌道衰減研究
 
+> 唯一 Phase 1 SQLite：`data/swarm_a_analysis.sqlite`。`data/old/` 是 archive/cache，
+> 不是第二個資料產品，也不能當成目前輸出。
+
 目標：研究地磁暴與 Swarm-A 軌道衰減的關係。
 
-Phase 1 已完成 cached rebuild 並通過 P1.7 audit。可交付的 frozen release 是
-`data/swarm_a_phase1_contract_cached_release.sqlite`；P1.3/mean-orbit cache 是
-`data/swarm_a_phase1_rebuild.sqlite`，兩者都不提交至 Git。
+目前唯一正式輸出是 `data/swarm_a_analysis.sqlite`。mean-orbit cache 與重算得到的值相同；
+cache 只縮短 build，不形成另一個 release。現行資料庫已完成 10-minute orbit、3/6/12h rate、
+analysis 與 P1.7 working audit。
 
-完整交付與限制：[Phase 1 Final Report](plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md)。正式規格：[PLAN.md](plans/phase_1_data_preparation/PLAN.md)。
+完整交付與限制：[Phase 1 Final Report](plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md)。
+正式規格：[PLAN.md](plans/phase_1_data_preparation/PLAN.md)。
 核心術語：[GLOSSARY.md](GLOSSARY.md)。
+
+## 文件排版
+
+- 以閱讀節奏換行，不追求最少行數。
+- 一個句子同時交代兩個獨立條件、結果或決定時，拆成兩行或改成 list。
+- 資料 shape 的 `{}`、`[]`、`()` 維持多行縮排；一個 field 一行，不把欄位塞成長句。
+- 長段落在觀念轉折、輸入/輸出切換、數字結果與限制條件前換行。
+- 避免只有一個超長 Markdown line；內容完整、可掃讀比行數少重要。
 
 ## Canonical output
 
@@ -20,21 +32,24 @@ swarm_a_states                 14,558,400 raw POD rows
   -> swarm_a_analysis_10min       224,280 causal analysis rows
 ```
 
-`swarm_a_analysis_10min` coverage：`2022-01-01 12:10:00 UTC` 至 `2026-08-13 00:00:00 UTC`；9 個 `chunk_id`；density 不在 core table。
+`swarm_a_analysis_10min` coverage：`2022-01-01 12:10:00 UTC` 至
+`2026-08-13 00:00:00 UTC`；有 9 個 `chunk_id`；density 不在 core table。
 
-frozen release 的 mean table 只保留 13,495,680 個 usable POD。legacy working DB 的 mean table
-早於 campaign date-level exclusion，因此另有 14,558,400 列；它僅供比較。
+現行 mean table 保留 13,495,680 個 usable POD。舊 archive 可能保有早於 campaign
+date-level exclusion 的 row；它只供復原或比較，不是另一個 research release。
 
-frozen release metadata：`status = frozen`、`rebuild_status = verified_mean_orbit_cache_reuse`、
-`audit_outcome = pass`。
+manifest 記錄 `rebuild_status`，用來區分 cache reuse 與 fresh rebuild 的 provenance；
+不代表資料值或研究輸出不同。
 
 ## Scope
 
 Phase 1 只準備可追溯的 10 分鐘資料集。
 
-- 做：POD mean orbit、chunk-safe bin、3/6/12 小時 backward decay rate、causal weather/geomagnetic join、SQLite audit。
+- 做：POD mean orbit、chunk-safe bin、3/6/12 小時 backward decay rate、
+  causal weather/geomagnetic join、SQLite audit。
 - 不做：ML、drag propagator、XYZ 預報、DNSAACC density core join。
-- Q4 maneuver：ESA 已公告的 orbit-raise campaign 以 date-level exclusion 切開 chunk；其餘 residual candidate 維持 audit-only。
+- Q4 maneuver：ESA 已公告的 orbit-raise campaign 以 date-level exclusion 切開 chunk；
+  其餘 residual candidate 維持 audit-only。
 
 ## 專案地圖
 
@@ -57,12 +72,11 @@ data/
 ├─ space_weather/      raw F10.7 / Ap CSV
 ├─ swarm_density_acc/  raw DNSAACC density ZIP
 ├─ swarm_a_phase1_rebuild.sqlite verified P1.3/mean-orbit cache; not committed
-└─ swarm_a_phase1_contract_cached_release.sqlite frozen release; not committed
+└─ swarm_a_analysis.sqlite          current Phase 1 analysis target; not committed
 
 data_lineage/               downloaded sources -> current data products
-├─ pod.md                    raw POD -> orbit analysis
 ├─ density.md                DNSAACC ZIP -> density summary -> comparison
-├─ orbit_analysis.md         orbit analysis table shapes
+├─ orbit_analysis.md         POD -> orbit analysis
 └─ README.md                 all source-to-output paths
 ```
 
@@ -78,7 +92,8 @@ raw files
   -> causal space-weather + geomagnetic analysis rows
 ```
 
-Raw tables are immutable. Each calculation writes a separate derived table keyed by source `time_us`.
+Raw tables are immutable. Each calculation writes a separate derived table
+keyed by source `time_us`.
 
 `data/` 依資料結構分類；`calculation/` 只放純計算；`phase1/` 只放跨資料集的
 pipeline entry points。新增程式先放到資料結構對應的 package，不再新增平面的 `data/*.py`。

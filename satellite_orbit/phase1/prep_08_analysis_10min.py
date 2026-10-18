@@ -12,7 +12,7 @@ from satellite_orbit.calculation.analysis.calc_feature_alignment import (
 from satellite_orbit.data.database.prep_raw_schema import connect_database
 
 
-DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
+DEFAULT_DATABASE = Path("data/swarm_a_analysis.sqlite")
 ALGORITHM_VERSION = "causal_space_weather_geomagnetic_backward_3h_6h_12h_v3"
 ANALYSIS_COLUMNS = {
     "time_us",

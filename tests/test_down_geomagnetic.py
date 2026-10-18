@@ -3,11 +3,13 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from satellite_orbit.data.geomagnetic.down_geomagnetic import (
     MAX_DOWNLOAD_DAYS,
     _check_download_coverage,
     download_geomagnetic,
+    download_geomagnetic_range,
 )
 
 
@@ -66,6 +68,20 @@ class GeomagneticDownloadTest(unittest.TestCase):
             f"at most {MAX_DOWNLOAD_DAYS} days",
         ):
             download_geomagnetic("2025-01-01", "2025-12-31")
+
+    def test_splits_a_long_range_into_safe_requests(self):
+        """Input: 181 requested days.
+        Output: two sequential requests no longer than the source limit."""
+        with patch(
+            "satellite_orbit.data.geomagnetic.down_geomagnetic.download_geomagnetic",
+            return_value={},
+        ) as download_mock:
+            download_geomagnetic_range("2025-01-01", "2025-06-30")
+
+        self.assertEqual(
+            [call.args[:2] for call in download_mock.call_args_list],
+            [("2025-01-01", "2025-06-29"), ("2025-06-30", "2025-06-30")],
+        )
 
 
 if __name__ == "__main__":

@@ -3,6 +3,8 @@
 import json
 import sys
 from pathlib import Path
+from time import sleep
+from urllib.error import ContentTooShortError
 from urllib.parse import quote
 from urllib.request import urlopen, urlretrieve
 
@@ -10,6 +12,8 @@ ESA_SERVER = "https://swarm-diss.eo.esa.int/"
 ESA_POD_FOLDER = "swarm/Level2daily/Latest_baselines/POD/RD/Sat_A"
 DEFAULT_FIRST_DAY = "2022-01-01"
 DEFAULT_DATA_FOLDER = "data/swarm_a_pod"
+MAX_DOWNLOAD_ATTEMPTS = 5
+RETRY_DELAY_SECONDS = 5
 
 
 def list_swarm_pod_files():
@@ -57,7 +61,8 @@ def select_latest_files(source_files, first_day):
 
 
 def download_file(source_file, data_folder):
-    """Output: local ZIP path."""
+    """Input: ESA source metadata and local folder.
+    Output: complete local ZIP path."""
     data_folder = Path(data_folder)
     output_path = data_folder / source_file["name"]
 
@@ -67,11 +72,22 @@ def download_file(source_file, data_folder):
 
     data_folder.mkdir(parents=True, exist_ok=True)
     download_url = f"{ESA_SERVER}?do=download&file={quote(source_file['path'])}"
-    urlretrieve(download_url, output_path)
-    if output_path.stat().st_size != source_file["size"]:
-        output_path.unlink()
-        raise ValueError(f"Incomplete POD download for {source_file['name']}.")
-    return output_path
+    for attempt in range(1, MAX_DOWNLOAD_ATTEMPTS + 1):
+        try:
+            urlretrieve(download_url, output_path)
+            if output_path.stat().st_size == source_file["size"]:
+                return output_path
+        except (ContentTooShortError, OSError):
+            pass
+
+        output_path.unlink(missing_ok=True)
+        if attempt < MAX_DOWNLOAD_ATTEMPTS:
+            sleep(RETRY_DELAY_SECONDS)
+
+    raise ValueError(
+        f"Incomplete POD download after {MAX_DOWNLOAD_ATTEMPTS} attempts: "
+        f"{source_file['name']}."
+    )
 
 
 def download_swarm_a_pod(day, data_folder=DEFAULT_DATA_FOLDER):

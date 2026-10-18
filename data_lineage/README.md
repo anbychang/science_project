@@ -1,74 +1,46 @@
-# Data Lineage
+# Phase 1 Data Lineage
 
-這一頁是資料從下載到目前最後產物的完整答案。它定義每條 source-to-output path 必須可追溯，也記錄目前實際建立的 writer、SQLite table 與 read-only query。研究計畫只引用它，不擁有它。
+## 現行資料庫
 
-目前資料庫 evidence 是 frozen release `data/swarm_a_phase1_rebuild.sqlite`；fresh rebuild 與 release audit 已通過，詳見 [final report](../plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md)。
+唯一正式資料庫是 `data/swarm_a_analysis.sqlite`。
+
+```text
+POD + weather + geomagnetic
+  -> orbit / rate
+  -> analysis
+  -> P1.7 audit
+```
+
+`working_audit_pass` 表示現行資料庫已通過 audit。cache 只避免重跑相同的
+mean-orbit work，不是第二份資料或 release。
+
+## 主線
 
 ```text
 POD ZIP
-  -> swarm_a_states -> mean orbit -> orbit 10-minute
-  -> 3h/6h/12h same-chunk backward decay -> swarm_a_analysis_10min
-space-weather CSV
-  -> space_weather -> causal weather fields in swarm_a_analysis_10min
-geomagnetic CSV
-  -> geomagnetic -> SYM-H fields in swarm_a_analysis_10min
-DNSAACC ZIP
-  -> swarm_a_density -> swarm_a_density_10min [done]
-  -> swarm_a_density_event_baseline_10min [done]
+  -> swarm_a_states
+  -> orbital elements + POD quality + mean orbit
+  -> swarm_a_orbit_10min
+  -> swarm_a_orbit_decay_10min
+
+weather CSV + geomagnetic CSV
+  -> causal fields
+
+orbit decay + causal fields
+  -> swarm_a_analysis_10min
+  -> metadata.p1_7_release_manifest
 ```
 
-## Rules
+## 規則
 
-- Raw SQLite tables immutable。
-- 每個 derived writer 只建立自己的 derived table。
-- density baseline writer 只能讀 raw `swarm_a_density` 與 `swarm_a_density_10min`，不得回寫任一 input table。
-- 後續 density / orbit comparison 只能 read `swarm_a_density_event_baseline_10min` 與 `swarm_a_analysis_10min`，不得回寫任一 table。
+- Raw table immutable；derived writer 只重建自己的 table。
+- Mean orbit、10-minute bin 與 rate 不跨 `chunk_id`。
+- Weather source time 不晚於 orbit time。
+- SYM-H 只允許右端點在 orbit time 後 120 seconds 內。
+- Density 不進 Phase 1 core analysis。
 
-## 固定文件格式
+## 文件
 
-每個資料步驟固定寫成三個 block，順序不可改：
-
-```text
-## [N] input collection -> output collection
-
-程式檔、function、必要轉換
-
-input example
-
-output example
-```
-
-不寫 `action`、`in`、`out` 標籤；block 的位置就是意義。
-
-## 資料結構表示法
-
-SQLite table 是具名的 List；List 內每一列是具名結構。
-
-```text
-SQLite
-{
-  table_name: [RecordType, ...]
-}
-
-RecordType
-{
-  scalar_field,
-  vector_field: [x, y, z],
-  time_range: [start_time, end_time]
-}
-```
-
-固定使用：
-
-```text
-{}  named record / Dictionary
-[]  List, vector, or [start, end] range
-```
-
-## Flows
-
-- [POD lineage](pod.md): POD ZIP -> orbit analysis table
-- [Space weather lineage](space_weather.md): weather CSV -> causal weather fields
-- [Geomagnetic lineage](geomagnetic.md): geomagnetic CSV -> SYM-H fields
-- [Density lineage](density.md): DNSAACC ZIP -> 10-minute density -> event baseline SQLite
-- [Orbit analysis data products](orbit_analysis.md): actual SQLite table shapes
+- [Orbit lineage](orbit_analysis.md): POD 到 final orbit / rate / audit。
+- [Space-weather lineage](space_weather.md): Ap、F10.7、F10.7A。
+- [Geomagnetic lineage](geomagnetic.md): SYM-H。

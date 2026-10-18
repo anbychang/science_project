@@ -122,6 +122,30 @@ def download_geomagnetic(first_day, last_day, data_folder=DEFAULT_DATA_FOLDER):
     return downloaded_paths
 
 
+def download_geomagnetic_range(first_day, last_day, data_folder=DEFAULT_DATA_FOLDER):
+    """Input: requested UTC date range and local folder.
+    Output: [{sym_h: path, ae: path}, ...] in <= 180-day source requests."""
+    requested_last_day = _read_day(last_day).date()
+    chunk_first_day = _read_day(first_day).date()
+    downloaded_chunks = []
+
+    while chunk_first_day <= requested_last_day:
+        chunk_last_day = min(
+            chunk_first_day + timedelta(days=MAX_DOWNLOAD_DAYS - 1),
+            requested_last_day,
+        )
+        downloaded_chunks.append(
+            download_geomagnetic(
+                chunk_first_day.isoformat(),
+                chunk_last_day.isoformat(),
+                data_folder,
+            )
+        )
+        chunk_first_day = chunk_last_day + timedelta(days=1)
+
+    return downloaded_chunks
+
+
 def main():
     """Input: python -m ... FIRST_DAY LAST_DAY
     Output: printed {sym_h_path, ae_path}"""

@@ -199,10 +199,6 @@ class P17ReleaseAuditTest(unittest.TestCase):
         self.assertEqual(json.loads(metadata["p1_7_release_manifest"]), manifest)
         rebuild_commands = json.loads(metadata["p1_7_rebuild_commands"])
         self.assertEqual(rebuild_commands, list(REBUILD_COMMANDS))
-        self.assertEqual(
-            rebuild_commands,
-            ["python -m satellite_orbit.phase1.prep_phase1_rebuild NEW_DATABASE [MEAN_CACHE]"],
-        )
         self.assertEqual(metadata["p1_7_rebuild_status"], "not_executed")
 
     def test_marks_frozen_only_with_explicit_clean_rebuild_evidence(self):
@@ -234,6 +230,25 @@ class P17ReleaseAuditTest(unittest.TestCase):
 
         self.assertEqual(manifest["rebuild"]["status"], "clean_rebuild_verified")
         self.assertEqual(status, "frozen")
+
+    def test_accepts_p1_release_without_phase2_density(self):
+        """Input: complete P1 chain with no Phase 2 density rows
+        Output: P1.7 audit succeeds without unrelated density evidence"""
+        with tempfile.TemporaryDirectory() as temporary_folder:
+            database_path = Path(temporary_folder) / "release.sqlite"
+            connection = sqlite3.connect(database_path)
+            try:
+                create_tables(connection)
+                add_release_fixture(connection)
+                connection.execute("DELETE FROM swarm_a_density")
+                connection.commit()
+            finally:
+                connection.close()
+
+            manifest = write_release_metadata(database_path)
+
+        self.assertEqual(manifest["audit_outcome"], "pass")
+        self.assertNotIn("density_rows", manifest["raw_inputs"])
 
     def test_records_verified_mean_cache_without_claiming_clean_rebuild(self):
         """Input: valid final data and verified mean-orbit cache evidence

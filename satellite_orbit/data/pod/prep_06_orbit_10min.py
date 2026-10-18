@@ -6,7 +6,7 @@ from pathlib import Path
 from satellite_orbit.data.database.prep_raw_schema import connect_database
 
 
-DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
+DEFAULT_DATABASE = Path("data/swarm_a_analysis.sqlite")
 BIN_DURATION_US = 600_000_000
 MINIMUM_POD_COUNT = 56
 MAXIMUM_POD_GAP_S = 10.0

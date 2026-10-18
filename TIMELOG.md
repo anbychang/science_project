@@ -2,7 +2,9 @@
 
 最後更新：2026-10-18
 
-Current status：`data/swarm_a_phase1_contract_cached_release.sqlite` 是 frozen Phase 1 release，P1.3 與 mean orbit 經 exact source/state match 後重用 cache，後段 3/6/12h decay、analysis 與 P1.7 audit 均已重跑並通過。詳細交付與限制見 `plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md`。
+> 唯一現行 SQLite：`data/swarm_a_analysis.sqlite`。`data/old/` 的 archive/cache 不代表第二個資料產品。
+
+Current status：`data/swarm_a_analysis.sqlite` 是唯一現行 Phase 1 target。cache 只避免重跑結果相同的 mean-orbit work；現行資料庫完成 3/6/12h decay、analysis 與 P1.7 working audit。詳細交付與限制見 `plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md`。
 
 這份檔案只記錄時間順序：某一天做了什麼、量到什麼、得到什麼結論。它不放長期規則或完整技術定義；那些放在 `plans/phase_1_data_preparation/PLAN.md` 與各階段規格。
 
@@ -51,7 +53,7 @@ Current status：`data/swarm_a_phase1_contract_cached_release.sqlite` 是 frozen
 3. 加入 CelesTrak `SW-All.csv` 下載與讀取，對 state 加入 F10.7、F10.7A、Ap 與資料類型。
 4. 以 Astropy 處理 GCRF/ITRF、IERS 與地理座標。
 5. 建立 NRLMSIS 2.0：ITRF position -> WGS84 longitude/latitude/altitude -> `density_kg_m3`。
-6. 由月 CSV 流程改為單一 `swarm_a_data.sqlite`。
+6. 由月 CSV 流程改為單一 `data/old/swarm_a_data.sqlite`。
 
 **量到或確認的事**：
 
@@ -399,7 +401,7 @@ causal weather / geomagnetic source time；density 不進 core analysis table。
 aggregate、coverage、Git revision、row counts、missingness 與 rebuild commands 已寫入
 SQLite `metadata`。
 
-**限制**：這是 current-database audit。weather preparation v2/v3 修正後，尚未從 raw files fresh rebuild 並重跑完整 audit；不可將本次結果稱為 frozen release。
+**限制**：這是 current-database audit。weather preparation v2/v3 修正後，尚未從 raw files fresh rebuild 並重跑完整 audit；不可將本次結果宣稱為 full fresh rebuild。
 
 ## 2026-10-18：補齊 Swarm-A 官方 orbit event 排除
 
@@ -441,8 +443,8 @@ key、chunk、time continuity、feature source time 與 missingness 全部通過
 
 **狀態**：舊 `data/swarm_a_phase1_rebuild.sqlite` 已被 supersede，不可作正式交付。先前
 v2 與全量 v3 均在發現流程可縮短後停止並移除。現行 v3 是從既有 raw/P1.3/mean 資料複製後
-做 P1.4--P1.7 partial rebuild，因此狀態為 `working_audit_pass`，不是 `frozen`；它沒有偽稱
-為完整 fresh rebuild。
+做 P1.4--P1.7 partial rebuild，因此狀態為 `working_audit_pass`；它沒有偽稱為完整
+fresh rebuild。
 
 ## 2026-10-18：自然符號 rate 與編號 pipeline
 
@@ -465,3 +467,12 @@ chunk 與 feature 都保持不變。
 **驗證**：完整 test suite `95` tests 通過；新的 synthetic decline test 確認
 `-1.2 m/day` 下降輸出 `-1.2 m/day`；v4 schema 沒有舊欄位，且 status 是
 `working_audit_pass`。
+
+## 2026-10-18：P1.7 manifest 最終 refresh
+
+**結果**：對現行 `data/swarm_a_analysis.sqlite` 重跑 P1.7 audit metadata。沒有重算
+10-minute orbit、3/6/12h rate 或 analysis。
+
+**驗證**：`audit_outcome = pass`、`release_status = working_audit_pass`、
+SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
+`code_content.digest` 已與目前 Phase 1 implementation files 一致。

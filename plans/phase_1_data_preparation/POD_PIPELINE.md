@@ -29,6 +29,6 @@ python -m satellite_orbit.phase1.prep_phase1_rebuild NEW_DATABASE
    -> manifest and integrity audit
 ```
 
-`04` 先於 `05`：quality 先建立可發布 rows 與 chunks；新 target 若顯式指定 frozen cache，
+`04` 先於 `05`：quality 先建立可發布 rows 與 chunks；cache restore 若顯式指定 cache artifact，
 `prep_mean_orbit_cache.py` 只在 source signature、完整 ITRF state 與 numerical environment 相符，且舊
 mean rows 覆蓋所有 current usable rows 時重用。否則 fail fast，不得回退成未驗證的 cache。不得在重建途中手動跳過任何編號。

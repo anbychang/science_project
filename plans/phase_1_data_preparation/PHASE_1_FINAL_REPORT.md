@@ -2,9 +2,10 @@
 
 ## 狀態
 
-`data/swarm_a_phase1_contract_cached_release.sqlite` 已從已驗證的 P1.3 與 mean-orbit cache 接續重建，並通過 P1.7 release audit。
-metadata 為 `status = frozen`、`rebuild_status = verified_mean_orbit_cache_reuse`、`audit_outcome = pass`。
-`data/swarm_a_data.sqlite` 保留為 legacy working database，不能取代這個 frozen release。
+唯一正式資料庫是 `data/swarm_a_analysis.sqlite`。mean-orbit cache 與重算結果一致，
+只用於避免昂貴的重算；它不形成第二個 database 或 release。
+P1.7 metadata 為 `status = working_audit_pass`、`rebuild_status = not_executed`、
+`audit_outcome = pass`。archive/cache 只保留復原與比較證據。
 
 ## 範圍與排除項目
 
@@ -14,7 +15,7 @@ Phase 1 的交付物是可追溯的 10 分鐘分析 table。
 - 排除：ML、atmospheric drag propagator、XYZ prediction、DNSAACC density core join、Q4 maneuver rejection rule。
 - Density 保留 raw `swarm_a_density`，供後續 Phase 2 獨立研究。
 
-## Frozen canonical output
+## Canonical output
 
 ```text
 swarm_a_states                    14,558,400
@@ -27,9 +28,8 @@ swarm_a_states                    14,558,400
   -> swarm_a_analysis_10min          224,280
 ```
 
-frozen target 的 mean table 只含 13,495,680 個 usable rows。legacy working DB 的 mean table
-早於 campaign date-level exclusion 而有 14,558,400 列；其下游 bin 仍以
-`quality.is_usable = 1` join，所以不曾使用 campaign rows，但該資料庫不作交付依據。
+現行 target 的 mean table 只含 13,495,680 個 usable rows。archive/cache 早於
+campaign date-level exclusion 的 rows 只供比較，不作交付依據。
 
 `swarm_a_analysis_10min` UTC coverage：`2022-01-01 12:10` 至 `2026-08-13 00:00`，中間有
 frame transition 與兩段公告 orbit-raise campaign 的排除區間。
@@ -83,7 +83,7 @@ SYM-H exact or <= 2-minute bounded interpolation
 Q4 residual candidate is audit-only. ESA-published orbit-raise campaigns are separately marked
 `planned_orbit_raise_campaign` and split chunks.
 
-## Frozen release 品質證據
+## 現行資料庫品質證據
 
 - SQLite `integrity_check = ok`.
 - Foreign-key check has no violations.
@@ -94,7 +94,7 @@ Q4 residual candidate is audit-only. ESA-published orbit-raise campaigns are sep
 - Ap, F10.7, F10.7A and SYM-H causal-source audit found no prohibited future reference.
 - P1.3 與 P1.5 以 exact source/state match 驗證 cache 後直接重用；本次不重算 mean orbit。
 
-上述條件均在 cached target 的 P1.7 audit 驗證。所有 missingness、future-reference、
+上述條件均在現行 target 的 P1.7 audit 驗證。所有 missingness、future-reference、
 chunk continuity、foreign-key 與 integrity failure count 都是 0。
 
 ## 未校準的 decay-rate 異常
@@ -112,23 +112,23 @@ Q4 目前是 audit-only；沒有 external maneuver labels 或已校準 rejection
 
 ## Provenance 與可重建性
 
-P1.7 audit 在 `metadata` 記錄 raw signature aggregate、coverage、Git revision、row counts、missingness、frame policy、algorithms、rebuild commands 與 implementation SHA-256 digest。frozen target 的 status 是 `frozen`，且 cache reuse 已驗證。
+P1.7 audit 在 `metadata` 記錄 raw signature aggregate、coverage、Git revision、row counts、missingness、frame policy、algorithms、rebuild commands 與 implementation SHA-256 digest。`rebuild_status` 只記錄再現方式，不代表另一份資料產品。
 
 `source_files` is immutable raw history. Parsed SP3 frame, cadence, coverage, epoch count, and time system live in derived `swarm_a_pod_source_provenance`, keyed by `source_id`.
 
-Raw tables are immutable. Derived calculations write separate tables. 兩個 SQLite database 都不提交至 Git。
+Raw tables are immutable. Derived calculations write separate tables. 現行 SQLite 不提交至 Git；archive/cache 也不是正式輸出。
 
-## Cached-rebuild 證據
+## Cache-reuse 證據
 
 已執行：
 
    ```powershell
-   python -m satellite_orbit.phase1.prep_phase1_rebuild data/swarm_a_phase1_contract_cached_release.sqlite data/swarm_a_phase1_rebuild.sqlite
+   python -m satellite_orbit.phase1.prep_phase1_rebuild CACHE_DATABASE RECOVERY_DATABASE
    ```
 
-P1.3 與 mean-orbit 在 source/state exact-match 驗證後重用 cache；P1.4 之後重跑 10-minute orbit、
-3/6/12h decay、P1.6 causal analysis 與 P1.7 audit。輸出為 9 chunks、224,928 orbit rows、
-224,280 decay/analysis rows；UTC coverage 為 `2022-01-01 12:10:00Z` 至 `2026-08-13 00:00:00Z`。
+P1.3 與 mean-orbit 在 source/state exact-match 驗證後可重用 cache；其值不會形成另一個
+research version。10-minute orbit、3/6/12h decay、P1.6 causal analysis 與 P1.7 audit 的
+正式結果都以現行 `data/swarm_a_analysis.sqlite` 為準。
 
 ## Phase 2 handoff
 

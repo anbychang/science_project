@@ -17,8 +17,8 @@ from satellite_orbit.data.pod.prep_07_decay_rate import (
 )
 
 
-DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
-AUDIT_VERSION = "p1_7_release_audit_v4"
+DEFAULT_DATABASE = Path("data/swarm_a_analysis.sqlite")
+AUDIT_VERSION = "p1_7_release_audit_v5"
 MAXIMUM_ABSOLUTE_FLOAT = 1.7e308
 REBUILD_STATUS = "not_executed"
 SEMI_MAJOR_AXIS_TOLERANCE_M = 1e-6
@@ -93,7 +93,6 @@ REQUIRED_TABLES = (
     "source_files",
     "space_weather",
     "geomagnetic",
-    "swarm_a_density",
     "swarm_a_states",
     "swarm_a_orbital_elements",
     "swarm_a_pod_quality",
@@ -227,7 +226,7 @@ def raw_input_manifest(connection):
     )
     counts = {
         table: connection.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
-        for table in ("geomagnetic", "swarm_a_density", "space_weather", "source_files")
+        for table in ("geomagnetic", "space_weather", "source_files")
     }
     if not source_records or any(count == 0 for count in counts.values()):
         raise ValueError("P1.7 requires non-empty raw source tables.")
@@ -237,7 +236,6 @@ def raw_input_manifest(connection):
         "weather_metadata": weather_metadata,
         "weather_metadata_sha256": stable_sha256(weather_metadata),
         "geomagnetic_rows": counts["geomagnetic"],
-        "density_rows": counts["swarm_a_density"],
         "space_weather_rows": counts["space_weather"],
     }
 

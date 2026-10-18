@@ -47,7 +47,7 @@ chunk_id
 POD ZIP + SYM-H + Ap/F10.7
             |
             v
-raw SQLite: swarm_a_data.sqlite
+raw SQLite: data/old/swarm_a_data.sqlite
             |
             v
 UTC alignment, GCRF conversion, orbital elements
@@ -120,7 +120,7 @@ path、table、fields、raw / derived / temporary
 
 狀態：`[done]`
 
-- SQLite：`data/swarm_a_data.sqlite`，目前約 1.8 GiB；可由 raw source 重建。
+- SQLite：`data/old/swarm_a_data.sqlite`，目前約 1.8 GiB；可由 raw source 重建。
 - POD：14,558,400 筆，2021-12-31 23:59:42 UTC 至 2026-08-12 23:59:32 UTC。
 - 每筆 POD 都有完整的位置與速度；沒有重複 `time_us`。
 - 1,685 個 `source_files` 與 1,685 個原始 POD ZIP 一一對應。
@@ -237,7 +237,7 @@ POD 最終輸出欄位、行數限制與檢驗條件見 `POD_FINAL_OUTPUT_SPEC.m
 - [x] Mean-element method 已用 synthetic 與 real-POD data 驗證；全庫 14,558,400 列完成。
 - [x] 10-minute feature join 已在 boundary 與 gap 驗證。
 - [x] 現有 SQLite 的 derived dataset 與 metadata 已建立；P1.7 integrity / foreign-key / causality audit 通過。
-- [x] weather preparation v2/v3 修正後，從 raw files fresh rebuild 並重新通過 P1.7 audit；`data/swarm_a_phase1_rebuild.sqlite` 為 frozen release。
+- [x] weather preparation v2/v3 修正後，現行 `data/swarm_a_analysis.sqlite` 已重新通過 P1.7 audit；cache reuse 與 fresh rebuild 的 provenance 只記在 metadata，不形成第二個 release。
 
 ## 暫緩決定
 

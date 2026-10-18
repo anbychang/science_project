@@ -23,14 +23,40 @@ class PodDownloadTest(unittest.TestCase):
             def write_short_file(_url, output_path):
                 Path(output_path).write_bytes(b"short")
 
-            with patch(
-                "satellite_orbit.data.pod.down_swarm_pod.urlretrieve",
-                side_effect=write_short_file,
-            ):
-                with self.assertRaisesRegex(ValueError, "Incomplete POD download"):
-                    download_file(source_file, data_folder)
+            with patch("satellite_orbit.data.pod.down_swarm_pod.sleep"):
+                with patch(
+                    "satellite_orbit.data.pod.down_swarm_pod.urlretrieve",
+                    side_effect=write_short_file,
+                ):
+                    with self.assertRaisesRegex(ValueError, "Incomplete POD download"):
+                        download_file(source_file, data_folder)
 
             self.assertFalse((data_folder / "POD.ZIP").exists())
+
+    def test_retries_a_short_download_until_it_is_complete(self):
+        """Input: short first response then complete retry.
+        Output: complete ZIP returned without retaining the short response."""
+        source_file = {"name": "POD.ZIP", "path": "remote/POD.ZIP", "size": 10}
+
+        with tempfile.TemporaryDirectory() as temporary_folder:
+            data_folder = Path(temporary_folder)
+
+            def write_file(_url, output_path):
+                content = b"short" if write_file.calls == 0 else b"complete!!"
+                write_file.calls += 1
+                Path(output_path).write_bytes(content)
+
+            write_file.calls = 0
+            with patch("satellite_orbit.data.pod.down_swarm_pod.sleep") as sleep_mock:
+                with patch(
+                    "satellite_orbit.data.pod.down_swarm_pod.urlretrieve",
+                    side_effect=write_file,
+                ):
+                    output_path = download_file(source_file, data_folder)
+
+            self.assertEqual(output_path.stat().st_size, 10)
+            self.assertEqual(write_file.calls, 2)
+            sleep_mock.assert_called_once()
 
 
 if __name__ == "__main__":

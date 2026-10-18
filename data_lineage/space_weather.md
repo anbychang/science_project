@@ -1,125 +1,49 @@
-# Space Weather Data Lineage
+# Phase 1 Space-Weather Lineage
 
 ```text
-SW-All.csv -> daily values -> 3-hour WeatherRecord -> SQLite
+SW-All.csv
+  -> space_weather
+  -> Ap / F10.7 / F10.7A in swarm_a_analysis_10min
 ```
 
-## [1] local CSV -> daily weather rows
-
-```text
-load_space_weather.py -> _load_weather_file()
-prep_raw_weather.py -> weather_days()
-
-check AP1..AP8
-```
-
-```text
-{
-  DATE: 2024-05-10,
-  F10.7_OBS: 150.2,
-  F10.7_OBS_CENTER81: 145.8,
-  AP_AVG: 8,
-  AP1: 6,
-  ...,
-  AP8: 12
-}
-```
-
-```text
-[
-  {
-    day: 2024-05-10 UTC,
-    f107: 150.2 sfu,
-    f107a: 145.8 sfu,
-    ap_slots: [6, 8, 10, 12, 9, 7, 5, 12]
-  },
-  ...
-]
-```
-
-## [2] one 3-hour time -> one WeatherRecord
-
-```text
-load_space_weather.py -> load_space_weather()
-
-previous-day F10.7
-previous-day causal F10.7A
-current / previous Ap slots
-```
-
-```text
-{time: 2024-05-10 12:00:00 UTC}
-```
-
-```text
-{
-  time: 2024-05-10 12:00:00 UTC,
-  f107: 149.4 sfu,
-  f107a: 145.8 sfu,
-  ap: [8, 10, 8, 6, 5, 7.5, 6.1],
-  f107_data_type: "OBS"
-}
-```
-
-## [3] [WeatherRecord, ...] -> SQLite
+## Raw table
 
 ```text
 prep_raw_weather.py -> write_space_weather()
-time_to_us() -> time_us
-```
 
-```text
-[
-  {time: 2024-05-10 12:00:00 UTC, f107: 149.4 sfu, f107a: 145.8 sfu, ap: [...]},
-  ...
-]
-```
-
-```text
-SQLite
 {
-  space_weather:
-  [
+  space_weather: [
     {
-      time: 2024-05-10 12:00:00 UTC,
-      f107: 149.4 sfu,
-      f107a: 145.8 sfu,
-      ap: [8, 10, 8, 6, 5, 7.5, 6.1]
+      time_us,
+      f107_sfu,
+      f107a_sfu,
+      ap_now,
+      ap_3h,
+      ap_6h,
+      ap_9h,
+      f107_data_type
     },
     ...
   ]
 }
 ```
 
-## [4] WeatherRecord -> analysis feature fields
+一個完整 UTC day 產生八個 3-hour rows；缺少任一 Ap slot 就拒絕該 day。
+
+## Analysis fields
 
 ```text
-prep_08_analysis_10min.py
+prep_08_analysis_10min.py -> align_space_weather()
 
-Ap -> target official 3-hour block
-F10.7 / F10.7A -> previous-day source_time
-source_time <= orbit_time
-```
-
-```text
 {
-  time: 2024-05-10 12:00:00 UTC,
-  f107: 149.4 sfu,
-  f107a: 145.8 sfu,
-  ap: [8, 10, 8, 6, 5, 7.5, 6.1]
+  ap_now,
+  ap_source_time_us,
+  f107_sfu,
+  f107_source_time_us,
+  f107a_sfu,
+  f107a_source_time_us,
+  f107_data_type
 }
 ```
 
-```text
-{
-  orbit_time: 2024-05-10 14:30:00 UTC,
-  ap_now: 8,
-  ap_source_time: 2024-05-10 12:00:00 UTC,
-  f107_sfu: 149.4 sfu,
-  f107_source_time: 2024-05-09 00:00:00 UTC,
-  f107a_sfu: 145.8 sfu,
-  f107a_source_time: 2024-05-09 00:00:00 UTC
-}
-```
-
-Frozen release has this causal join and passed the release audit; see [final report](../plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md).
+每個 source time 必須是 `<= orbit time`。
