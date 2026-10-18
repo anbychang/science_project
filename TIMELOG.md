@@ -2,7 +2,7 @@
 
 最後更新：2026-10-18
 
-Current status：`data/swarm_a_phase1_rebuild_v4.sqlite` 是現行 Phase 1 working output，已通過 audit；它是由 v3 從 signed-rate stage 往下重建，並非 full fresh rebuild。詳細交付與限制見 `plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md`。
+Current status：`data/swarm_a_phase1_contract_cached_release.sqlite` 是 frozen Phase 1 release，P1.3 與 mean orbit 經 exact source/state match 後重用 cache，後段 3/6/12h decay、analysis 與 P1.7 audit 均已重跑並通過。詳細交付與限制見 `plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md`。
 
 這份檔案只記錄時間順序：某一天做了什麼、量到什麼、得到什麼結論。它不放長期規則或完整技術定義；那些放在 `plans/phase_1_data_preparation/PLAN.md` 與各階段規格。
 
