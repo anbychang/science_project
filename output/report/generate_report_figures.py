@@ -47,8 +47,7 @@ ORBIT_RAISE_CONTEXT_STOP = "2023-09-01"
 ORBIT_RAISE_START = "2023-04-26"
 ORBIT_RAISE_STOP = "2023-06-08"
 FIGURE_DPI = 180
-# MATLAB-style publication palette.  The four series need both colour and
-# line-style distinctions because the candidate values frequently overlap.
+# MATLAB-style publication palette for the candidate series.
 THREE_ORBIT_RAW_COLOR = "#0072BD"
 FIVE_ORBIT_RAW_COLOR = "#D95319"
 THREE_ORBIT_JOINT_COLOR = "#77AC30"
@@ -405,46 +404,26 @@ def save_h2h3_residual_figure(
     plt.close(figure)
 
 
-def save_candidate_rate_figure(
-    candidate_rows: list[tuple[int, float]], figure_details: tuple[str, str], output_path: Path,
+def save_candidate_pair_figure(
+    candidate_rows: dict[tuple[str, int], list[tuple[int, float]]],
+    figure_details: tuple[str, str, str, str], output_path: Path,
 ) -> None:
-    """Input: candidate rows, (title, color), and PNG path.
-    Output: saved single-method candidate-rate figure."""
-    title, color = figure_details
-    if not candidate_rows:
-        raise ValueError(f"No candidate rows for {title}.")
-    dates = utc_datetimes([row[0] for row in candidate_rows])
-    figure, axis = plt.subplots(figsize=(13, 4.5), constrained_layout=True)
-    axis.plot(dates, [row[1] for row in candidate_rows], color=color, linewidth=0.8)
-    axis.axhline(0.0, color="#0f172a", linewidth=0.8)
-    axis.set_title(title)
-    axis.set_ylabel("衰減率候選（m/day）")
-    axis.set_xlabel("UTC")
-    configure_time_axis(axis)
-    figure.savefig(output_path, dpi=FIGURE_DPI)
-    plt.close(figure)
-
-
-def save_candidate_comparison_figure(
-    candidate_rows: dict[tuple[str, int], list[tuple[int, float]]], output_path: Path,
-) -> None:
-    """Input: four candidate time series and PNG destination.
-    Output: saved four-series 3/5-orbit candidate comparison."""
-    series = [
-        ("raw_b_l_local_ols", 3, "原始模型，3 圈", THREE_ORBIT_RAW_COLOR, "-", 1.15),
-        ("raw_b_l_local_ols", 5, "原始模型，5 圈", FIVE_ORBIT_RAW_COLOR, "-", 1.15),
-        ("joint_h2_h3_local_ols", 3, "H2/H3 聯合，3 圈", THREE_ORBIT_JOINT_COLOR, "--", 1.35),
-        ("joint_h2_h3_local_ols", 5, "H2/H3 聯合，5 圈", FIVE_ORBIT_JOINT_COLOR, ":", 1.55),
-    ]
+    """Input: candidate time series, (title, method, 3/5 colors), and PNG path.
+    Output: one saved two-series 3/5-orbit model comparison."""
+    title, method, three_orbit_color, five_orbit_color = figure_details
     figure, axis = plt.subplots(figsize=(13, 4.8), constrained_layout=True)
-    for method, orbit_count, label, color, style, width in series:
+    for orbit_count, color in ((3, three_orbit_color), (5, five_orbit_color)):
         rows = candidate_rows[(method, orbit_count)]
         axis.plot(
             utc_datetimes([row[0] for row in rows]), [row[1] for row in rows],
-            color=color, linestyle=style, linewidth=width, label=label,
+            color=color, linewidth=1.2, label=f"{orbit_count} 圈",
         )
+    all_rates = [rate for rows in candidate_rows.values() for _, rate in rows]
+    rate_range = max(all_rates) - min(all_rates)
+    axis.set_ylim(min(all_rates) - 0.05 * rate_range,
+                  max(all_rates) + 0.05 * rate_range)
     axis.axhline(0.0, color="#0f172a", linewidth=0.8)
-    axis.set_title("2024 年 5 月：四種局部衰減率候選")
+    axis.set_title(title)
     axis.set_ylabel("衰減率候選（m/day）")
     axis.set_xlabel("UTC")
     axis.legend(loc="lower left", ncol=2, frameon=True, framealpha=0.94)
@@ -584,17 +563,16 @@ def generate_figures(database_path: Path, output_directory: Path) -> None:
     save_corrected_ols_example_figure(
         ols_example_samples, output_directory / "report-05b-h2-h3-corrected-ols-three-orbit-example.png",
     )
-    figure_details = {
-        ("raw_b_l_local_ols", 3): ("原始平均元素：3 圈候選", THREE_ORBIT_RAW_COLOR, "report-06a-may-2024-raw-three-orbit-candidates.png"),
-        ("raw_b_l_local_ols", 5): ("原始平均元素：5 圈候選", FIVE_ORBIT_RAW_COLOR, "report-06b-may-2024-raw-five-orbit-candidates.png"),
-        ("joint_h2_h3_local_ols", 3): ("H2/H3 聯合模型：3 圈候選", THREE_ORBIT_JOINT_COLOR, "report-06c-may-2024-h2-h3-three-orbit-candidates.png"),
-        ("joint_h2_h3_local_ols", 5): ("H2/H3 聯合模型：5 圈候選", FIVE_ORBIT_JOINT_COLOR, "report-06d-may-2024-h2-h3-five-orbit-candidates.png"),
-    }
-    for key, (title, color, filename) in figure_details.items():
-        save_candidate_rate_figure(candidate_rate_rows[key], (title, color), output_directory / filename)
-    save_candidate_comparison_figure(
-        candidate_rate_rows, output_directory / "report-06-may-2024-candidate-comparison.png",
+    comparison_figures = (
+        (("2024 年 5 月：原始模型（無 H2/H3）", "raw_b_l_local_ols",
+          THREE_ORBIT_RAW_COLOR, FIVE_ORBIT_RAW_COLOR),
+         "report-06a-may-2024-without-h2-h3.png"),
+        (("2024 年 5 月：H2/H3 聯合模型", "joint_h2_h3_local_ols",
+          THREE_ORBIT_RAW_COLOR, FIVE_ORBIT_RAW_COLOR),
+         "report-06b-may-2024-with-h2-h3.png"),
     )
+    for details, filename in comparison_figures:
+        save_candidate_pair_figure(candidate_rate_rows, details, output_directory / filename)
 
 
 def main() -> None:
