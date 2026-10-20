@@ -11,7 +11,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -40,7 +39,20 @@ OLS_EXAMPLE_START = "2024-05-03T01:46:22Z"
 OLS_EXAMPLE_STOP = "2024-05-03T06:28:22Z"
 MAY_2024_START = "2024-05-01T00:00:00Z"
 MAY_2024_STOP = "2024-06-01T00:00:00Z"
+ORBIT_RAISE_DATABASE_PATH = (
+    PROJECT_ROOT / "data/sqlite/swarm_a_analysis_2014_2026_phase_candidate_working_v2.sqlite"
+)
+ORBIT_RAISE_CONTEXT_START = "2023-04-01"
+ORBIT_RAISE_CONTEXT_STOP = "2023-09-01"
+ORBIT_RAISE_START = "2023-04-26"
+ORBIT_RAISE_STOP = "2023-06-08"
 FIGURE_DPI = 180
+# MATLAB-style publication palette.  The four series need both colour and
+# line-style distinctions because the candidate values frequently overlap.
+THREE_ORBIT_RAW_COLOR = "#0072BD"
+FIVE_ORBIT_RAW_COLOR = "#D95319"
+THREE_ORBIT_JOINT_COLOR = "#77AC30"
+FIVE_ORBIT_JOINT_COLOR = "#4E8A18"
 
 
 def open_read_only_database(database_path: Path) -> sqlite3.Connection:
@@ -147,22 +159,32 @@ def read_example_day_rows(connection: sqlite3.Connection) -> list[tuple[int, flo
     ).fetchall()
 
 
-def read_chunk_rows(connection: sqlite3.Connection) -> list[tuple[int, int, int]]:
-    """Input: working-database connection.
-    Output: [(chunk_id, start time_us, stop time_us), ...]."""
-    start_time_us, _ = utc_time_bounds(WORKING_START)
-    _, stop_time_us = utc_time_bounds(WORKING_STOP)
-    return connection.execute(
+def read_orbit_raise_rows() -> list[tuple[int, float, int | None, int]]:
+    """Input: full-mission source database and 2023 event dates.
+    Output: [(UTC day, daily mean semi-major axis m, chunk_id, is_usable), ...]."""
+    start_time_us, _ = utc_time_bounds(ORBIT_RAISE_CONTEXT_START)
+    stop_time_us, _ = utc_time_bounds(ORBIT_RAISE_CONTEXT_STOP)
+    with open_read_only_database(ORBIT_RAISE_DATABASE_PATH) as connection:
+        return connection.execute(
         f"""
-        SELECT chunk_id, MIN(time_us), MAX(time_us)
-        FROM {QUALITY_TABLE}
-        WHERE is_usable = 1
-          AND time_us >= ?
-          AND time_us < ?
-        GROUP BY chunk_id
-        ORDER BY chunk_id
+        SELECT (mean.time_us / ?) * ?, AVG(mean.mean_semi_major_axis_m),
+               MIN(quality.chunk_id), MIN(quality.is_usable)
+        FROM {MEAN_ORBIT_TABLE} AS mean
+        JOIN {QUALITY_TABLE} AS quality ON quality.time_us = mean.time_us
+        WHERE mean.mean_semi_major_axis_m IS NOT NULL
+          AND mean.time_us >= ?
+          AND mean.time_us < ?
+        GROUP BY (mean.time_us / ?) * ?
+        ORDER BY mean.time_us
         """,
-        (start_time_us, stop_time_us),
+        (
+            MICROSECONDS_PER_DAY,
+            MICROSECONDS_PER_DAY,
+            start_time_us,
+            stop_time_us,
+            MICROSECONDS_PER_DAY,
+            MICROSECONDS_PER_DAY,
+        ),
     ).fetchall()
 
 
@@ -218,43 +240,6 @@ def read_candidate_rate_rows(
     for method, orbit_count, time_us, rate_m_day in rows:
         grouped_rows.setdefault((method, orbit_count), []).append((time_us, rate_m_day))
     return grouped_rows
-
-
-def save_pipeline_figure(output_path: Path) -> None:
-    """Input: PNG destination.
-    Output: saved research-pipeline flowchart."""
-    figure, axis = plt.subplots(figsize=(14, 5.5), constrained_layout=True)
-    axis.set_axis_off()
-    stages = [
-        ("原始資料", "ESA POD\nITRF 狀態向量", "#dbeafe"),
-        ("座標與元素", "GCRF 與\nB-L 平均元素", "#dbeafe"),
-        ("品質邊界", "品質篩選與\nchunk", "#e5e7eb"),
-        ("相位診斷", "完整軌道、u、\nH2/H3", "#fef3c7"),
-        ("局部估計", "3 圈與 5 圈\nOLS 候選", "#fef3c7"),
-        ("時間對齊", "地磁與\n太空天氣", "#dcfce7"),
-        ("資料產品", "稽核後\n分析資料集", "#dcfce7"),
-    ]
-    x_positions = [0.02, 0.16, 0.30, 0.44, 0.58, 0.72, 0.86]
-    for x_position, (section, label, color) in zip(x_positions, stages):
-        box = FancyBboxPatch(
-            (x_position, 0.33), 0.12, 0.34,
-            boxstyle="round,pad=0.012,rounding_size=0.018",
-            linewidth=1.2, edgecolor="#475569", facecolor=color,
-        )
-        axis.add_patch(box)
-        axis.text(x_position + 0.06, 0.59, section, ha="center", va="center", fontsize=9, weight="bold")
-        axis.text(x_position + 0.06, 0.45, label, ha="center", va="center", fontsize=10)
-    for x_position in x_positions[:-1]:
-        axis.annotate(
-            "", xy=(x_position + 0.137, 0.50), xytext=(x_position + 0.123, 0.50),
-            arrowprops={"arrowstyle": "->", "color": "#334155", "lw": 1.3},
-        )
-    axis.text(0.25, 0.14, "原始觀測與座標處理", ha="center", fontsize=10, color="#1e3a8a")
-    axis.text(0.59, 0.14, "可重現的相位與局部衰減估計", ha="center", fontsize=10, color="#92400e")
-    axis.text(0.87, 0.14, "可追溯的分析資料產品", ha="center", fontsize=10, color="#166534")
-    axis.set_title("Swarm-A 軌道分析資料流程", fontsize=16, weight="bold")
-    figure.savefig(output_path, dpi=FIGURE_DPI)
-    plt.close(figure)
 
 
 def save_three_year_mean_figure(
@@ -313,26 +298,70 @@ def save_phase_time_figure(
     plt.close(figure)
 
 
-def save_chunk_figure(chunk_rows: list[tuple[int, int, int]], output_path: Path) -> None:
-    """Input: chunk boundaries and PNG destination.
-    Output: saved working-range chunk timeline."""
-    if not chunk_rows:
-        raise ValueError("No usable chunks are available.")
-    figure, axis = plt.subplots(figsize=(13, 3.8), constrained_layout=True)
-    for index, (chunk_id, start_time_us, stop_time_us) in enumerate(chunk_rows):
-        start = datetime.fromtimestamp(start_time_us / MICROSECONDS_PER_SECOND, timezone.utc)
-        stop = datetime.fromtimestamp(stop_time_us / MICROSECONDS_PER_SECOND, timezone.utc)
-        axis.hlines(index, start, stop, color="#1d4ed8", linewidth=11, label="可用資料段" if index == 0 else None)
-        axis.text(start + (stop - start) / 2, index + 0.14, f"chunk {chunk_id}", ha="center", va="bottom")
-        if index:
-            axis.axvline(start, color="#b91c1c", linewidth=1.2, linestyle="--")
-            axis.text(start, len(chunk_rows) - 0.36, f"切段\n{start:%Y-%m-%d %H:%M} UTC", ha="center", va="top", color="#991b1b", fontsize=8)
-    axis.set_yticks(range(len(chunk_rows)), [f"chunk {row[0]}" for row in chunk_rows])
-    axis.set_ylim(-0.65, len(chunk_rows) - 0.1)
-    axis.set_title("三年工作資料集的連續資料段：OLS 與完整軌道不得跨越紅色切段")
+def save_orbit_raise_chunk_figure(
+    rows: list[tuple[int, float, int | None, int]], output_path: Path,
+) -> None:
+    """Input: daily full-mission event rows and PNG destination.
+    Output: saved orbit-raise exclusion and chunk-boundary figure."""
+    if not rows:
+        raise ValueError("No daily rows are available around the orbit-raise campaign.")
+    raise_start_time_us, _ = utc_time_bounds(ORBIT_RAISE_START)
+    raise_stop_time_us, _ = utc_time_bounds(ORBIT_RAISE_STOP)
+    pre_event_rows: list[tuple[int, float]] = []
+    excluded_rows: list[tuple[int, float]] = []
+    post_event_rows: list[tuple[int, float]] = []
+    for time_us, semi_major_axis_m, _chunk_id, is_usable in rows:
+        if time_us < raise_start_time_us:
+            pre_event_rows.append((time_us, semi_major_axis_m))
+        elif time_us >= raise_stop_time_us:
+            post_event_rows.append((time_us, semi_major_axis_m))
+        else:
+            if not is_usable:
+                excluded_rows.append((time_us, semi_major_axis_m))
+    if not pre_event_rows or not excluded_rows or not post_event_rows:
+        raise ValueError("Orbit-raise figure requires rows before, during, and after the campaign.")
+    campaign_plot_rows = [pre_event_rows[-1], *excluded_rows]
+    post_event_plot_rows = [excluded_rows[-1], *post_event_rows]
+    figure, axis = plt.subplots(figsize=(13, 4.8), constrained_layout=True)
+    axis.plot(
+        utc_datetimes([row[0] for row in pre_event_rows]),
+        [row[1] for row in pre_event_rows], color=THREE_ORBIT_RAW_COLOR,
+        linewidth=1.6, label="chunk 10：事件前",
+    )
+    axis.plot(
+        utc_datetimes([row[0] for row in post_event_plot_rows]),
+        [row[1] for row in post_event_plot_rows], color=THREE_ORBIT_JOINT_COLOR,
+        linewidth=1.6, label="chunk 11：事件後",
+    )
+    raise_start = datetime.strptime(ORBIT_RAISE_START, "%Y-%m-%d").replace(
+        tzinfo=timezone.utc,
+    )
+    raise_stop = datetime.strptime(ORBIT_RAISE_STOP, "%Y-%m-%d").replace(
+        tzinfo=timezone.utc,
+    )
+    axis.axvspan(raise_start, raise_stop, color=FIVE_ORBIT_RAW_COLOR, alpha=0.08)
+    axis.axvline(
+        raise_start, color="#404040", linewidth=1.25, linestyle="-",
+        label="chunk 邊界：campaign 起訖",
+    )
+    axis.axvline(raise_stop, color="#404040", linewidth=1.25, linestyle="-")
+    axis.plot(
+        utc_datetimes([row[0] for row in campaign_plot_rows]),
+        [row[1] for row in campaign_plot_rows], color=FIVE_ORBIT_RAW_COLOR,
+        linewidth=1.6, label="campaign 內原始日平均：排除",
+    )
+    axis.set_xlim(
+        datetime(2023, 4, 1, tzinfo=timezone.utc),
+        datetime(2023, 9, 1, tzinfo=timezone.utc),
+    )
+    axis.set_title("官方軌道抬升事件：資料排除與 chunk 切分")
+    axis.set_ylabel("每日平均半長軸（m）")
     axis.set_xlabel("UTC")
-    axis.legend(loc="lower left")
-    configure_time_axis(axis)
+    axis.xaxis.set_major_locator(mdates.MonthLocator())
+    axis.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+    axis.ticklabel_format(axis="y", style="plain", useOffset=True)
+    axis.grid(alpha=0.22)
+    axis.legend(loc="lower right", frameon=True, framealpha=0.94)
     figure.savefig(output_path, dpi=FIGURE_DPI)
     plt.close(figure)
 
@@ -377,19 +406,48 @@ def save_h2h3_residual_figure(
 
 
 def save_candidate_rate_figure(
-    candidate_rows: list[tuple[int, float]], title: str, output_path: Path,
+    candidate_rows: list[tuple[int, float]], figure_details: tuple[str, str], output_path: Path,
 ) -> None:
-    """Input: candidate [(time_us, rate m/day), ...], title, and PNG path.
+    """Input: candidate rows, (title, color), and PNG path.
     Output: saved single-method candidate-rate figure."""
+    title, color = figure_details
     if not candidate_rows:
         raise ValueError(f"No candidate rows for {title}.")
     dates = utc_datetimes([row[0] for row in candidate_rows])
     figure, axis = plt.subplots(figsize=(13, 4.5), constrained_layout=True)
-    axis.plot(dates, [row[1] for row in candidate_rows], color="#1d4ed8", linewidth=0.8)
+    axis.plot(dates, [row[1] for row in candidate_rows], color=color, linewidth=0.8)
     axis.axhline(0.0, color="#0f172a", linewidth=0.8)
     axis.set_title(title)
     axis.set_ylabel("衰減率候選（m/day）")
     axis.set_xlabel("UTC")
+    configure_time_axis(axis)
+    figure.savefig(output_path, dpi=FIGURE_DPI)
+    plt.close(figure)
+
+
+def save_candidate_comparison_figure(
+    candidate_rows: dict[tuple[str, int], list[tuple[int, float]]], output_path: Path,
+) -> None:
+    """Input: four candidate time series and PNG destination.
+    Output: saved four-series 3/5-orbit candidate comparison."""
+    series = [
+        ("raw_b_l_local_ols", 3, "原始模型，3 圈", THREE_ORBIT_RAW_COLOR, "-", 1.15),
+        ("raw_b_l_local_ols", 5, "原始模型，5 圈", FIVE_ORBIT_RAW_COLOR, "-", 1.15),
+        ("joint_h2_h3_local_ols", 3, "H2/H3 聯合，3 圈", THREE_ORBIT_JOINT_COLOR, "--", 1.35),
+        ("joint_h2_h3_local_ols", 5, "H2/H3 聯合，5 圈", FIVE_ORBIT_JOINT_COLOR, ":", 1.55),
+    ]
+    figure, axis = plt.subplots(figsize=(13, 4.8), constrained_layout=True)
+    for method, orbit_count, label, color, style, width in series:
+        rows = candidate_rows[(method, orbit_count)]
+        axis.plot(
+            utc_datetimes([row[0] for row in rows]), [row[1] for row in rows],
+            color=color, linestyle=style, linewidth=width, label=label,
+        )
+    axis.axhline(0.0, color="#0f172a", linewidth=0.8)
+    axis.set_title("2024 年 5 月：四種局部衰減率候選")
+    axis.set_ylabel("衰減率候選（m/day）")
+    axis.set_xlabel("UTC")
+    axis.legend(loc="lower left", ncol=2, frameon=True, framealpha=0.94)
     configure_time_axis(axis)
     figure.savefig(output_path, dpi=FIGURE_DPI)
     plt.close(figure)
@@ -453,9 +511,9 @@ def save_raw_ols_example_figure(
     dates = utc_datetimes([sample.time_us for sample in samples])
     raw_line_m = trend_line_values(samples, raw_values_m, raw_rate_m_day)
     figure, axis = plt.subplots(figsize=(13, 4.5), constrained_layout=True)
-    axis.plot(dates, raw_values_m, color="#64748b", linewidth=0.6, label="原始平均半長軸")
+    axis.plot(dates, raw_values_m, color=THREE_ORBIT_RAW_COLOR, linewidth=0.6, label="原始平均半長軸")
     axis.plot(
-        dates, raw_line_m, color="#1d4ed8", linewidth=2.0,
+        dates, raw_line_m, color=THREE_ORBIT_RAW_COLOR, linewidth=2.0,
         label=f"原始 OLS 斜率：{raw_rate_m_day:.1f} m/day",
     )
     axis.set_title("三圈視窗：原始平均半長軸與原始 OLS")
@@ -476,9 +534,9 @@ def save_corrected_ols_example_figure(
     dates = utc_datetimes([sample.time_us for sample in samples])
     corrected_line_m = trend_line_values(samples, corrected_values_m, joint_rate_m_day)
     figure, axis = plt.subplots(figsize=(13, 4.5), constrained_layout=True)
-    axis.plot(dates, corrected_values_m, color="#15803d", linewidth=0.6, label="扣除 H2/H3 後的平均半長軸")
+    axis.plot(dates, corrected_values_m, color=THREE_ORBIT_JOINT_COLOR, linewidth=0.6, label="扣除 H2/H3 後的平均半長軸")
     axis.plot(
-        dates, corrected_line_m, color="#c2410c", linewidth=2.0,
+        dates, corrected_line_m, color=THREE_ORBIT_JOINT_COLOR, linewidth=2.0,
         label=f"H2/H3 聯合 OLS 斜率：{joint_rate_m_day:.1f} m/day",
     )
     axis.set_title("三圈視窗：扣除 H2/H3 後與聯合 OLS")
@@ -499,11 +557,9 @@ def generate_figures(database_path: Path, output_directory: Path) -> None:
     with open_read_only_database(database_path) as connection:
         daily_rows = read_daily_mean_rows(connection)
         example_day_rows = read_example_day_rows(connection)
-        chunk_rows = read_chunk_rows(connection)
         ols_example_samples = read_ols_example_samples(connection)
         reconstruction_rows = reconstruct_phase_orbit(read_example_fit_orbit(connection))
         candidate_rate_rows = read_candidate_rate_rows(connection)
-    save_pipeline_figure(output_directory / "report-01-orbit-analysis-pipeline.png")
     save_three_year_mean_figure(
         daily_rows, output_directory / "report-02a-three-year-mean-semi-major-axis.png",
     )
@@ -513,8 +569,8 @@ def generate_figures(database_path: Path, output_directory: Path) -> None:
     save_phase_time_figure(
         example_day_rows, output_directory / "report-02c-one-day-orbit-phase.png",
     )
-    save_chunk_figure(
-        chunk_rows, output_directory / "report-03-working-data-chunk-boundaries.png",
+    save_orbit_raise_chunk_figure(
+        read_orbit_raise_rows(), output_directory / "report-03-orbit-raise-chunk-boundary.png",
     )
     save_h2h3_reconstruction_figure(
         reconstruction_rows, output_directory / "report-04a-h2-h3-harmonic-reconstruction.png",
@@ -529,13 +585,16 @@ def generate_figures(database_path: Path, output_directory: Path) -> None:
         ols_example_samples, output_directory / "report-05b-h2-h3-corrected-ols-three-orbit-example.png",
     )
     figure_details = {
-        ("raw_b_l_local_ols", 3): ("原始平均元素：3 圈候選", "report-06a-may-2024-raw-three-orbit-candidates.png"),
-        ("raw_b_l_local_ols", 5): ("原始平均元素：5 圈候選", "report-06b-may-2024-raw-five-orbit-candidates.png"),
-        ("joint_h2_h3_local_ols", 3): ("H2/H3 聯合模型：3 圈候選", "report-06c-may-2024-h2-h3-three-orbit-candidates.png"),
-        ("joint_h2_h3_local_ols", 5): ("H2/H3 聯合模型：5 圈候選", "report-06d-may-2024-h2-h3-five-orbit-candidates.png"),
+        ("raw_b_l_local_ols", 3): ("原始平均元素：3 圈候選", THREE_ORBIT_RAW_COLOR, "report-06a-may-2024-raw-three-orbit-candidates.png"),
+        ("raw_b_l_local_ols", 5): ("原始平均元素：5 圈候選", FIVE_ORBIT_RAW_COLOR, "report-06b-may-2024-raw-five-orbit-candidates.png"),
+        ("joint_h2_h3_local_ols", 3): ("H2/H3 聯合模型：3 圈候選", THREE_ORBIT_JOINT_COLOR, "report-06c-may-2024-h2-h3-three-orbit-candidates.png"),
+        ("joint_h2_h3_local_ols", 5): ("H2/H3 聯合模型：5 圈候選", FIVE_ORBIT_JOINT_COLOR, "report-06d-may-2024-h2-h3-five-orbit-candidates.png"),
     }
-    for key, (title, filename) in figure_details.items():
-        save_candidate_rate_figure(candidate_rate_rows[key], title, output_directory / filename)
+    for key, (title, color, filename) in figure_details.items():
+        save_candidate_rate_figure(candidate_rate_rows[key], (title, color), output_directory / filename)
+    save_candidate_comparison_figure(
+        candidate_rate_rows, output_directory / "report-06-may-2024-candidate-comparison.png",
+    )
 
 
 def main() -> None:
