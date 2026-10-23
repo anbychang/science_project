@@ -18,6 +18,7 @@ from satellite_orbit.data.pod.prep_07_decay_rate import (
 
 
 DEFAULT_DATABASE = Path("data/swarm_a_analysis.sqlite")
+MEAN_ORBIT_ELEMENTS_V1_TABLE = "swarm_a_mean_orbit_elements_v1"
 AUDIT_VERSION = "p1_7_release_audit_v5"
 MAXIMUM_ABSOLUTE_FLOAT = 1.7e308
 REBUILD_STATUS = "not_executed"
@@ -71,8 +72,6 @@ PHASE_ONE_IMPLEMENTATION_FILES = (
     "satellite_orbit/data/database/prep_raw_database.py",
     "satellite_orbit/data/database/prep_raw_identifiers.py",
     "satellite_orbit/data/database/prep_raw_schema.py",
-    "satellite_orbit/data/density/load_swarm_density.py",
-    "satellite_orbit/data/density/prep_raw_density.py",
     "satellite_orbit/data/geomagnetic/prep_raw_geomagnetic.py",
     "satellite_orbit/data/pod/load_sp3_inventory.py",
     "satellite_orbit/data/pod/load_swarm_pod.py",
@@ -542,6 +541,94 @@ def write_release_metadata(
                     ("p1_7_release_manifest", json.dumps(manifest, sort_keys=True)),
                     ("p1_7_rebuild_commands", json.dumps(REBUILD_COMMANDS)),
                     ("p1_7_rebuild_status", manifest["rebuild"]["status"]),
+                ],
+            )
+    finally:
+        connection.close()
+    return manifest
+
+
+def write_scoped_v1_release_metadata(database_path, start_time_us, stop_time_us):
+    """Input: P1.7 SQLite path and [start_time_us, stop_time_us)
+    Output: scoped v1 release manifest after a passing audit"""
+    database_path = Path(database_path)
+    connection = sqlite3.connect(database_path)
+    try:
+        with connection:
+            required_tables = (
+                MEAN_ORBIT_ELEMENTS_V1_TABLE,
+                "swarm_a_pod_quality",
+                "swarm_a_orbit_10min",
+                "swarm_a_orbit_decay_10min",
+                "swarm_a_analysis_10min",
+            )
+            present_tables = {
+                row[0] for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            missing_tables = sorted(set(required_tables) - present_tables)
+            if missing_tables:
+                raise ValueError(f"Scoped P1.7 requires tables: {missing_tables}")
+
+            expected, missing_mean, rejected = connection.execute(
+                f"""
+                SELECT
+                    (SELECT count(*) FROM swarm_a_pod_quality
+                     WHERE is_usable = 1 AND time_us >= ? AND time_us < ?),
+                    (SELECT count(*) FROM swarm_a_pod_quality AS quality
+                     LEFT JOIN {MEAN_ORBIT_ELEMENTS_V1_TABLE} AS mean
+                       ON mean.time_us = quality.time_us
+                     WHERE quality.is_usable = 1
+                       AND quality.time_us >= ? AND quality.time_us < ?
+                       AND (mean.time_us IS NULL
+                            OR mean.mean_semi_major_axis_m IS NULL
+                            OR mean.rejection_reason IS NOT NULL)),
+                    (SELECT count(*) FROM {MEAN_ORBIT_ELEMENTS_V1_TABLE}
+                     WHERE rejection_reason IS NOT NULL)
+                """,
+                (start_time_us, stop_time_us, start_time_us, stop_time_us),
+            ).fetchone()
+            orbit_rows, decay_rows, analysis_rows, coverage_start, coverage_end = connection.execute(
+                """
+                SELECT
+                    (SELECT count(*) FROM swarm_a_orbit_10min),
+                    (SELECT count(*) FROM swarm_a_orbit_decay_10min),
+                    (SELECT count(*) FROM swarm_a_analysis_10min),
+                    (SELECT min(time_us) FROM swarm_a_analysis_10min),
+                    (SELECT max(time_us) FROM swarm_a_analysis_10min)
+                """
+            ).fetchone()
+            integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
+            foreign_keys = connection.execute("PRAGMA foreign_key_check").fetchall()
+            if integrity != "ok" or foreign_keys or missing_mean or rejected:
+                raise ValueError(
+                    "Scoped P1.7 audit failed: "
+                    f"integrity={integrity}, foreign_keys={len(foreign_keys)}, "
+                    f"missing_mean={missing_mean}, rejected={rejected}"
+                )
+            if not analysis_rows or decay_rows != analysis_rows:
+                raise ValueError("Scoped P1.7 requires matching non-empty decay and analysis rows.")
+
+            manifest = {
+                "audit_version": "p1_7_scoped_v1_audit_v1",
+                "audit_outcome": "pass",
+                "scope_utc": {"start": utc_text(start_time_us), "stop": utc_text(stop_time_us)},
+                "mean_orbit_table": MEAN_ORBIT_ELEMENTS_V1_TABLE,
+                "usable_pod_rows": expected,
+                "mean_orbit_rejections": rejected,
+                "row_counts": {"orbit_10min": orbit_rows, "decay_10min": decay_rows, "analysis_10min": analysis_rows},
+                "analysis_coverage_utc": {"start": utc_text(coverage_start), "end": utc_text(coverage_end)},
+                "sqlite_integrity_check": integrity,
+                "foreign_key_violation_count": len(foreign_keys),
+                "code_revision": git_revision(),
+            }
+            connection.executemany(
+                "INSERT OR REPLACE INTO metadata VALUES (?, ?)",
+                [
+                    ("p1_7_release_audit_version", manifest["audit_version"]),
+                    ("p1_7_release_status", "working_audit_pass"),
+                    ("p1_7_release_manifest", json.dumps(manifest, sort_keys=True)),
                 ],
             )
     finally:

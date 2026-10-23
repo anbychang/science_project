@@ -1,4 +1,4 @@
-"""Convert one GCRF osculating state to a Brouwer-Lyddane mean orbit."""
+"""Convert one GCRF osculating state to Brouwer-Lyddane mean elements."""
 
 import os
 import sys
@@ -7,11 +7,13 @@ from math import isfinite
 from pathlib import Path
 
 _OREKIT_CONTEXT = None
+MEAN_ORBIT_CONVERGENCE_EPSILON = 1.0e-13
+MEAN_ORBIT_MAX_ITERATIONS = 5_000
 
 
-def calculate_mean_semi_major_axis(state):
+def calculate_mean_orbital_elements(state):
     """Input: {time, GCRF, position_m, velocity_m_s}
-    Output: mean_semi_major_axis_m"""
+    Output: {mean orbit elements and mean GCRF PV coordinates}"""
     if state["frame"] != "GCRF":
         raise ValueError("Mean-orbit state must use GCRF.")
 
@@ -24,6 +26,8 @@ def calculate_mean_semi_major_axis(state):
         utc,
         gcrf,
         propagator,
+        orekit_exception,
+        keplerian_orbit,
     ) = _orekit_context()
     state_time = state["time"]
     if state_time.tzinfo is None:
@@ -49,16 +53,76 @@ def calculate_mean_semi_major_axis(state):
         orekit_date,
         provider.getMu(),
     )
-    mean_orbit = propagator.computeMeanOrbit(
-        osculating_orbit,
-        provider,
-        provider.onDate(orekit_date),
-        0.0,
-    )
-    mean_semi_major_axis_m = mean_orbit.getA()
+    try:
+        mean_orbit = propagator.computeMeanOrbit(
+            osculating_orbit,
+            provider,
+            provider.onDate(orekit_date),
+            0.0,
+            MEAN_ORBIT_CONVERGENCE_EPSILON,
+            MEAN_ORBIT_MAX_ITERATIONS,
+        )
+    except orekit_exception as error:
+        raise ValueError(
+            f"Brouwer-Lyddane mean-orbit conversion failed: {error}"
+        ) from error
+    return mean_orbit_elements(mean_orbit, keplerian_orbit)
+
+
+def calculate_mean_semi_major_axis(state):
+    """Input: {time, GCRF, position_m, velocity_m_s}
+    Output: mean_semi_major_axis_m"""
+    return calculate_mean_orbital_elements(state)["mean_semi_major_axis_m"]
+
+
+def mean_orbit_elements(mean_orbit, keplerian_orbit_class):
+    """Input: Orekit mean Orbit and its Keplerian converter
+    Output: {mean orbit elements and mean GCRF PV coordinates}"""
+    mean_semi_major_axis_m = float(mean_orbit.getA())
     if not isfinite(mean_semi_major_axis_m) or mean_semi_major_axis_m <= 0.0:
         raise ValueError("Brouwer-Lyddane conversion returned an invalid semi-major axis.")
-    return mean_semi_major_axis_m
+
+    mean_keplerian_orbit = keplerian_orbit_class(mean_orbit)
+    mean_position = mean_orbit.getPosition()
+    mean_velocity = mean_orbit.getVelocity()
+    elements = {
+        "mean_semi_major_axis_m": mean_semi_major_axis_m,
+        "mean_eccentricity": float(mean_orbit.getE()),
+        "mean_inclination_rad": float(mean_orbit.getI()),
+        "mean_longitude_rad": float(mean_orbit.getLM()),
+        "mean_eccentric_longitude_rad": float(mean_orbit.getLE()),
+        "mean_true_longitude_rad": float(mean_orbit.getLv()),
+        "mean_equinoctial_ex": float(mean_orbit.getEquinoctialEx()),
+        "mean_equinoctial_ey": float(mean_orbit.getEquinoctialEy()),
+        "mean_equinoctial_hx": float(mean_orbit.getHx()),
+        "mean_equinoctial_hy": float(mean_orbit.getHy()),
+        "mean_keplerian_period_s": float(mean_orbit.getKeplerianPeriod()),
+        "mean_keplerian_mean_motion_rad_s": float(mean_orbit.getKeplerianMeanMotion()),
+        "mean_argument_of_perigee_rad": float(mean_keplerian_orbit.getPerigeeArgument()),
+        "mean_raan_rad": float(
+            mean_keplerian_orbit.getRightAscensionOfAscendingNode()
+        ),
+        "mean_anomaly_rad": float(mean_keplerian_orbit.getMeanAnomaly()),
+        "mean_eccentric_anomaly_rad": float(
+            mean_keplerian_orbit.getEccentricAnomaly()
+        ),
+        "mean_true_anomaly_rad": float(mean_keplerian_orbit.getTrueAnomaly()),
+        "mean_x_m": float(mean_position.getX()),
+        "mean_y_m": float(mean_position.getY()),
+        "mean_z_m": float(mean_position.getZ()),
+        "mean_vx_m_s": float(mean_velocity.getX()),
+        "mean_vy_m_s": float(mean_velocity.getY()),
+        "mean_vz_m_s": float(mean_velocity.getZ()),
+    }
+    if not all(isfinite(value) for value in elements.values()):
+        raise ValueError("Brouwer-Lyddane conversion returned non-finite mean elements.")
+    return elements
+
+
+def initialize_mean_orbit_context():
+    """Input: none
+    Output: Orekit context initialized before threaded calculations"""
+    _orekit_context()
 
 
 def _orekit_context():
@@ -92,8 +156,9 @@ def _orekit_context():
     from org.hipparchus.geometry.euclidean.threed import Vector3D
     from org.orekit.forces.gravity.potential import GravityFieldFactory
     from org.orekit.frames import FramesFactory
-    from org.orekit.orbits import CartesianOrbit
+    from org.orekit.orbits import CartesianOrbit, KeplerianOrbit
     from org.orekit.propagation.analytical import BrouwerLyddanePropagator
+    from org.orekit.errors import OrekitException
     from org.orekit.time import AbsoluteDate, TimeScalesFactory
     from org.orekit.utils import PVCoordinates
 
@@ -106,6 +171,8 @@ def _orekit_context():
         TimeScalesFactory.getUTC(),
         FramesFactory.getGCRF(),
         BrouwerLyddanePropagator,
+        OrekitException,
+        KeplerianOrbit,
     )
     return _OREKIT_CONTEXT
 

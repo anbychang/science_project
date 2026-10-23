@@ -58,10 +58,6 @@ def add_release_fixture(connection):
         (TIME_US, 120.0, 118.0, 117.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, "OBSERVED"),
     )
     connection.execute("INSERT INTO geomagnetic (time_us, sym_h_nt) VALUES (?, ?)", (TIME_US, -20.0))
-    connection.execute(
-        "INSERT INTO swarm_a_density VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (TIME_US, 1e-12, 500000.0, 1.0, 2.0, 12.0, "density.ZIP"),
-    )
     connection.execute("INSERT INTO swarm_a_states VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (TIME_US, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, TIME_US, 1))
     connection.execute(
         "INSERT INTO swarm_a_orbital_elements VALUES (?, ?, ?)",
@@ -230,25 +226,6 @@ class P17ReleaseAuditTest(unittest.TestCase):
 
         self.assertEqual(manifest["rebuild"]["status"], "clean_rebuild_verified")
         self.assertEqual(status, "frozen")
-
-    def test_accepts_p1_release_without_phase2_density(self):
-        """Input: complete P1 chain with no Phase 2 density rows
-        Output: P1.7 audit succeeds without unrelated density evidence"""
-        with tempfile.TemporaryDirectory() as temporary_folder:
-            database_path = Path(temporary_folder) / "release.sqlite"
-            connection = sqlite3.connect(database_path)
-            try:
-                create_tables(connection)
-                add_release_fixture(connection)
-                connection.execute("DELETE FROM swarm_a_density")
-                connection.commit()
-            finally:
-                connection.close()
-
-            manifest = write_release_metadata(database_path)
-
-        self.assertEqual(manifest["audit_outcome"], "pass")
-        self.assertNotIn("density_rows", manifest["raw_inputs"])
 
     def test_records_verified_mean_cache_without_claiming_clean_rebuild(self):
         """Input: valid final data and verified mean-orbit cache evidence

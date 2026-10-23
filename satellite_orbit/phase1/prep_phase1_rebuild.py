@@ -6,7 +6,6 @@ from pathlib import Path
 from satellite_orbit.data.database.prep_raw_database import write_sqlite_database
 from satellite_orbit.data.pod.prep_02_source_provenance import write_database_provenance
 from satellite_orbit.data.pod.prep_03_orbital_elements import write_orbital_elements
-from satellite_orbit.data.pod.prep_04_mean_orbit import write_mean_orbits
 from satellite_orbit.data.pod.prep_mean_orbit_cache import (
     copy_verified_mean_orbit_cache,
     copy_verified_orbital_element_cache,
@@ -18,12 +17,21 @@ from satellite_orbit.phase1.prep_08_analysis_10min import write_analysis_10min
 from satellite_orbit.phase1.prep_09_release_audit import write_release_metadata
 
 
+def write_phase1_raw_database(database_path):
+    """Input: new Phase 1 SQLite path.
+    Output: raw POD, weather, and geomagnetic rows without Phase 2 density."""
+    return write_sqlite_database(database_path)
+
+
 def write_mean_orbit_stage(database_path, cache_database_path):
-    """Input: target SQLite path and optional verified mean-orbit cache
-    Output: mean orbit calculated or copied after verification"""
-    if cache_database_path is not None:
-        return copy_verified_mean_orbit_cache(database_path, cache_database_path)
-    return write_mean_orbits(database_path, rebuild=True)
+    """Input: target SQLite path and required verified P1.5 cache path.
+    Output: verified mean-orbit rows copied without an Orekit calculation."""
+    if cache_database_path is None:
+        raise ValueError(
+            "Phase 1 rebuild requires a P1.5 mean-orbit cache; "
+            "normal rebuilds do not recompute Orekit mean elements."
+        )
+    return copy_verified_mean_orbit_cache(database_path, cache_database_path)
 
 
 def default_stages(
@@ -31,10 +39,15 @@ def default_stages(
     mean_orbit_cache_database=None,
     orbital_element_cache_database=None,
 ):
-    """Input: explicit rebuild evidence and optional mean-orbit cache
+    """Input: rebuild evidence, required P1.5 cache, optional P1.3 cache
     Output: ordered {(name, writer), ...} for a new Phase 1 database"""
+    if mean_orbit_cache_database is None:
+        raise ValueError(
+            "Phase 1 rebuild requires a P1.5 mean-orbit cache; "
+            "normal rebuilds do not recompute Orekit mean elements."
+        )
     return (
-        ("01_raw", write_sqlite_database),
+        ("01_raw", write_phase1_raw_database),
         ("02_provenance", write_database_provenance),
         (
             "03_orbital_elements",
@@ -68,7 +81,7 @@ def write_phase1_rebuild(
     mean_orbit_cache_database=None,
     orbital_element_cache_database=None,
 ):
-    """Input: absent target path, optional stages, and optional mean-orbit cache
+    """Input: absent target path, optional stages, and required default P1.5 cache
     Output: {database_path, stages} after a fresh Phase 1 rebuild"""
     database_path = Path(database_path)
     if database_path.exists():
@@ -76,7 +89,6 @@ def write_phase1_rebuild(
             f"Fresh Phase 1 rebuild target already exists: {database_path}. "
             "Choose a new SQLite path."
         )
-
     rebuild_evidence = {
         "entry_point": "write_phase1_rebuild",
         "target_database": str(database_path),
@@ -105,12 +117,12 @@ def write_phase1_rebuild(
 
 
 def main():
-    """Input: python -m satellite_orbit.phase1.prep_phase1_rebuild NEW_DATABASE [MEAN_CACHE]
+    """Input: python -m satellite_orbit.phase1.prep_phase1_rebuild NEW_DATABASE P1_5_CACHE
     Output: fresh Phase 1 rebuild summary"""
     arguments = sys.argv[1:]
-    if len(arguments) not in (1, 2):
-        raise ValueError("Usage: NEW_DATABASE [CACHE_DATABASE]")
-    cache_database_path = arguments[1] if len(arguments) == 2 else None
+    if len(arguments) != 2:
+        raise ValueError("Usage: NEW_DATABASE P1_5_CACHE_DATABASE")
+    cache_database_path = arguments[1]
     result = write_phase1_rebuild(
         arguments[0],
         mean_orbit_cache_database=cache_database_path,

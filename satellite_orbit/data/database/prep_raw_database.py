@@ -3,7 +3,6 @@
 from pathlib import Path
 
 from satellite_orbit.data.database.prep_raw_schema import connect_database, create_tables
-from satellite_orbit.data.density.prep_raw_density import write_density_folder
 from satellite_orbit.data.geomagnetic.prep_raw_geomagnetic import write_ae, write_sym_h
 from satellite_orbit.data.pod.prep_01_raw_pod import write_pod_folder
 from satellite_orbit.data.space_weather.prep_raw_weather import write_space_weather
@@ -12,7 +11,6 @@ DEFAULT_DATABASE = Path("data/swarm_a_data.sqlite")
 DEFAULT_POD_FOLDER = Path("data/swarm_a_pod")
 DEFAULT_WEATHER_FILE = Path("data/space_weather/SW-All.csv")
 DEFAULT_GEOMAGNETIC_FOLDER = Path("data/geomagnetic")
-DEFAULT_DENSITY_FOLDER = Path("data/swarm_density_acc")
 
 
 def write_sqlite_database(
@@ -20,9 +18,8 @@ def write_sqlite_database(
     pod_folder=DEFAULT_POD_FOLDER,
     weather_file=DEFAULT_WEATHER_FILE,
     geomagnetic_folder=DEFAULT_GEOMAGNETIC_FOLDER,
-    density_folder=DEFAULT_DENSITY_FOLDER,
 ):
-    """Input: {database path, downloaded data folders}
+    """Input: {database path, POD, weather, geomagnetic source paths}
     Output: {database path, written row counts}"""
     database_path = Path(database_path)
     database_path.parent.mkdir(parents=True, exist_ok=True)
@@ -41,10 +38,6 @@ def write_sqlite_database(
             pod_folder,
             known_weather_times,
         )
-        density_files, density_rows = write_density_folder(
-            connection,
-            density_folder,
-        )
 
     return {
         "database_path": database_path,
@@ -53,8 +46,6 @@ def write_sqlite_database(
         "ae_rows": ae_rows,
         "pod_files": pod_files,
         "state_rows": state_rows,
-        "density_files": density_files,
-        "density_rows": density_rows,
     }
 
 
@@ -68,8 +59,6 @@ def main():
     print(f"AE source rows stored: {result['ae_rows']}")
     print(f"POD files changed: {result['pod_files']}")
     print(f"Orbit states added: {result['state_rows']}")
-    print(f"Density files added: {result['density_files']}")
-    print(f"Density points added: {result['density_rows']}")
 
 
 if __name__ == "__main__":

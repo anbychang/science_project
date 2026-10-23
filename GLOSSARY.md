@@ -1,47 +1,27 @@
-# Phase 1 Glossary
+# Phase 1 術語
 
-## Raw record
+本表區分現行逐 10 秒相位估計與保留的 10 分鐘舊分支；兩者的衰減率不可當成同一種資料產品。
 
-One immutable observation written from a local source file. Raw records are never updated by a calculation.
+## 現行資料
 
-## Source file
+**Raw record**：從來源檔寫入的原始觀測；後續計算不得修改。
 
-One POD ZIP recorded in `source_files`. Its parsed SP3 metadata is derived provenance, not raw history.
+**State**：一個時刻的軌道狀態，形狀為 `{time, frame, position_m, velocity_m_s}`。
 
-## State
+**Chunk**：同一產品流、SP3 frame 與 cadence 下，時間連續的可用 state 序列。`chunk_id` 不是 maneuver 分類。
 
-One POD time snapshot:
-`{time, frame, position_m, velocity_m_s}`.
+**Mean element**：從慣性座標的 osculating state 轉換所得的 Brouwer-Lyddane 平均軌道根數；不代表所有週期擾動都已消除。
 
-## Chunk
+**Phase orbit**：以連續展開的 `u = omega + M` 每增加 `2*pi` 定義的一個完整軌道，不是固定分鐘數。
 
-One P1.4 sequence of usable states with the same product stream, SP3 frame, cadence, and continuous time.
-`chunk_id` is not a maneuver classification.
+**Local decay candidate**：在每個可用 10 秒時刻，回看完整 3 或 5 個 phase orbit，對 mean semi-major axis 求得的局部斜率。它是描述性估計，尚未校準成磁暴造成的阻力衰減。
 
-## 10-minute orbit bin
+**Causal feature**：對同一 `time_us` 對齊的 SYM-H、Ap、F10.7 與 F10.7A；來源時間須遵守各自的因果邊界。
 
-One UTC `[end - 600 s, end)` aggregate from exactly one chunk. It stores the mean semi-major axis,
-POD count, and maximum POD gap.
+**Working audit**：檢查兩張局部斜率表與一張 feature 表的 key、有效性、來源時間及 SQLite 完整性。`pass` 不代表物理結果已校準或資料庫已成正式 release。
 
-## Contiguous run
+## 保留的舊分支
 
-One consecutive 600-second subset inside a chunk. Decay smoothing uses runs, so a chunk can contain
-more than one run if a 10-minute orbit bin is missing.
+**10-minute orbit bin**：舊流程中，同一 chunk 內的 UTC `[end - 600 s, end)` 平均列；不是現行局部斜率的輸入。
 
-## Decay row
-
-One interior contiguous-run row with smoothed semi-major axis, derivative, and decay rate. It excludes
-the Savitzky-Golay window edges.
-
-## Analysis row
-
-One decay row plus causal SYM-H, Ap, F10.7, and F10.7A features. Density and AE are not Phase 1 core features.
-
-## Working audit
-
-An audit of the current SQLite database. It may pass before a fresh raw-file rebuild has been executed.
-
-## Rebuild provenance
-
-P1.7 manifest 的 `rebuild_status`。它說明現行 database 是 fresh rebuild 還是 verified cache reuse；
-它不表示不同資料值、不同研究版本或第二個 release。
+**Backward rate**：舊流程在 10 分鐘列上計算的 3、6、12 小時差分率；不等同於現行 3／5 圈 OLS slope。

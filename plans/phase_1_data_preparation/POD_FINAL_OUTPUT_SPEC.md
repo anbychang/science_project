@@ -1,5 +1,9 @@
 # P1.5 POD 軌道輸出規格
 
+NOTE: 本頁只保留舊版 10 分鐘 P1.5／P1.7 產物的欄位規格，不是現行
+P1.5.6 v2 的輸出。現行 10 秒局部斜率見
+[orbit_analysis.md](../../data_lineage/orbit_analysis.md)。
+
 ## 狀態
 
 這是已發布 P1.5 10 分鐘軌道產物的規格；final P1.7 table 另外是

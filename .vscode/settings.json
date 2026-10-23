@@ -1,15 +1,8 @@
 {
   "files.exclude": {
-    "**/.git": true,
-    ".vscode": true,
-    ".gitignore": true,
+    "**/.*": true,
     "requirements.txt": true,
-    "ruff.toml": true,
-    "**/.ruff_cache": true,
-    "**/__pycache__": true,
-    "**/*.pyc": true,
-    "data/*.sqlite-shm": true,
-    "data/*.sqlite-wal": true
+    "ruff.toml": true
   },
   "search.exclude": {
     "**/.git/**": true,
@@ -26,5 +19,6 @@
     "**/__pycache__/**": true,
     "data/*.sqlite-shm": true,
     "data/*.sqlite-wal": true
-  }
+  },
+  "git.autorefresh": false
 }

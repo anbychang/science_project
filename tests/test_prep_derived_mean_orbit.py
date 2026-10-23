@@ -9,7 +9,13 @@ from unittest.mock import patch
 from satellite_orbit.data.pod import prep_04_mean_orbit
 from satellite_orbit.data.pod import prep_mean_orbit_cache
 from satellite_orbit.data.database.prep_raw_schema import create_tables
-from satellite_orbit.data.pod.prep_04_mean_orbit import write_mean_orbits
+from satellite_orbit.data.pod.prep_04_mean_orbit import (
+    ALGORITHM_NAME,
+    MEAN_ORBIT_ELEMENT_FIELDS,
+    MEAN_ORBIT_ELEMENTS_TABLE,
+    write_mean_orbit_elements,
+    write_mean_orbits,
+)
 from satellite_orbit.data.pod.prep_05_pod_quality import create_quality_table
 
 
@@ -154,6 +160,93 @@ class MeanOrbitSourceStateTest(unittest.TestCase):
 
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0][0], POD_TIME_US)
+
+
+class FullMeanOrbitStorageTest(unittest.TestCase):
+    """Input: valid P1.3 states inside and outside the full-element window
+    Output: only 2022--2026 elements enter the independent versioned table"""
+
+    def test_writes_full_elements_without_changing_existing_tables(self):
+        """Input: one 2024 state, one 2021 state, and existing old output
+        Output: finite full elements for only the 2024 P1.3 state"""
+        earlier_time_us = 1_609_459_200_000_000
+        with tempfile.TemporaryDirectory() as temporary_folder:
+            database_path = Path(temporary_folder) / "full_mean_orbit.sqlite"
+            states = [
+                (earlier_time_us, 7e6, 0.0, 0.0, 0.0, 7500.0, 0.0, earlier_time_us, 1),
+                (POD_TIME_US, 7e6, 0.0, 0.0, 0.0, 7500.0, 0.0, POD_TIME_US, 1),
+            ]
+            connection = sqlite3.connect(database_path)
+            try:
+                create_tables(connection)
+                create_orbital_elements_table(connection)
+                prep_04_mean_orbit.create_mean_orbit_table(connection)
+                connection.executemany(
+                    "INSERT INTO swarm_a_states VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    states,
+                )
+                insert_valid_orbital_elements(connection, states)
+                connection.executemany(
+                    "INSERT INTO swarm_a_mean_orbital_elements VALUES (?, ?, ?)",
+                    [(time_us, 6_800_000.0, None) for time_us, *_ in states],
+                )
+                before_raw = connection.execute(
+                    "SELECT * FROM swarm_a_states ORDER BY time_us"
+                ).fetchall()
+                before_p1_3 = connection.execute(
+                    "SELECT * FROM swarm_a_orbital_elements ORDER BY time_us"
+                ).fetchall()
+                before_old_mean = connection.execute(
+                    "SELECT * FROM swarm_a_mean_orbital_elements ORDER BY time_us"
+                ).fetchall()
+                connection.commit()
+            finally:
+                connection.close()
+
+            def fake_element_rows(source_rows):
+                return [
+                    (time_us, 6_800_000.0, *([1.0] * (len(MEAN_ORBIT_ELEMENT_FIELDS) - 1)), None)
+                    for time_us, _ in source_rows
+                ]
+
+            with patch.object(
+                prep_04_mean_orbit,
+                "mean_orbit_element_rows",
+                side_effect=fake_element_rows,
+            ):
+                result = write_mean_orbit_elements(database_path)
+                resumed_result = write_mean_orbit_elements(database_path)
+
+            connection = sqlite3.connect(database_path)
+            try:
+                rows = connection.execute(
+                    f"SELECT * FROM {MEAN_ORBIT_ELEMENTS_TABLE} ORDER BY time_us"
+                ).fetchall()
+                metadata = dict(connection.execute("SELECT name, value FROM metadata"))
+                after_raw = connection.execute(
+                    "SELECT * FROM swarm_a_states ORDER BY time_us"
+                ).fetchall()
+                after_p1_3 = connection.execute(
+                    "SELECT * FROM swarm_a_orbital_elements ORDER BY time_us"
+                ).fetchall()
+                after_old_mean = connection.execute(
+                    "SELECT * FROM swarm_a_mean_orbital_elements ORDER BY time_us"
+                ).fetchall()
+            finally:
+                connection.close()
+
+        self.assertEqual(result["stored_rows"], 1)
+        self.assertEqual(resumed_result["new_source_files"], 0)
+        self.assertEqual([row[0] for row in rows], [POD_TIME_US])
+        element_row = rows[0]
+        self.assertEqual(element_row[1], 6_800_000.0)
+        self.assertTrue(all(value is not None for value in element_row[1:-1]))
+        self.assertIsNone(element_row[-1])
+        self.assertEqual(metadata["mean_orbit_elements_table"], MEAN_ORBIT_ELEMENTS_TABLE)
+        self.assertEqual(metadata["mean_orbit_elements_fields"], ",".join(MEAN_ORBIT_ELEMENT_FIELDS))
+        self.assertEqual(before_raw, after_raw)
+        self.assertEqual(before_p1_3, after_p1_3)
+        self.assertEqual(before_old_mean, after_old_mean)
 
 
 class MeanOrbitCacheReuseTest(unittest.TestCase):
@@ -310,7 +403,74 @@ class MeanOrbitStorageTest(unittest.TestCase):
         self.assertEqual(resumed_result["stored_rows"], 0)
         self.assertEqual([row[0] for row in rows], [POD_TIME_US, POD_TIME_US + 10_000_000])
         self.assertTrue(all(row[1] > 0.0 and row[2] is None for row in rows))
-        self.assertEqual(algorithm, "orekit_brouwer_lyddane_j2_to_j5_m2_0_v2")
+        self.assertEqual(algorithm, ALGORITHM_NAME)
+
+    def test_writes_parallel_sources_through_one_sqlite_writer(self):
+        """Input: two valid sources and two calculation threads
+        Output: both source results are stored without concurrent SQLite writes"""
+        with tempfile.TemporaryDirectory() as temporary_folder:
+            database_path = Path(temporary_folder) / "parallel_mean_orbit.sqlite"
+            states = [
+                (
+                    POD_TIME_US,
+                    7e6,
+                    0.0,
+                    0.0,
+                    0.0,
+                    7500.0,
+                    0.0,
+                    POD_TIME_US,
+                    1,
+                ),
+                (
+                    POD_TIME_US + 10_000_000,
+                    7e6,
+                    0.0,
+                    0.0,
+                    0.0,
+                    7500.0,
+                    0.0,
+                    POD_TIME_US + 10_000_000,
+                    2,
+                ),
+            ]
+            connection = sqlite3.connect(database_path)
+            try:
+                create_tables(connection)
+                create_orbital_elements_table(connection)
+                connection.executemany(
+                    "INSERT INTO swarm_a_states VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    states,
+                )
+                insert_valid_orbital_elements(connection, states)
+                connection.commit()
+            finally:
+                connection.close()
+
+            def fake_mean_orbit_rows(source_rows):
+                return [(time_us, 6_800_000.0, None) for time_us, _ in source_rows]
+
+            with patch.object(
+                prep_04_mean_orbit,
+                "initialize_mean_orbit_context",
+            ), patch.object(
+                prep_04_mean_orbit,
+                "mean_orbit_rows",
+                side_effect=fake_mean_orbit_rows,
+            ):
+                result = write_mean_orbits(database_path, workers=2)
+
+            connection = sqlite3.connect(database_path)
+            try:
+                stored_rows = connection.execute(
+                    "SELECT count(*) FROM swarm_a_mean_orbital_elements"
+                ).fetchone()[0]
+            finally:
+                connection.close()
+
+        self.assertEqual(result["new_source_files"], 2)
+        self.assertEqual(result["stored_rows"], 2)
+        self.assertEqual(stored_rows, 2)
 
     def test_replaces_partial_source_output_when_resuming(self):
         """Input: one stale mean row from a two-state source

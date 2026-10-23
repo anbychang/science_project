@@ -1,15 +1,5 @@
 __pycache__/
 *.py[cod]
 .orekitvenv/
-data/swarm_a_pod/
-data/swarm_density_acc/
-data/geomagnetic/
-data/*.sqlite
-data/*.sqlite-shm
-data/*.sqlite-wal
-data/*.log
-data/*.err.log
-data/*_batch*.cmd
-data/run_p15_mean_orbit_durable.cmd
-data/run_pod_quality_chunk_rebuild.cmd
-data/swarm_a_p15_durable_task.xml
+data/
+tmp/

@@ -1,53 +1,55 @@
 # Swarm-A 軌道衰減研究
 
-> 唯一 Phase 1 SQLite：`data/swarm_a_analysis.sqlite`。`data/old/` 是 archive/cache，
-> 不是第二個資料產品，也不能當成目前輸出。
+> 現行 Phase 1 工作輸出是兩份 P1.5.1 checkpoint 與其 P1.5.6 v2 working copy。
 
 目標：研究地磁暴與 Swarm-A 軌道衰減的關係。
 
-目前唯一正式輸出是 `data/swarm_a_analysis.sqlite`。mean-orbit cache 與重算得到的值相同；
-cache 只縮短 build，不形成另一個 release。現行資料庫已完成 10-minute orbit、3/6/12h rate、
-analysis 與 P1.7 working audit。
+目前有 2014--2026 全期與 2023--2026 三年版 P1.5.1 mean-element checkpoint，
+以及兩份逐 10 秒的 P1.5.6 v2 working copy。兩份 working copy 都有 raw B-L、
+joint H2/H3、P1.6 causal feature 與 P1.7 v2 audit；兩份 audit 的 6 項 violation
+均為 0，metadata status 為 `pass`。這是資料契約稽核，不是已校準的磁暴衰減率或
+正式 release。舊 10 分鐘 P1.5--P1.7 輸出是 retained legacy，不可和 v2 混用。
 
 完整交付與限制：[Phase 1 Final Report](plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md)。
-正式規格：[PLAN.md](plans/phase_1_data_preparation/PLAN.md)。
+現行執行狀態與契約：[PHASE_1_EXECUTION_PLAN.md](plans/phase_1_data_preparation/PHASE_1_EXECUTION_PLAN.md)
+及 [orbit_analysis.md](data_lineage/orbit_analysis.md)。
+[PLAN.md](plans/phase_1_data_preparation/PLAN.md) 保留舊 10 分鐘設計。
 核心術語：[GLOSSARY.md](GLOSSARY.md)。
 
-## 文件排版
+## 文件規則
 
-- 以閱讀節奏換行，不追求最少行數。
-- 一個句子同時交代兩個獨立條件、結果或決定時，拆成兩行或改成 list。
-- 資料 shape 的 `{}`、`[]`、`()` 維持多行縮排；一個 field 一行，不把欄位塞成長句。
-- 長段落在觀念轉折、輸入/輸出切換、數字結果與限制條件前換行。
-- 避免只有一個超長 Markdown line；內容完整、可掃讀比行數少重要。
+Data Lineage 的完整寫作與資料 contract 規則在
+[data_lineage/RULES.md](data_lineage/RULES.md)。
 
 ## Canonical output
 
 ```text
-swarm_a_states                 14,558,400 raw POD rows
-  -> swarm_a_mean_orbital_elements
-                               13,495,680 usable rows
-  -> swarm_a_orbit_10min          224,928 UTC bins
-  -> swarm_a_orbit_decay_10min    224,280 decay rows
-  -> swarm_a_analysis_10min       224,280 causal analysis rows
+2014--2026 checkpoint
+  -> swarm_a_mean_orbit_elements_v1  39,346,558 rows
+  -> phase_candidate_working_v2
+       -> raw B-L v2 / joint H2H3 v2 / P1.6 features v2 / P1.7 audit v2
+
+2023--2026 checkpoint
+  -> swarm_a_mean_orbit_elements_v1   9,469,438 rows
+  -> phase_candidate_working_v1
+       -> raw B-L v2 / joint H2H3 v2 / P1.6 features v2 / P1.7 audit v2
 ```
 
-`swarm_a_analysis_10min` coverage：`2022-01-01 12:10:00 UTC` 至
-`2026-08-13 00:00:00 UTC`；有 9 個 `chunk_id`；density 不在 core table。
-
-現行 mean table 保留 13,495,680 個 usable POD。舊 archive 可能保有早於 campaign
-date-level exclusion 的 row；它只供復原或比較，不是另一個 research release。
-
-manifest 記錄 `rebuild_status`，用來區分 cache reuse 與 fresh rebuild 的 provenance；
-不代表資料值或研究輸出不同。
+12 年 v2 的每張 rate table 有 38,378,878 rows；三年的兩張 rate table 與
+feature table 各有 9,469,438 rows。12 年 feature row count 仍以 writer metadata
+與 P1.7 key-identity audit 為證據，尚未另行完成全表獨立計數。兩份 checkpoint 的
+P1.5.1 rejection 都是 0。三年 checkpoint 保留全期 raw states，只有 mean-element
+table 限定三年。全期 raw／quality 比 mean-element 多的 2 筆，時間分別是
+2013-12-31 23:59:44、23:59:54 UTC，位於 2014-01-01 起始範圍之前；
+不是範圍內漏算。
 
 ## Scope
 
-Phase 1 只準備可追溯的 10 分鐘資料集。
+Phase 1 現行主線準備可追溯的逐 10 秒局部斜率候選；10 分鐘資料集是保留的舊分支。
 
-- 做：POD mean orbit、chunk-safe bin、3/6/12 小時 backward decay rate、
-  causal weather/geomagnetic join、SQLite audit。
-- 不做：ML、drag propagator、XYZ 預報、DNSAACC density core join。
+- 做：POD mean orbit、phase-defined 3／5 圈 raw 與 H2/H3 局部 OLS、
+  causal weather/geomagnetic feature、SQLite audit。
+- 不做：ML、drag propagator、XYZ 預報、舊版 density core join。
 - Q4 maneuver：ESA 已公告的 orbit-raise campaign 以 date-level exclusion 切開 chunk；
   其餘 residual candidate 維持 audit-only。
 
@@ -59,7 +61,7 @@ satellite_orbit/
 │  ├─ pod/            POD download, load, raw/derived writers
 │  ├─ space_weather/  F10.7 / Ap download, load, raw writer
 │  ├─ geomagnetic/    SYM-H / AE download, load, raw writer
-│  ├─ density/        DNSAACC density load and raw writer
+│  ├─ density/        DNSAPOD source download and load
 │  └─ database/       shared SQLite schema, IDs, raw-data entry point
 ├─ calculation/
 │  ├─ pod/            time, frame, osculating and mean-orbit calculations
@@ -70,15 +72,20 @@ data/
 ├─ swarm_a_pod/        raw POD ZIP
 ├─ geomagnetic/        raw SYM-H / AE CSV
 ├─ space_weather/      raw F10.7 / Ap CSV
-├─ swarm_density_acc/  raw DNSAACC density ZIP
-├─ swarm_a_phase1_rebuild.sqlite verified P1.3/mean-orbit cache; not committed
-└─ swarm_a_analysis.sqlite          current Phase 1 analysis target; not committed
+├─ swarm_density_pod/  raw DNSAPOD density ZIP
+└─ sqlite/
+   ├─ swarm_a_analysis_2014_2026_p1_5_iter5000.sqlite
+   ├─ swarm_a_analysis_2014_2026_phase_candidate_working_v2.sqlite
+   ├─ swarm_a_analysis_2023_2026_p1_5_iter5000.sqlite
+   └─ swarm_a_analysis_2023_2026_phase_candidate_working_v1.sqlite
 
 data_lineage/               downloaded sources -> current data products
-├─ density.md                DNSAACC ZIP -> density summary -> comparison
+├─ phase_2_storm_dataset.md  current P2.0–P2.3 SME orbit lineage
 ├─ orbit_analysis.md         POD -> orbit analysis
 └─ README.md                 all source-to-output paths
 ```
+
+舊 DNSAACC 程式與 `data_lineage/density.md` 已移除；`data/swarm_density_acc/` 的原始 ZIP 保留原位供歷史追溯。現行 Phase 2 只用 DNSAPOD。
 
 ## Data flow
 
@@ -86,10 +93,10 @@ data_lineage/               downloaded sources -> current data products
 raw files
   -> immutable raw SQLite
   -> GCRF osculating / quality / final chunks
-  -> Brouwer-Lyddane mean semi-major axis
-  -> chunk-local UTC 10-minute bins
-  -> chunk-local backward 3h/6h/12h difference decay rows
-  -> causal space-weather + geomagnetic analysis rows
+  -> Brouwer-Lyddane mean elements
+  -> 3／5 個 phase orbit 的 raw B-L / joint H2/H3 局部 slope
+  -> 每個 10 秒 time_us 的 causal feature
+  -> P1.7 v2 working audit
 ```
 
 Raw tables are immutable. Each calculation writes a separate derived table
@@ -103,7 +110,8 @@ pipeline entry points。新增程式先放到資料結構對應的 package，不
 - [Phase 1 final report](plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md)
 - [Phase 1 contracts](plans/phase_1_data_preparation/PLAN.md)
 - [Data lineage index](data_lineage/README.md)
-- [Orbit analysis structure](data_lineage/orbit_analysis.md)
-- [Phase 2 plan](plans/phase_2_density_validation/PHASE_2_EXECUTION_PLAN.md)
-- [Density flow](data_lineage/density.md)
+- [Data lineage rules](data_lineage/RULES.md)
+- [POD lineage](data_lineage/orbit_analysis.md)
+- [Phase 2 SME 方法主報告](plans/phase_2_density_validation/PHASE_2_SME_REPORT.md)
+- [Phase 2 SME 逐圈資料血緣](data_lineage/phase_2_storm_dataset.md)
 - [Historical timeline](TIMELOG.md)

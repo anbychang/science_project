@@ -2,7 +2,10 @@
 
 ## 狀態
 
-唯一正式資料庫是 `data/swarm_a_analysis.sqlite`。mean-orbit cache 與重算結果一致，
+本文件記錄舊 10 分鐘 P1.7 run；該 SQLite 已退出現行資料集。現行資料是
+`data/sqlite/` 內兩份 P1.5.1 checkpoint 與兩份 v2 working copy；
+兩份 working copy 的 P1.7 v2 audit 已通過，但尚非已校準的正式 decay release。
+mean-orbit cache 與重算結果一致，
 只用於避免昂貴的重算；它不形成第二個 database 或 release。
 P1.7 metadata 為 `status = working_audit_pass`、`rebuild_status = not_executed`、
 `audit_outcome = pass`。archive/cache 只保留復原與比較證據。
@@ -15,7 +18,7 @@ Phase 1 的交付物是可追溯的 10 分鐘分析 table。
 - 排除：ML、atmospheric drag propagator、XYZ prediction、DNSAACC density core join、Q4 maneuver rejection rule。
 - Density 保留 raw `swarm_a_density`，供後續 Phase 2 獨立研究。
 
-## Canonical output
+## 舊版 10 分鐘輸出（歷史紀錄）
 
 ```text
 swarm_a_states                    14,558,400
@@ -28,7 +31,7 @@ swarm_a_states                    14,558,400
   -> swarm_a_analysis_10min          224,280
 ```
 
-現行 target 的 mean table 只含 13,495,680 個 usable rows。archive/cache 早於
+當時 target 的 mean table 只含 13,495,680 個 usable rows。archive/cache 早於
 campaign date-level exclusion 的 rows 只供比較，不作交付依據。
 
 `swarm_a_analysis_10min` UTC coverage：`2022-01-01 12:10` 至 `2026-08-13 00:00`，中間有
@@ -83,7 +86,7 @@ SYM-H exact or <= 2-minute bounded interpolation
 Q4 residual candidate is audit-only. ESA-published orbit-raise campaigns are separately marked
 `planned_orbit_raise_campaign` and split chunks.
 
-## 現行資料庫品質證據
+## 當時 10 分鐘資料庫品質證據
 
 - SQLite `integrity_check = ok`.
 - Foreign-key check has no violations.
@@ -94,7 +97,7 @@ Q4 residual candidate is audit-only. ESA-published orbit-raise campaigns are sep
 - Ap, F10.7, F10.7A and SYM-H causal-source audit found no prohibited future reference.
 - P1.3 與 P1.5 以 exact source/state match 驗證 cache 後直接重用；本次不重算 mean orbit。
 
-上述條件均在現行 target 的 P1.7 audit 驗證。所有 missingness、future-reference、
+上述條件均在當時 target 的舊 P1.7 audit 驗證。所有 missingness、future-reference、
 chunk continuity、foreign-key 與 integrity failure count 都是 0。
 
 ## 未校準的 decay-rate 異常
@@ -128,11 +131,13 @@ Raw tables are immutable. Derived calculations write separate tables. 現行 SQL
 
 P1.3 與 mean-orbit 在 source/state exact-match 驗證後可重用 cache；其值不會形成另一個
 research version。10-minute orbit、3/6/12h decay、P1.6 causal analysis 與 P1.7 audit 的
-正式結果都以現行 `data/swarm_a_analysis.sqlite` 為準。
+本報告的 P1.7 結果只保留歷史紀錄，不是現行資料產品。
 
 ## Phase 2 handoff
 
-Phase 2 starts from `swarm_a_analysis_10min`, not raw 10-second osculating semi-major axis.
+上述是舊 10 分鐘分支的 Phase 2 handoff；現行 Phase 2 來源應以
+[PHASE_1_EXECUTION_PLAN.md](PHASE_1_EXECUTION_PLAN.md) 與 Phase 2 計畫重新對接，
+不得把已退出主線的 `swarm_a_analysis_10min` 當作現行輸入。
 
 - Select storm windows and define the scientific comparison.
 - Decide whether density becomes a separate aligned product; do not silently join it into the core table.

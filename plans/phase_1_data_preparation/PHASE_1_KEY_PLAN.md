@@ -2,7 +2,8 @@
 
 此檔保留 2026-10-17 之前的執行重點，不再是 current status。
 
-目前結果與未完成事項：[PHASE_1_FINAL_REPORT.md](PHASE_1_FINAL_REPORT.md)。
+現行結果與狀態：[PHASE_1_EXECUTION_PLAN.md](PHASE_1_EXECUTION_PLAN.md)。
+舊 10 分鐘 run 見 [PHASE_1_FINAL_REPORT.md](PHASE_1_FINAL_REPORT.md)。
 
 > NOTE: 以下 `Now` / `Next` 是歷史計畫，不代表現況。
 

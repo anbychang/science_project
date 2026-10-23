@@ -1,5 +1,13 @@
 # 第一階段計畫：Swarm-A 資料準備
 
+NOTE: 本頁保留原先 10 分鐘分析資料集的設計與驗證紀錄，**不是現行 P1.5.6--P1.7
+輸出契約**。現行逐 10 秒、3／5 個 phase orbit 的 raw B-L／joint H2/H3 局部斜率、
+共用 P1.6 feature 與 P1.7 v2 audit，以
+[PHASE_1_EXECUTION_PLAN.md](PHASE_1_EXECUTION_PLAN.md) 和
+[orbit_analysis.md](../../data_lineage/orbit_analysis.md) 為準。本頁提到的
+`data/old/`、`data/swarm_a_analysis.sqlite` 與 14,558,400 筆統計均屬舊範圍，
+不得當成目前檔案路徑或資料量。
+
 ## 目標
 
 建立一份可重建、每 10 分鐘一列的 Swarm-A 資料集，用來研究軌道衰減與地磁、太陽活動的關係。每個衍生數值都必須保留來源時間與品質判斷。
@@ -237,7 +245,7 @@ POD 最終輸出欄位、行數限制與檢驗條件見 `POD_FINAL_OUTPUT_SPEC.m
 - [x] Mean-element method 已用 synthetic 與 real-POD data 驗證；全庫 14,558,400 列完成。
 - [x] 10-minute feature join 已在 boundary 與 gap 驗證。
 - [x] 現有 SQLite 的 derived dataset 與 metadata 已建立；P1.7 integrity / foreign-key / causality audit 通過。
-- [x] weather preparation v2/v3 修正後，現行 `data/swarm_a_analysis.sqlite` 已重新通過 P1.7 audit；cache reuse 與 fresh rebuild 的 provenance 只記在 metadata，不形成第二個 release。
+- [x] 舊 10 分鐘分支的 `data/swarm_a_analysis.sqlite` 當時通過 P1.7 audit；該檔目前不在工作區，不能用來代表現行 v2 audit。
 
 ## 暫緩決定
 

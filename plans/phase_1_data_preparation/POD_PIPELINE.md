@@ -1,5 +1,9 @@
 # POD 執行順序
 
+NOTE: 下列 06--09 的 10 分鐘 rebuild 是 retained legacy，不會生成現行
+P1.5.6 v2／P1.6 v2／P1.7 v2。現行 checkpoint 與下游 working copy 的接續、
+輸入和輸出見 [PHASE_1_EXECUTION_PLAN.md](PHASE_1_EXECUTION_PLAN.md)。
+
 決定：POD 的可執行 processing module 使用兩位數編號。編號是資料依賴順序；`load_` 是 reader helper，`down_` 是下載工具，report/audit 是檢查工具，均不編入寫入順序。
 
 完整 rebuild 只由下列入口執行：

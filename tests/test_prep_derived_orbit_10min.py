@@ -239,6 +239,5 @@ class Orbit10MinuteStorageTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "1 usable mean-orbit rows are incomplete"):
                 write_orbit_10min(database_path)
 
-
 if __name__ == "__main__":
     unittest.main()

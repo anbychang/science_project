@@ -10,7 +10,8 @@ from urllib.request import urlopen, urlretrieve
 
 ESA_SERVER = "https://swarm-diss.eo.esa.int/"
 ESA_POD_FOLDER = "swarm/Level2daily/Latest_baselines/POD/RD/Sat_A"
-DEFAULT_FIRST_DAY = "2022-01-01"
+DEFAULT_FIRST_DAY = "2014-01-01"
+PROJECT_LAST_DAY = "2026-06-30"
 DEFAULT_DATA_FOLDER = "data/swarm_a_pod"
 MAX_DOWNLOAD_ATTEMPTS = 5
 RETRY_DELAY_SECONDS = 5
@@ -38,15 +39,16 @@ def get_file_version(source_file):
     return int(version)
 
 
-def select_latest_files(source_files, first_day):
-    """Input: all files and first YYYY-MM-DD
-    Output: one latest-version file per day"""
+def select_latest_files(source_files, first_day, last_day=PROJECT_LAST_DAY):
+    """Input: ESA files and inclusive YYYY-MM-DD range.
+    Output: one latest-version file per requested day."""
     first_day = first_day.replace("-", "")
+    last_day = last_day.replace("-", "")
     latest_by_day = {}
 
     for source_file in source_files:
         day = get_file_day(source_file)
-        if day < first_day:
+        if day < first_day or day > last_day:
             continue
 
         old_file = latest_by_day.get(day)
@@ -94,7 +96,7 @@ def download_swarm_a_pod(day, data_folder=DEFAULT_DATA_FOLDER):
     """Input: one day as YYYY-MM-DD
     Output: that day's latest-version ZIP path"""
     source_files = list_swarm_pod_files()
-    selected_files = select_latest_files(source_files, day)
+    selected_files = select_latest_files(source_files, day, day)
     requested_day = day.replace("-", "")
 
     for source_file in selected_files:
@@ -107,11 +109,12 @@ def download_swarm_a_pod(day, data_folder=DEFAULT_DATA_FOLDER):
 def download_swarm_a_pod_since(
     first_day,
     data_folder=DEFAULT_DATA_FOLDER,
+    last_day=PROJECT_LAST_DAY,
 ):
-    """Input: first day as YYYY-MM-DD
-    Output: local ZIP paths from that day onward"""
+    """Input: inclusive first/last days and local folder.
+    Output: local ZIP paths inside the project time range."""
     source_files = list_swarm_pod_files()
-    selected_files = select_latest_files(source_files, first_day)
+    selected_files = select_latest_files(source_files, first_day, last_day)
     downloaded_paths = []
 
     for index, source_file in enumerate(selected_files, start=1):
@@ -123,12 +126,19 @@ def download_swarm_a_pod_since(
 
 
 def main():
+    """Input: python -m ... [FIRST_DAY] [LAST_DAY].
+    Output: count of downloaded POD ZIP files."""
     first_day = DEFAULT_FIRST_DAY
+    last_day = PROJECT_LAST_DAY
     if len(sys.argv) >= 2:
         first_day = sys.argv[1]
+    if len(sys.argv) >= 3:
+        last_day = sys.argv[2]
+    if len(sys.argv) > 3:
+        raise ValueError("Usage: [FIRST_DAY] [LAST_DAY]")
 
-    file_paths = download_swarm_a_pod_since(first_day)
-    print(f"Complete: {len(file_paths)} files since {first_day}.")
+    file_paths = download_swarm_a_pod_since(first_day, last_day=last_day)
+    print(f"Complete: {len(file_paths)} files from {first_day} to {last_day}.")
 
 
 if __name__ == "__main__":

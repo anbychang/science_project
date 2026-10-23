@@ -7,6 +7,8 @@ from satellite_orbit.data.database.prep_raw_schema import connect_database
 
 
 DEFAULT_DATABASE = Path("data/swarm_a_analysis.sqlite")
+MEAN_ORBIT_TABLE = "swarm_a_mean_orbital_elements"
+MEAN_ORBIT_ELEMENTS_V1_TABLE = "swarm_a_mean_orbit_elements_v1"
 BIN_DURATION_US = 600_000_000
 MINIMUM_POD_COUNT = 56
 MAXIMUM_POD_GAP_S = 10.0
@@ -30,26 +32,29 @@ def create_orbit_10min_table(connection):
     )
 
 
-def incomplete_mean_orbit_count(connection):
+def incomplete_mean_orbit_count(connection, mean_orbit_table, start_time_us, stop_time_us):
     """Input: SQLite connection
     Output: usable POD rows without a usable mean-orbit result"""
     return connection.execute(
         """
         SELECT count(*)
         FROM swarm_a_pod_quality AS quality
-        LEFT JOIN swarm_a_mean_orbital_elements AS mean
+        LEFT JOIN {mean_orbit_table} AS mean
             ON mean.time_us = quality.time_us
         WHERE quality.is_usable = 1
+          AND quality.time_us >= ?
+          AND quality.time_us < ?
           AND (
               mean.time_us IS NULL
               OR mean.mean_semi_major_axis_m IS NULL
               OR mean.rejection_reason IS NOT NULL
           )
-        """
+        """.format(mean_orbit_table=mean_orbit_table),
+        (start_time_us, stop_time_us),
     ).fetchone()[0]
 
 
-def orbit_bin_query():
+def orbit_bin_query(mean_orbit_table):
     """Input: none
     Output: SQL rows {time_us, mean_a, pod_count, max_gap_s, chunk_id}"""
     return """
@@ -62,7 +67,7 @@ def orbit_bin_query():
                     PARTITION BY quality.chunk_id
                     ORDER BY mean.time_us
                 ) AS previous_time_us
-            FROM swarm_a_mean_orbital_elements AS mean
+            FROM {mean_orbit_table} AS mean
             JOIN swarm_a_pod_quality AS quality
                 ON quality.time_us = mean.time_us
             WHERE quality.is_usable = 1
@@ -102,7 +107,7 @@ def orbit_bin_query():
               OR time_us = last_time_us
           )
         ORDER BY time_us
-    """
+    """.format(mean_orbit_table=mean_orbit_table)
 
 
 def orbit_bin_parameters():
@@ -118,7 +123,7 @@ def orbit_bin_parameters():
     )
 
 
-def orbit_insert_query():
+def orbit_insert_query(mean_orbit_table):
     """Input: none
     Output: SQL insert with the fixed algorithm version"""
     return (
@@ -140,7 +145,7 @@ def orbit_insert_query():
             ?
         FROM (
         """
-        + orbit_bin_query()
+        + orbit_bin_query(mean_orbit_table)
         + ")"
     )
 
@@ -174,15 +179,24 @@ def write_metadata(connection):
     )
 
 
-def write_orbit_10min(database_path=DEFAULT_DATABASE):
+def write_orbit_10min(
+    database_path=DEFAULT_DATABASE,
+    mean_orbit_table=MEAN_ORBIT_TABLE,
+    start_time_us=0,
+    stop_time_us=2**63 - 1,
+):
     """Input: SQLite path with complete mean-orbit rows
     Output: {input_rows, stored_rows}"""
     database_path = Path(database_path)
+    if mean_orbit_table not in (MEAN_ORBIT_TABLE, MEAN_ORBIT_ELEMENTS_V1_TABLE):
+        raise ValueError(f"Unsupported mean-orbit table: {mean_orbit_table}")
     connection = connect_database(database_path)
     try:
         with connection:
             create_orbit_10min_table(connection)
-            incomplete_rows = incomplete_mean_orbit_count(connection)
+            incomplete_rows = incomplete_mean_orbit_count(
+                connection, mean_orbit_table, start_time_us, stop_time_us
+            )
             if incomplete_rows:
                 raise ValueError(
                     "Cannot bin POD while "
@@ -190,14 +204,17 @@ def write_orbit_10min(database_path=DEFAULT_DATABASE):
                 )
 
             input_rows = connection.execute(
-                "SELECT count(*) FROM swarm_a_mean_orbital_elements"
+                f"SELECT count(*) FROM {mean_orbit_table} WHERE time_us >= ? AND time_us < ?",
+                (start_time_us, stop_time_us),
             ).fetchone()[0]
             candidate_bins = connection.execute(
-                "SELECT count(*) FROM (" + orbit_bin_query() + ")",
+                "SELECT count(*) FROM (" + orbit_bin_query(mean_orbit_table) + ")",
                 orbit_bin_parameters(),
             ).fetchone()[0]
             connection.execute("DELETE FROM swarm_a_orbit_10min")
-            connection.execute(orbit_insert_query(), orbit_insert_parameters())
+            connection.execute(
+                orbit_insert_query(mean_orbit_table), orbit_insert_parameters()
+            )
             write_metadata(connection)
     finally:
         connection.close()

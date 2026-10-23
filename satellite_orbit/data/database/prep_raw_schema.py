@@ -52,16 +52,6 @@ def create_tables(connection):
             source_id INTEGER NOT NULL
         );
 
-        CREATE TABLE IF NOT EXISTS swarm_a_density (
-            time_us INTEGER PRIMARY KEY,
-            density_kg_m3 REAL NOT NULL,
-            altitude_m REAL NOT NULL,
-            latitude_deg REAL NOT NULL,
-            longitude_deg REAL NOT NULL,
-            local_solar_time_h REAL NOT NULL,
-            source_file_name TEXT NOT NULL
-        );
-
         CREATE TABLE IF NOT EXISTS source_files (
             source_id INTEGER PRIMARY KEY,
             file_name TEXT NOT NULL UNIQUE,

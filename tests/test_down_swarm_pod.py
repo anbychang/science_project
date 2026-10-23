@@ -5,12 +5,25 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from satellite_orbit.data.pod.down_swarm_pod import download_file
+from satellite_orbit.data.pod.down_swarm_pod import download_file, select_latest_files
 
 
 class PodDownloadTest(unittest.TestCase):
     """Input: POD download response
     Output: complete local ZIP or clear failure"""
+
+    def test_excludes_files_after_the_requested_end(self):
+        """Input: POD files on both sides of the inclusive end date.
+        Output: only the in-range POD file."""
+        files = [
+            {"name": "SW_OPER_SP3ACOM_2__20240629T235942_20240630T235942_0201.ZIP"},
+            {"name": "SW_OPER_SP3ACOM_2__20240630T235942_20240701T235942_0201.ZIP"},
+        ]
+
+        selected_files = select_latest_files(files, "2024-01-01", "2024-06-30")
+
+        self.assertEqual(len(selected_files), 1)
+        self.assertIn("20240630T235942", selected_files[0]["name"])
 
     def test_discards_a_download_with_the_wrong_size(self):
         """Input: response shorter than ESA metadata size
