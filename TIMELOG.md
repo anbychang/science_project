@@ -1,12 +1,20 @@
 # Swarm-A 軌道衰減研究時間紀錄
 
-最後更新：2026-10-24
+最後更新：2026-10-25
 
 > 2026-10-18 的 10 分鐘 Phase 1 工作稽核與後續逐 10 秒相位候選，是兩條不同資料產品。舊紀錄提到的 `data/swarm_a_analysis.sqlite` 目前不在工作區；現存三年與 2014–2026 候選工作庫位於 `data/sqlite/`，尚非已校準的正式 decay release。
 
 Current status：三年與 2014–2026 工作庫均已完成逐 10 秒的 raw B-L／joint H2/H3 3／5 圈候選、共用 P1.6 v2 feature，以及 P1.7 v2 audit。兩份 audit 各有 6 項、violation 全為 0，metadata status 均為 `pass`。12 年 v2 兩張 rate table 各有 38,378,878 筆；十二年報告限定 2014-07-01 至 2026-06-30。舊 10 分鐘產品的歷史交付與限制見 `plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md`。
 
 Phase 2 status：[done]，固定交付鏈是 P2.3 v5／P2.4 v5／P2.5 v2／P2.6 final，一分鐘一列，共 25 場、217,912 列。25 張逐場圖直接位於 `output/image/Phase2/P2.6/`，沒有圖版本子目錄。交付檢查點與研究界線見 `plans/phase_2_density_validation/PHASE_2_FINAL_REPORT.md`；下方舊版紀錄只供歷史追溯。
+
+## 2026-10-25：Phase 2 final 上傳 GitHub
+
+**結果**：將 Phase 2 final 的程式、測試、lineage、計畫、最終報告與 25 張圖提交為 Git commit `4b9eb3082fc2b483e9c2036751f01d58055211ee`，commit message 為 `feat: finalize phase 2 minute dataset`，並推送至 GitHub `origin/master`。推送後本機 `HEAD` 與 `origin/master` 一致。
+
+**驗證**：全套 pytest 結果為 195 passed；Orekit／JVM 在 Windows 上印出 access-violation 診斷，但 pytest 最終 exit code 為 0。7 個 Phase 2 SQLite 的 SHA-256 與 `PHASE_2_FINAL_REPORT.md` 一致，正式圖數是 25。
+
+**邊界**：`data/` 受 `.gitignore` 排除，所以大型 SQLite checkpoint 沒有上傳 GitHub；Git 保存可重建程式、檔名、表契約與 SHA-256。本機未追蹤的 `tmpfmbldalh/` 是暫存目錄，沒有納入 commit 或上傳。
 
 ## 2026-10-24：Phase 2 結案與唯讀封存
 
