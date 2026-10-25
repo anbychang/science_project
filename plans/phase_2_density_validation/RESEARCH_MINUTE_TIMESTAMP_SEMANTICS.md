@@ -11,10 +11,10 @@
 
 - 同一組來源標籤 `2023-08-03T05:38:00Z`：京都 CSV 的 `symHValue = -2 nT`，SME CSV 的 `SME = 153.613083 nT`。京都 CSV 首行 metadata 原本就帶 `timeStampLocation = center`；SME CSV 沒有等價 metadata。[京都原始檔](../../data/geomagnetic/sym_h_2023-05-14_2023-11-09.csv)、[SME 原始檔](../../data/sme/SME_20230803.csv)
 - P2.1 把兩個來源的整分時間戳存成同一個 `time_us` key；這是資料對齊 key，不是兩者有相同物理觀測區間的證據。[P2.1 實作](../../satellite_orbit/phase2/prep_21_geomag_1min.py)
-- 舊 P2.3 v1 曾把該 key 命名為 `minute_start_time_us`，自行建立 `[05:38, 05:39)` 分組格，並在 `05:38:30` 取 Phase 1 軌道量。這不是來源宣告的觀測區間。現行 P2.3 v2 已改在原始 `05:38:00` 標籤對齊軌道，另記名義區間 `05:37:30–05:38:30`。[P2.3 實作](../../satellite_orbit/phase2/prep_23_minute_features.py)
+- 舊 P2.3 v1 曾把該 key 命名為 `minute_start_time_us`，自行建立 `[05:38, 05:39)` 分組格，並在 `05:38:30` 取 Phase 1 軌道量。這不是來源宣告的觀測區間。現行 P2.3 v5 在原始 `05:38:00` 標籤對齊 Phase 1，另記名義區間 `05:37:30–05:38:30`；事件選取端點則以 `t0` 同相位決定。[P2.3 實作](../../satellite_orbit/phase2/prep_23_t0_phase_window.py)
 - P2.1 的 `kyoto_not_before_time_us = stamp + 30 s` 與 `sme_not_before_time_us = tval + 60 s` 是專案使用的保守觀測完成界線，不是來源實際發布時間。京都的前者可對應名義半分鐘寬的右端；SuperMAG 的後者在 `tval` 位置未明前只是政策假設。[P2.1 實作](../../satellite_orbit/phase2/prep_21_geomag_1min.py)
 
 ## 決策與未解事項
 
-- P2.3 v2 區分 `source_time_us`、`assumed_support_start_time_us`、`assumed_support_end_time_us`、`target_time_us` 與來源的 `*_not_before_time_us`。`target_time_us = source_time_us`。京都軌道對齊採官方中心戳；SME 比照採中心戳是 Anby 同意的工作假設，不是 SuperMAG 已證實的定義。
+- P2.3 v5 區分 `source_time_us`、`assumed_support_start_time_us`、`assumed_support_end_time_us` 與來源的 `*_not_before_time_us`。Phase 1 對齊時間是 `source_time_us`。京都軌道對齊採官方中心戳；SME 比照採中心戳是 Anby 同意的工作假設，不是 SuperMAG 已證實的定義。
 - 尚未查得 SuperMAG `indices.php` 的 `tval` 時間戳位置、SME 合成後的精確時間支持區間，也未查得兩來源的逐筆發布時間。不可把「一分鐘頻率」「置中 boxcar」「API 時間戳」混成同一主張。

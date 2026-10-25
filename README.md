@@ -1,6 +1,6 @@
 # Swarm-A 軌道衰減研究
 
-> 現行 Phase 1 工作輸出是兩份 P1.5.1 checkpoint 與其 P1.5.6 v2 working copy。
+> Phase 1 保留兩份 P1.5.1 checkpoint 與 P1.5.6 v2 working copy；Phase 2 已結案並封存唯一的 P2.6 final 與 25 張逐場圖。
 
 目標：研究地磁暴與 Swarm-A 軌道衰減的關係。
 
@@ -33,7 +33,14 @@ Data Lineage 的完整寫作與資料 contract 規則在
   -> swarm_a_mean_orbit_elements_v1   9,469,438 rows
   -> phase_candidate_working_v1
        -> raw B-L v2 / joint H2H3 v2 / P1.6 features v2 / P1.7 audit v2
+
+Phase 2 three-year minute chain
+  -> P2.0 source audit -> P2.1 geomag -> P2.2 events
+  -> P2.3 t0 phase minute features -> P2.4 density
+  -> P2.5 minute analysis view -> P2.6 final smoothed peak QC
 ```
+
+Phase 2 已結案；唯一交付的 P2.6 檢查點是 `data/sqlite/2023/swarm_a_phase2_sme_p2_6_final.sqlite`。F10.7A 使用來源 `F10.7_OBS_CENTER81`；SME 與密度殘差先平滑，peak 只在 `t0 - 12 h` 至 `t0 + 24 h` 選取。25 張磁暴圖直接位於 `output/image/Phase2/P2.6/`，不設圖版本子目錄。交付結果與限制見[Phase 2 最終報告](plans/phase_2_density_validation/PHASE_2_FINAL_REPORT.md)。
 
 12 年 v2 的每張 rate table 有 38,378,878 rows；三年的兩張 rate table 與
 feature table 各有 9,469,438 rows。12 年 feature row count 仍以 writer metadata
@@ -66,7 +73,8 @@ satellite_orbit/
 ├─ calculation/
 │  ├─ pod/            time, frame, osculating and mean-orbit calculations
 │  └─ analysis/       causal feature alignment
-└─ phase1/         final analysis writer, rebuild, release audit
+├─ phase1/         final analysis writer, rebuild, release audit
+└─ phase2/         P2.0–P2.6 versioned minute-data writers
 
 data/
 ├─ swarm_a_pod/        raw POD ZIP
@@ -80,7 +88,7 @@ data/
    └─ swarm_a_analysis_2023_2026_phase_candidate_working_v1.sqlite
 
 data_lineage/               downloaded sources -> current data products
-├─ phase_2_storm_dataset.md  current P2.0–P2.3 SME orbit lineage
+├─ phase_2_storm_dataset.md  current P2.0–P2.6 minute-data lineage
 ├─ orbit_analysis.md         POD -> orbit analysis
 └─ README.md                 all source-to-output paths
 ```
@@ -112,6 +120,8 @@ pipeline entry points。新增程式先放到資料結構對應的 package，不
 - [Data lineage index](data_lineage/README.md)
 - [Data lineage rules](data_lineage/RULES.md)
 - [POD lineage](data_lineage/orbit_analysis.md)
+- [Phase 2 最終報告](plans/phase_2_density_validation/PHASE_2_FINAL_REPORT.md)
+- [Phase 2 計畫](plans/phase_2_density_validation/PLAN.md)
 - [Phase 2 SME 方法主報告](plans/phase_2_density_validation/PHASE_2_SME_REPORT.md)
-- [Phase 2 SME 逐圈資料血緣](data_lineage/phase_2_storm_dataset.md)
+- [Phase 2 SME 分鐘資料血緣](data_lineage/phase_2_storm_dataset.md)
 - [Historical timeline](TIMELOG.md)

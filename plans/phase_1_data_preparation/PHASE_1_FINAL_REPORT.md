@@ -135,9 +135,9 @@ research version。10-minute orbit、3/6/12h decay、P1.6 causal analysis 與 P1
 
 ## Phase 2 handoff
 
-上述是舊 10 分鐘分支的 Phase 2 handoff；現行 Phase 2 來源應以
-[PHASE_1_EXECUTION_PLAN.md](PHASE_1_EXECUTION_PLAN.md) 與 Phase 2 計畫重新對接，
-不得把已退出主線的 `swarm_a_analysis_10min` 當作現行輸入。
+上述是舊 10 分鐘分支的 Phase 2 handoff；實際 Phase 2 已另以現行 10 秒 Phase 1
+輸出完成，交付結果見[Phase 2 最終報告](../phase_2_density_validation/PHASE_2_FINAL_REPORT.md)。
+不得把已退出主線的 `swarm_a_analysis_10min` 當作 Phase 2 輸入。
 
 - Select storm windows and define the scientific comparison.
 - Decide whether density becomes a separate aligned product; do not silently join it into the core table.

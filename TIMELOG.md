@@ -1,10 +1,32 @@
 # Swarm-A 軌道衰減研究時間紀錄
 
-最後更新：2026-10-22
+最後更新：2026-10-24
 
 > 2026-10-18 的 10 分鐘 Phase 1 工作稽核與後續逐 10 秒相位候選，是兩條不同資料產品。舊紀錄提到的 `data/swarm_a_analysis.sqlite` 目前不在工作區；現存三年與 2014–2026 候選工作庫位於 `data/sqlite/`，尚非已校準的正式 decay release。
 
 Current status：三年與 2014–2026 工作庫均已完成逐 10 秒的 raw B-L／joint H2/H3 3／5 圈候選、共用 P1.6 v2 feature，以及 P1.7 v2 audit。兩份 audit 各有 6 項、violation 全為 0，metadata status 均為 `pass`。12 年 v2 兩張 rate table 各有 38,378,878 筆；十二年報告限定 2014-07-01 至 2026-06-30。舊 10 分鐘產品的歷史交付與限制見 `plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md`。
+
+Phase 2 status：[done]，固定交付鏈是 P2.3 v5／P2.4 v5／P2.5 v2／P2.6 final，一分鐘一列，共 25 場、217,912 列。25 張逐場圖直接位於 `output/image/Phase2/P2.6/`，沒有圖版本子目錄。交付檢查點與研究界線見 `plans/phase_2_density_validation/PHASE_2_FINAL_REPORT.md`；下方舊版紀錄只供歷史追溯。
+
+## 2026-10-24：Phase 2 結案與唯讀封存
+
+**決定**：Phase 2 只有一個最終版本，固定為來源置中 81 日 F10.7A、SME／密度殘差平滑，以及 `t0 - 12 h` 至 `t0 + 24 h` 的 peak 候選窗。後續研究另開階段；不回寫 P2.0–P2.6 檢查點或 25 張最終圖。
+
+**結果**：建立 `plans/phase_2_density_validation/PHASE_2_FINAL_REPORT.md`，同步計畫、方法、資料血緣、README 與專案指引。P2.6 目錄只保留 25 場各一張最終圖；繪圖入口改為拒絕覆寫既有圖。舊 SYM-H 單來源及舊合併事件 writer、對應測試，以及已併入最終報告的暫存記憶文件移至 Windows 資源回收筒，可復原。
+
+**證據**：7 個現行 SQLite 的 SHA-256、integrity 與 foreign key 均核對通過；25 張圖與 25 場 QC 事件日期一一對應；Phase 2／MSIS 相關測試 22 項通過。此結案是描述性資料與 QC 契約完成，不宣稱已建立因果延遲或軌道衰減標籤。
+
+## 2026-10-23：Phase 2 重置與 t0 同相位 P2.3 v4
+
+**決定**：刪除工作區內以固定 `u=0` 圈分箱的 P2.3 v2/v3、P2.4–P2.6 程式、測試、圖與衍生 SQLite。完整舊狀態先提交並推送為 Git commit `d45f6f4`，可回復但不再是現行輸入。
+
+**輸出完成**：`data/sqlite/2023/swarm_a_phase2_sme_p2_3_t0_phase_v4.sqlite`。25 場、217,912 分鐘列。每場先由 P2.2 原始 `t0` 在 Phase 1 10 s `u` 內插相位，再取前 31、後 62 個同相位 phase orbit；P2.3 不建立 `orbit_id` 分箱或每圈摘要。
+
+**P2.4 輸出完成**：`data/sqlite/2023/swarm_a_phase2_sme_p2_4_density_t0_phase_v4.sqlite`。176 個 DNSAPOD 日檔、217,912 分鐘列、25 場事件；全部通過 L2 與 L2/MSIS paired 的 80% 覆蓋率。沒有 per-orbit table。
+
+**P2.5 輸出完成**：`data/sqlite/2023/swarm_a_phase2_sme_p2_5_minute_analysis_v1.sqlite`。新增 `storm_minute_analysis_v1` SQL view，以 `{storm_id, source_time_us}` 一對一連接 P2.3 特徵與 P2.4 密度，保留 217,912 分鐘列與 25 場；不做每圈平均或峰值計算。
+
+**證據與修正**：SQLite integrity 為 `ok`，foreign key 違規 0；每場 phase span 是 93 個 `2*pi`，所有分鐘 `source_time_us` 都位於該場精確相位窗內。P2.5 的雙向 minute key mismatch 均為 0，SHA-256 為 `228d1715f15c43924da7ce9b6f38c19907f8806e94d67d6c6e4b4f280215d656`。CelesTrak 的 4 個 `INT` F10.7 日是官方對缺測日的線性插值；P2.3/P2.4 接受 `OBS`／`INT`，拒絕 `PRD`／`PRM`，避免把這些日誤判成 MSIS 缺值。
 
 ## 2026-10-22：Phase 1 現行資料與文件核對
 
@@ -630,3 +652,63 @@ SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
 **證據**：新 P2.6 表 21 列，與刪除前峰值 CSV 的欄名和所有值逐欄一致；`expected_order = 1` 為 5 場。SQLite `integrity_check = ok`，SHA-256 為 `3172340c4a38a98aca462afead59c3eb9f055d422fc8f760029c421244045465`。P2.4、P2.5 SHA-256 未變；Phase 2 相關測試 54 項通過。
 
 **未解決**：P2.6 是描述性峰值稽核，不是延遲核或衰減標籤；4 場 MSIS 配對缺口與複合事件峰值解讀仍待後續研究。另發現 P2.4 圈內原生計數比分鐘表多 18 筆 L2、16 筆配對邊界樣本；已在 lineage 與 ISSUE 記錄兩種計數母體，未改寫封存檢查點。
+
+## 2026-10-23：完成新版每分鐘 P2.6 峰值順序 smoke check
+
+**決定**：P2.6 複製現行 P2.5 v1，不恢復舊 `orbit_id`、每圈 SME 或每圈峰值。代表事件固定為一般強磁暴 `S20231105T1654`；使用完整 t0 同相位窗內未平滑的一分鐘 `sme_nt` 與 `log_ratio_obs` 最大值。這一步只檢查 SME 是否先於密度，不把結果擴張成 25 場因果延遲。
+
+**結果**：建立 `data/sqlite/2023/swarm_a_phase2_sme_p2_6_minute_qc_v1.sqlite` 與 `storm_minute_peak_qc_v1`。P2.5 的 217,912 筆分鐘列完整保留；新增一列 QC。SME 峰為 `t_rel_h = -1.35 h`，SYM-H 最低點為 `0 h`，密度殘差峰為 `+1.65 h`；SME 領先密度 `3.00 h`，密度晚於 t0 `1.65 h`。F2-3 輸出為 `output/image/Phase2/P2.6/F2-3-S20231105T1654-minute-peak-order.png`。
+
+**證據**：P2.6 SQLite SHA-256 為 `0b59e08fb7de1c846a9caeaa3284265f1e190c46ef479f3baa5e7f39f2a3a987`；P2.5 SHA-256 維持 `228d1715f15c43924da7ce9b6f38c19907f8806e94d67d6c6e4b4f280215d656`。SQLite integrity 與 foreign key 檢查通過；Phase 2 與 P2.4 MSIS 相關測試共 24 項通過。全 repository 測試在既有 Orekit／JPype JVM 啟動時發生 Windows access violation，因此沒有宣稱全套測試通過。
+
+**未解決**：P2.2 的 `compound` 仍把同一磁暴內多個小波谷計為多個 minimum，不能直接代表獨立能量脈衝。延遲模型、敏感度測試與 GPR 不屬於本次 Phase 2 分鐘資料完成範圍。
+
+## 2026-10-23：產生全部 P2.6 一分鐘事件圖
+
+**決定**：沿用 `storm_minute_analysis_v1` 的 25 場 `used` 事件，不新增或修改 SQLite table。每張圖直接使用一分鐘 `sme_nt`、`symh_nt` 與 `log_ratio_obs`；峰值由完整事件窗選出，顯示範圍至少為 `t0 +/- 12 h`，必要時延伸到峰值。檔名使用 SYM-H `t0` 的 UTC 日期 `YYYY-MM-DD.png`；日期碰撞時停止，不能靜默覆蓋。
+
+**結果**：`output/image/Phase2/P2.6/` 現有 25 張 PNG，日期從 `2023-08-05.png` 到 `2026-04-18.png`。舊的單場檔名 `F2-3-S20231105T1654-minute-peak-order.png` 已由日期檔名 `2023-11-05.png` 取代。每張圖標出完整事件窗的 SME 最大值、密度殘差最大值及 SYM-H 最低點 `t0`。
+
+**證據**：25 個不同 `storm_id` 對應 25 個不同 UTC 日期，實際 PNG 數量為 25。`prep_phase2_f2_3_minute.py` 通過 `py_compile` 並完整重跑；P2.6 targeted tests 2 項通過。抽查 `2023-11-05.png`、`2024-05-11.png` 與 `2026-04-18.png`，標記、座標軸、單位與標題完整。
+
+**未解決**：複合事件的兩個全窗口最大值可能屬於不同能量脈衝。25 張圖只供描述性人工比較；正式 QC table 仍只保留代表事件一列。
+
+## 2026-10-23：建立一圈 density smoothing prototype 與 Phase 2 交接
+
+**決定**：不修改現行 P2.6 SQLite 或 lineage。SME 與 SYM-H 只在圖上作 15-minute centered mean；SYM-H `t0` 保持 raw minimum。Density `log_ratio_obs` 依每分鐘 `u_rel_rad` 作 `u +/- pi` centered one-orbit mean，每個窗口至少 80% 有效值，事件端點不足完整窗口時輸出 NaN。
+
+**結果**：`output/image/Phase2/P2.6/smoothing_prototype/` 有 25 張 prototype PNG；正式 raw 圖仍有 25 張。`2023-11-05` 平滑 lag 為 `+2.65 h`；`2024-05-11` 的 density peak 從 raw `+9.65 h` 改為 smooth `+0.25 h`；`2026-04-18` 仍出現 SME `+22.27 h` 與 density `+3.52 h`，證明 global maximum pairing 可跨 pulse 錯配。
+
+**證據**：smoothing unit tests 2 項通過；25 張 prototype 都存在且非空。P2.6 SQLite SHA-256 維持 `0b59e08fb7de1c846a9caeaa3284265f1e190c46ef479f3baa5e7f39f2a3a987`。重新核對 P2.0–P2.6 七個 SQLite，`integrity_check` 全為 `ok`。
+
+**交接**：新增 `plans/phase_2_density_validation/PHASE_2_MEMORY.md`，集中記錄現行 checkpoint、對話中推翻的設計、時間與因果假設、prototype、Git 狀態及下一步。正式 peak 規則仍待 local pulse segmentation 與 pairing；prototype 未升格為 lineage。
+
+## 2026-10-24：Phase 2 改用來源置中 81 日 F10.7A
+
+**決定**：P2.3／P2.4 的 F10.7A 直接讀 CelesTrak `F10.7_OBS_CENTER81`，對應樣本當日；單日 F10.7 仍取前一 UTC 日。不再自行平均前 81 日。這是離線回溯輸入，包含未來觀測；Phase 1 P1.6 的 trailing feature 未更動。
+
+**結果**：另建 P2.3 v5、P2.4 v5、P2.5 v2、P2.6 `v2_center81`／`v3_center81`；舊 SQLite 與圖保留。P2.4 仍有 217,912 分鐘列、25 場 coverage 全通過；新 P2.6 平滑 QC 仍有 16 場 SME 峰較早、9 場相反。新 raw 與平滑圖各 25 張。
+
+**證據**：來源 `2023-08-03` 的 `F10.7_OBS_CENTER81 = 162.4 sfu` 直接成為 P2.3 v5 的 `f107a_sfu`；舊值為 166.1 sfu。217,613 筆有效分鐘的 MSIS 密度全部改變，L2 密度沒有變；2 場平滑密度峰各移動 1 分鐘。相關測試 11 項通過；新 SQLite integrity 與 foreign key 檢查通過。檢查點 SHA-256 見 Phase 2 memory。
+
+**未解決**：P2.6 的全域峰配對仍可能跨脈衝；置中 F10.7A 不可作即時預報特徵。
+
+## 2026-10-24：固定 Phase 2 唯一現行版本
+
+**決定**：P2.3 v5、P2.4 v5、P2.5 v2 與 P2.6 final 是唯一現行鏈。F10.7A 直接採 CelesTrak `F10.7_OBS_CENTER81`；P2.6 由完整事件列平滑，只在 `t0 - 12 h` 至 `t0 + 24 h` 選 peak。舊版衍生產物不再作研究輸入。
+
+**結果**：P2.6 final 直接從 P2.5 v2 建立 `storm_minute_smooth_v4` 與 `storm_minute_peak_qc_v4`，不依賴舊 raw QC。保留 `output/image/Phase2/P2.6/final/` 的 25 張三 panel 圖。8 個舊 SQLite、6 組舊圖（150 張）及 8 個只供舊流程的程式／測試已移至 Windows 資源回收筒，可由該處復原；原始觀測及現行檢查點未刪除。
+
+**證據**：最終 SQLite SHA-256 為 `ab49465ab672d98dd513c1169cb37c6fcb4488b98cade7b6ed66b151398c30de`；25 場、54,025 筆候選分鐘，16 場 SME 峰較早、9 場相反。與刪除前的置中 81 日平滑版相比，54,025 筆平滑值及 25 場 peak 時間均相同；SQLite integrity check 為 `ok`，foreign key check 無錯，相關測試 10 項通過。
+
+**未解決**：這是最終採用的描述性 QC 版本，不是完成的 causal pulse pairing 或延遲模型。置中 F10.7A 和 centered smoothing 都不能當即時預報特徵。
+
+## 2026-10-24：整理 Phase 2 計畫與磁暴圖
+
+**決定**：P2.6 最後一版同時包含 SME／密度平滑、來源 `F10.7_OBS_CENTER81` 與 `t0 - 12 h` 至 `t0 + 24 h` 的 peak 候選窗。25 場各有一張圖，直接放在 P2.6 圖目錄；不再區分圖版本。
+
+**結果**：新增 `plans/phase_2_density_validation/PLAN.md`；繪圖入口固定從 P2.6 final SQLite 產生 `output/image/Phase2/P2.6/` 的 25 張圖。重複圖組與誤產生的單張圖已移至 Windows 資源回收筒，可復原。P2.6 SQLite 與全部 25 場 QC 均未刪除。
+
+**證據**：25 個檔名日期與 `storm_minute_peak_qc_v4` 的 25 場事件相符；圖檔經逐張 SHA-256 比對一致。P2.6 圖目錄只含這 25 張 PNG。
+
+**未解決**：圖和全域 peak 仍只作描述性 QC；跨 pulse 配對與因果延遲尚未建立。

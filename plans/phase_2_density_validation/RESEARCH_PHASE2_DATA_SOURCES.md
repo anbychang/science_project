@@ -2,11 +2,11 @@
 
 ## 結果與界線
 
-查核日期：2026-10-22。下列是來源文件能支持的事實，不代表本機已完成下載或清理。
+查核日期：2026-10-22。下列是來源文件能支持的事實；本機現行實作與輸出以[Phase 2 計畫](PLAN.md)為準。
 
 - SuperMAG `SME` 是 1-minute 地磁指數；`indices.php` 回傳的 `tval` 究竟標示該分鐘觀測區間的起點或中心，尚未查到直接規格。SuperMAG 方法論只確認各站磁場先以 *centered boxcar average* 重採樣為 1-minute，不能據此替最終 SME API 時間戳下結論。[SuperMAG 方法論](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2012JA017683)、[SuperMAG 資料描述](https://spase-metadata.org/CNES/NumericalData/CDPP-AMDA/Indices/Ground_Based/ground-based-sme.html)
 - GFZ 官方 API 的 Kp／ap 時間代表 3-hour **區間起點**；Kyoto HAPI 提供的 Kp／ap 時間代表**區間中心**。同一物理區間在兩個介面有不同標記方式，不可直接以時間戳相等合併。[GFZ 下載與 API 說明](https://kp.gfz.de/en/data)、[Kyoto HAPI 說明](https://wdc.kugi.kyoto-u.ac.jp/hapi/)
-- `pymsis` 官方 `get_f107_ap()` 回傳前一日 F10.7、以目標日期為中心的 81-day F10.7A，以及 7 欄 ap history。既有一分鐘 pilot 採用的 trailing 81-day F10.7A 是**本專案替代選擇**，不能稱為與 `pymsis` 自動驅動相同。[pymsis 輸入文件](https://swxtrec.github.io/pymsis/reference/generated/pymsis.utils.get_f107_ap.html)、[NASA NRLMSIS 2.0 輸入說明](https://ccmc.gsfc.nasa.gov/models/NRLMSIS~2.0/)
+- `pymsis` 官方 `get_f107_ap()` 回傳前一日 F10.7、以目標日期為中心的 81-day F10.7A，以及 7 欄 ap history。早期 pilot 曾自算 trailing 81-day F10.7A；現行 P2.3–P2.6 已改用 CelesTrak 來源欄 `F10.7_OBS_CENTER81`，不再沿用該替代選擇。[pymsis 輸入文件](https://swxtrec.github.io/pymsis/reference/generated/pymsis.utils.get_f107_ap.html)、[NASA NRLMSIS 2.0 輸入說明](https://ccmc.gsfc.nasa.gov/models/NRLMSIS~2.0/)
 - Kyoto HAPI 的 `min_ae`、`min_asysym` 都提供每列 `versionCode` 與來源 `modificationDate`；`versionCode` 的十位數表示 real-time、provisional、final，個位數表示重新轉換代數。AE 可混用不同處理等級，故須逐列保存版本；SYM-H 當前 HAPI metadata 描述 best-available 目前僅有 provisional。[Kyoto AE metadata](https://wdc.kugi.kyoto-u.ac.jp/hapi/info?dataset=min_ae)、[Kyoto SYM metadata](https://wdc.kugi.kyoto-u.ac.jp/hapi/info?dataset=min_asysym)
 
 ## SuperMAG SME

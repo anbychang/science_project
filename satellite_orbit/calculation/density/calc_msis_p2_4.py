@@ -1,4 +1,4 @@
-"""Calculate causal-input NRLMSIS 2.0 density at DNSAPOD samples."""
+"""Calculate NRLMSIS 2.0 density at DNSAPOD samples."""
 
 import csv
 import json
@@ -12,12 +12,11 @@ import pymsis
 
 THREE_HOURS = timedelta(hours=3)
 ONE_DAY = timedelta(days=1)
-F107A_DAYS = 81
 KM_PER_M = 0.001
 
 
 def load_msis_weather(gfz_path: Path, solar_path: Path) -> dict:
-    """Input: GFZ ap JSON and CelesTrak CSV. Output: UTC ap and observed solar maps."""
+    """Input: GFZ ap JSON and CelesTrak CSV. Output: UTC ap and daily solar maps."""
     gfz = json.loads(Path(gfz_path).read_text(encoding="utf-8"))
     ap_slots = {}
     for label, value, status in zip(gfz["datetime"], gfz["ap"], gfz["status"], strict=True):
@@ -28,28 +27,33 @@ def load_msis_weather(gfz_path: Path, solar_path: Path) -> dict:
     solar = {}
     with Path(solar_path).open(encoding="utf-8", newline="") as source:
         for row in csv.DictReader(source):
-            if row["F10.7_DATA_TYPE"] != "OBS" or not row["F10.7_OBS"]:
+            if row["F10.7_DATA_TYPE"] not in {"OBS", "INT"}:
+                continue
+            if not row["F10.7_OBS"] or not row["F10.7_OBS_CENTER81"]:
                 continue
             flux = float(row["F10.7_OBS"])
-            if math.isfinite(flux) and flux > 0:
-                solar[date.fromisoformat(row["DATE"])] = flux
-    daily_solar = {day + ONE_DAY: solar_drivers(day + ONE_DAY, solar)
-                   for day in solar}
+            centered_flux = float(row["F10.7_OBS_CENTER81"])
+            if all(math.isfinite(value) and value > 0 for value in (flux, centered_flux)):
+                solar[date.fromisoformat(row["DATE"])] = {
+                    "f107_sfu": flux,
+                    "f107a_sfu": centered_flux,
+                }
+    daily_solar = {day: solar_drivers(day, solar) for day in solar}
     return {"ap_slots": ap_slots, "daily_solar": daily_solar}
 
 
 def solar_drivers(sample_day: date, solar_obs: dict) -> dict | None:
-    """Input: UTC sample day and observed flux map. Output: prior-day F10.7/A or None."""
+    """Input: UTC sample day and solar map. Output: prior-day F10.7 and centered F10.7A."""
     previous_day = sample_day - ONE_DAY
-    previous_flux = solar_obs.get(previous_day)
-    observed = [solar_obs[previous_day - timedelta(days=offset)]
-                for offset in range(F107A_DAYS)
-                if previous_day - timedelta(days=offset) in solar_obs]
-    if previous_flux is None or len(observed) != F107A_DAYS:
+    previous_solar = solar_obs.get(previous_day)
+    current_solar = solar_obs.get(sample_day)
+    if previous_solar is None or current_solar is None:
         return None
-    return {"f107_day_utc": previous_day.isoformat(), "f107_sfu": previous_flux,
-            "f107a_sfu": sum(observed) / len(observed),
-            "f107a_observed_days": len(observed)}
+    return {
+        "f107_day_utc": previous_day.isoformat(),
+        "f107_sfu": previous_solar["f107_sfu"],
+        "f107a_sfu": current_solar["f107a_sfu"],
+    }
 
 
 def ap_drivers(sample_time: datetime, ap_slots: dict) -> dict | None:

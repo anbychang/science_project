@@ -60,11 +60,13 @@ retained legacy，不是上述 v2 主線的輸入。
 - [POD lineage](orbit_analysis.md): POD 到 final orbit / rate / audit。
 - [Space-weather lineage](space_weather.md): Ap、F10.7、F10.7A。
 - [Geomagnetic lineage](geomagnetic.md): SYM-H。
-- [Phase 2 SME 方法主報告](../plans/phase_2_density_validation/PHASE_2_SME_REPORT.md)：唯一的方法規格；三年資料準備與峰值自我檢查已完成至 P2.6。
+- [Phase 2 最終報告](../plans/phase_2_density_validation/PHASE_2_FINAL_REPORT.md)：交付檢查點、SHA-256、驗證與科學限制。
+- [Phase 2 計畫](../plans/phase_2_density_validation/PLAN.md)：已完成的工作包、輸出與驗收。
+- [Phase 2 SME 方法主報告](../plans/phase_2_density_validation/PHASE_2_SME_REPORT.md)：唯一的方法規格；三年資料準備與 P2.6 final 描述性 peak QC。
 - [Phase 2 來源研究](../plans/phase_2_density_validation/RESEARCH_PHASE2_DATA_SOURCES.md)：官方時間語意、版本與未解事項。
-- [Phase 2 SME 分鐘資料血緣](phase_2_storm_dataset.md)：P2.0–P2.6 的實際 Action、Input、Output 與驗證結果；P2.3 v2 標為歷史檢查點。
+- [Phase 2 SME 分鐘資料血緣](phase_2_storm_dataset.md)：P2.0–P2.6 的實際 Action、Input、Output 與驗證結果。
 
-Phase 2 原始下載檔保留 CSV／ZIP；正式衍生結果只讀取 `data/sqlite/2023/` 的版本化 SQLite。P2.4 catalog 與 P2.6 峰值時序不另存 CSV。
+Phase 2 原始下載檔保留 CSV／ZIP；正式衍生結果只讀取 `data/sqlite/2023/` 的版本化 SQLite。
 
 ## Phase 2 新版 P2.0 SME 原始下載 [done]
 
@@ -246,7 +248,7 @@ SYM-H／AE 各有 1,578,240 個獨立分鐘、無 fill 或時間缺口；重疊 
 SYM-H 版本全為 10；AE 的版本 0 有 1,571,040 分鐘、版本 10 有 7,200 分鐘。
 CelesTrak 涵蓋 1,096 日，F10.7 有 1,092 個 `OBS` 日、4 個 `INT` 日：
 `2024-08-26`、`2025-02-12`、`2025-02-17`、`2026-05-09`。
-這份 JSON 已封存在 P2.0 `swarm_a_phase2_sme_p2_0_v2.sqlite` 的 `source_audit_v2`；P2.1 與 P2.2 依序複製前一步，P2.3 v3 從 P2.2 複製，P2.4 v3 再從 P2.3 v3 複製。完整檢查點契約見 [Phase 2 SME 分鐘資料血緣](phase_2_storm_dataset.md)。
+這份 JSON 已封存在 P2.0 `swarm_a_phase2_sme_p2_0_v2.sqlite` 的 `source_audit_v2`；P2.1、P2.2、P2.3 v5、P2.4 v5、P2.5 v2 與 P2.6 final 依序複製前一步。P2.3/P2.4 的單日 F10.7 使用前一日 `F10.7_OBS`；F10.7A 使用樣本當日來源 `F10.7_OBS_CENTER81`。`OBS`／`INT` 可用，`PRD`／`PRM` 不可進入研究資料。完整檢查點契約見 [Phase 2 SME 分鐘資料血緣](phase_2_storm_dataset.md)。
 
 ## Phase 2 DNSAPOD 三年原始檔補齊 [done]
 
@@ -289,4 +291,4 @@ data/swarm_density_pod/manifest_dnsapod_20230701_20260630.json (raw 檔案索引
 完整性與 SHA-256，日期無缺漏；manifest SHA-256 為
 `47c55aaf2f25b7adb373148786e7b36b00c54b1b655250cc36810bbdfd159152`。
 重現入口：`python -m satellite_orbit.data.density.down_dnsapod_three_year`；
-已有 manifest 時會拒絕覆寫。原始 ZIP 未匯入 SQLite；P2.4 v3 讀取並核對事件所需 175 個日檔，衍生分鐘密度表另存於 `data/sqlite/2023/swarm_a_phase2_sme_p2_4_density_v3.sqlite`。
+已有 manifest 時會拒絕覆寫。原始 ZIP 未匯入 SQLite；P2.4 v5 依 P2.3 v5 的 t0 相位分鐘窗讀取需要的日檔，衍生 SQLite 位於 `data/sqlite/2023/`。

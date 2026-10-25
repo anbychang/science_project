@@ -2,9 +2,12 @@
 
 The research goal is to study how geomagnetic storms affect Swarm-A orbital
 decay. XYZ orbit prediction is a later validation tool, not the main research
-question. The active phase only prepares a reproducible 1-minute analysis
-dataset from Phase 1's 10-second orbit records. Do not add machine learning
-or connect atmospheric drag until the phase plan requires it.
+question. Phase 2 is complete and frozen. Its reproducible 1-minute dataset
+and descriptive peak QC are documented in
+`plans/phase_2_density_validation/PHASE_2_FINAL_REPORT.md`. Treat Phase 2
+checkpoints as read-only; new research needs a separate phase and output.
+Do not revise Phase 2 without Anby's explicit request. Do not add machine
+learning or connect atmospheric drag until the phase plan requires it.
 
 The existing support code has two-body gravity, J2, RK4 integration, and
 NRLMSIS 2.0 density calculation. Atmospheric drag is not connected to the
