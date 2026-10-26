@@ -1,12 +1,22 @@
 # Swarm-A 軌道衰減研究時間紀錄
 
-最後更新：2026-10-25
+最後更新：2026-10-26
 
 > 2026-10-18 的 10 分鐘 Phase 1 工作稽核與後續逐 10 秒相位候選，是兩條不同資料產品。舊紀錄提到的 `data/swarm_a_analysis.sqlite` 目前不在工作區；現存三年與 2014–2026 候選工作庫位於 `data/sqlite/`，尚非已校準的正式 decay release。
 
 Current status：三年與 2014–2026 工作庫均已完成逐 10 秒的 raw B-L／joint H2/H3 3／5 圈候選、共用 P1.6 v2 feature，以及 P1.7 v2 audit。兩份 audit 各有 6 項、violation 全為 0，metadata status 均為 `pass`。12 年 v2 兩張 rate table 各有 38,378,878 筆；十二年報告限定 2014-07-01 至 2026-06-30。舊 10 分鐘產品的歷史交付與限制見 `plans/phase_1_data_preparation/PHASE_1_FINAL_REPORT.md`。
 
 Phase 2 status：[done]，固定交付鏈是 P2.3 v5／P2.4 v5／P2.5 v2／P2.6 final，一分鐘一列，共 25 場、217,912 列。25 張逐場圖直接位於 `output/image/Phase2/P2.6/`，沒有圖版本子目錄。交付檢查點與研究界線見 `plans/phase_2_density_validation/PHASE_2_FINAL_REPORT.md`；下方舊版紀錄只供歷史追溯。
+
+Phase 3 status：[探索性回溯試算]。三年 25 場已有 214,907 個有效中心相位分鐘與固定共同 $\tau=4.65$ 小時的密度曲線；$R_k$ 仍是候選值，尚未完成公平的 M0／M1 比較或即時預報。逐步結果見 `output/report/phase3_density_response_report.md`。
+
+## 2026-10-26：Phase 3 三年 25 場工作版上傳 GitHub
+
+**結果**：將 Phase 3 程式、測試、計畫、資料血緣、工作報告、18 張圖與分析 CSV 共 85 個檔案提交為 `e3996e39ea2bb8464ed101c9131ef0f61b24b240`，並推送至 `origin/master`；報告的 SQLite 交付邊界另以 `fd0f58c67cb4ba223c2bbd8145515beecc7ee475` 補記並推送。遠端 `master` 已核對到後一提交。
+
+**證據**：25 場逐場索引與 214,907 列有效預測位於本機 `data/sqlite/2023/swarm_a_phase3_prediction_tau465_exploratory.sqlite`；三個 Phase 3 衍生 SQLite 的 `integrity_check = ok`。Phase 3 相關測試 3 項通過，提交前 `git diff --cached --check` 無錯誤。
+
+**邊界**：`data/` 受 `.gitignore` 排除，三個 Phase 3 SQLite 未上傳；其中最大檔約 106 MB。GitHub 上的是可檢查的回溯試算程式與摘要，不是已校準的 Forecast release。Phase 2R 的未提交工作沒有納入這兩個 Phase 3 提交。
 
 ## 2026-10-25：Phase 2 final 上傳 GitHub
 
