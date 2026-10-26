@@ -124,6 +124,8 @@ $$
 
 最終交付庫 `data/sqlite/2023/swarm_a_phase3_prediction_tau465_exploratory.sqlite` 內，`phase3_prediction_minute` 以 `{storm_id, time_us}` 為鍵存 214,907 列；`phase3_25storm_overview` 以 `storm_id` 為主鍵存 25 列，並保存唯一的來源 `t0_time_us` 與 `algorithm_version`。每場有效分鐘數介於 8,320–8,677，與逐分鐘表逐場相符。候選 $R_k$ 與參數格點仍保留為中間分析 CSV；**25 場總覽與逐分鐘模型輸出以 SQLite 為準**。
 
+此 SQLite 位於本機 `data/`，依專案 `.gitignore` 不納入 GitHub 提交。GitHub 版本提供重算程式、報告、圖和分析 CSV；要取得完整逐分鐘 SQLite，仍須另行交付資料庫檔案。
+
 ![圖 5：25 場 L2、M0、M1 回溯相位密度總覽](../image/Phase3/prediction_tau465_25storm_overview.png)
 
 下表的 M1 誤差只把該場排除於 $G$ 的估計；M0 是未作同等校準的完整 MSIS。兩欄僅供找出需追查的事件，不能逐列宣布勝負。`R 距離`是候選暴前段結束至第一個強 SYM-H 低點的天數，不是距已確定 onset 的時間。
