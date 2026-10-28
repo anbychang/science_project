@@ -17,6 +17,7 @@ joint H2/H3、P1.6 causal feature 與 P1.7 v2 audit；兩份 audit 的 6 項 vio
 [Phase 1R 十二年計畫](research_workspace/phases/phase1r/docs/plans/PLAN.md)與[十二年工作報告](research_workspace/phases/phase1r/reports/orbit_analysis_report_2014_2026.md)記錄獨立的十二年範圍與限制。
 核心術語：[GLOSSARY.md](GLOSSARY.md)。
 資料與文件入口：[CATALOG.md](CATALOG.md)。
+各 Phase 可在 GitHub 閱讀的成果：[OUTPUT.md](OUTPUT.md)。
 
 ## 文件規則
 
