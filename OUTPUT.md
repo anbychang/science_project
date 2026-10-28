@@ -10,6 +10,6 @@
 | Phase 2（三年） | 已結案 | [最終報告](phases/phase2/reports/phase_2_final_report.md)、[SME 方法報告](phases/phase2/reports/phase_2_sme_report.md) | [25 場 P2.6 圖](phases/phase2/figures/P2.6/) |
 | Phase 2R（十二年） | 已結案 | [最終報告](phases/phase2r/reports/phase_2r_final_report.md) | [46 場 P2R.6 圖](phases/phase2r/figures/P2R.6/) |
 | Phase 3（三年） | 已結案 | [密度響應最終報告](phases/phase3/reports/phase_3_final_report.md) | [25 場總覽圖](phases/phase3/figures/prediction_tau465_25storm_overview.png)、[全部圖檔](phases/phase3/figures/)、[分析 CSV](phases/phase3/data/analysis/) |
-| Phase 4 | 尚在規劃，無輸出 | — | — |
+| Phase 4 | 25 場 GPR 留一場已出圖；模型判讀待使用者看圖 | [結果報告](phases/phase4/reports/phase_4_gpr_loso_report.md)、[資料血緣](phases/phase4/docs/lineage/phase_4_gpr_loso.md) | [總覽圖](phases/phase4/figures/gpr_loso_25storm_overview.png)、[逐場圖](phases/phase4/figures/gpr_loso/)、[逐場指標](phases/phase4/data/analysis/phase4_loso_event_metrics.csv) |
 
 Phase 2、2R、3 的報告與檢查點已固定。Phase 1／1R 的舊 10 分鐘結果不代表現行逐 10 秒候選。

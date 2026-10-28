@@ -14,9 +14,8 @@ GitHub 可直接閱讀的成果捷徑見 [OUTPUT.md](../OUTPUT.md)；本機 SQLi
 - [Phase 1 三年軌道分析](../phases/phase1/reports/orbit_analysis_report.md)：逐 10 秒候選軌道衰減率工作稿；資料契約稽核已通過，候選尚未校準。
 - [Phase 1 舊 10 分鐘紀錄](../phases/phase1/reports/phase_1_final_report.md)：歷史資料產品，不作現行輸入。
 - [Phase 1R 十二年軌道分析](../phases/phase1r/reports/orbit_analysis_report_2014_2026.md)：十二年獨立工作稿。
+- [Phase 4 GPR 留一場驗證](../phases/phase4/reports/phase_4_gpr_loso_report.md)：25 場一圈回溯結果、逐場圖與不確定性檢查；模型判讀待使用者看圖。
 
 Phase 3 的 30 個分析 CSV 位於 [data/analysis](../phases/phase3/data/analysis/)；逐分鐘 M1 與 25 場總覽以 `phases/phase3/data/sqlite/swarm_a_phase3_prediction_tau465_exploratory.sqlite` 為準。結案資料庫只讀；新分析另建輸出。
 
-## 尚未產出
-
-[Phase 4](../phases/phase4/docs/plans/PLAN.md) 已建立 GPR 殘差修正計畫，尚無模型結果或報告。
+Phase 4 的[資料血緣](../phases/phase4/docs/lineage/phase_4_gpr_loso.md)列出凍結來源、相位錨點與留出場輸出；本機 SQLite 依專案規則不提交 Git。

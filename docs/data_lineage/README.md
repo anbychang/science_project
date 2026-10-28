@@ -1,6 +1,6 @@
 # 資料血緣索引
 
-Phase 1／1R 是未校準的候選工作庫；Phase 2／2R 與 Phase 3 已結案，詳細入口見下方「文件」。Phase 4 只有計畫，尚無資料輸出。各步以所屬 Phase 的血緣文件與結案報告為準。
+Phase 1／1R 是未校準的候選工作庫；Phase 2／2R 與 Phase 3 已結案，詳細入口見下方「文件」。Phase 4 已有 25 場留一場 GPR 衍生結果，模型判讀仍在進行。各步以所屬 Phase 的血緣文件與報告為準。
 
 ## Phase 1／1R 工作資料庫
 
@@ -71,6 +71,8 @@ retained legacy，不是上述 v2 主線的輸入。
 - [Phase 2R 12 年計畫](../../phases/phase2r/docs/plans/PLAN.md)：P2R.0–P2R.6 的固定方法與驗收結果。
 - [Phase 2R 12 年資料血緣](../../phases/phase2r/docs/lineage/phase_2r_12year_replication.md)：每一步的 Action、Input、Output 與可查回範例。
 - [Phase 3 三年 25 場資料血緣](../../phases/phase3/docs/lineage/phase_3_25_storm_prediction.md)：已結案的 $R_k$ 校準、SME 濾波、MSIS 配對、共同延遲與逐場回溯密度曲線。
+- [Phase 4 一圈 GPR 資料血緣](../../phases/phase4/docs/lineage/phase_4_gpr_loso.md)：25 折留一場的凍結來源、相位錨點與衍生預測。
+- [Phase 4 GPR 結果報告](../../phases/phase4/reports/phase_4_gpr_loso_report.md)：逐場圖、誤差、涵蓋率與適用範圍。
 
 Phase 2 原始下載檔保留 CSV／ZIP；正式衍生結果只讀取 `phases/phase2/data/sqlite/` 的版本化 SQLite。
 Phase 2R 重用相同資料契約，獨立檢查點只寫入 `phases/phase2r/data/sqlite/`。
