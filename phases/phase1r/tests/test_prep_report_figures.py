@@ -6,6 +6,7 @@ import unittest
 from phases.phase1r.code.prep_report_figures import (
     REPORT_START_TIME_US,
     read_daily_mean_rows,
+    read_yearly_coverage,
 )
 
 
@@ -29,6 +30,30 @@ class TwelveYearReportFigureTest(unittest.TestCase):
             )
             result = read_daily_mean_rows(connection)
         self.assertEqual(result, [(REPORT_START_TIME_US, 250.0)])
+
+    def test_yearly_coverage_excludes_cross_boundary_window(self):
+        """Input: rows around 2014-07-01. Output: in-scope source and fit counts."""
+        with sqlite3.connect(":memory:") as connection:
+            connection.execute("""
+                CREATE TABLE swarm_a_phase_harmonic_decay_raw_b_l_sets_v2 (
+                    time_us INTEGER PRIMARY KEY,
+                    orbit_3_decay_rate_m_s REAL, orbit_3_window_start_time_us INTEGER,
+                    orbit_5_decay_rate_m_s REAL, orbit_5_window_start_time_us INTEGER
+                )
+            """)
+            connection.executemany(
+                "INSERT INTO swarm_a_phase_harmonic_decay_raw_b_l_sets_v2 VALUES (?, ?, ?, ?, ?)",
+                [
+                    (REPORT_START_TIME_US - 10_000_000, 1.0, REPORT_START_TIME_US - 20_000_000,
+                     1.0, REPORT_START_TIME_US - 20_000_000),
+                    (REPORT_START_TIME_US + 10_000_000, 1.0, REPORT_START_TIME_US - 10_000_000,
+                     1.0, REPORT_START_TIME_US - 10_000_000),
+                    (REPORT_START_TIME_US + 20_000_000, 1.0, REPORT_START_TIME_US,
+                     1.0, REPORT_START_TIME_US),
+                ],
+            )
+            coverage = read_yearly_coverage(connection)
+        self.assertEqual(coverage[0][2:], (2, 1, 1))
 
 
 if __name__ == "__main__":

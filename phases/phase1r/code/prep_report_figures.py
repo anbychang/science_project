@@ -2,13 +2,17 @@
 
 import sqlite3
 from datetime import datetime, timezone
+from math import cos, sin
 from pathlib import Path
+from statistics import mean
 
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+
+from phases.phase1.code.prep_phase1_v2_report_figures import hourly_candidates
 
 
 DATABASE_PATH = Path("phases/phase1r/data/sqlite/swarm_a_analysis_2014_2026_phase_candidate_working_v2.sqlite")
@@ -19,6 +23,10 @@ JOINT_TABLE = "swarm_a_phase_harmonic_decay_joint_h2_h3_sets_v2"
 MICROSECONDS_PER_DAY = 86_400_000_000
 SECONDS_PER_DAY = 86_400
 REPORT_START_TIME_US = int(datetime(2014, 7, 1, tzinfo=timezone.utc).timestamp() * 1_000_000)
+REPORT_STOP_TIME_US = int(datetime(2026, 7, 1, tzinfo=timezone.utc).timestamp() * 1_000_000)
+HARMONIC_EXAMPLE_US = int(datetime(2018, 1, 15, tzinfo=timezone.utc).timestamp() * 1_000_000)
+STORM_START_US = int(datetime(2024, 5, 9, tzinfo=timezone.utc).timestamp() * 1_000_000)
+STORM_STOP_US = int(datetime(2024, 5, 13, tzinfo=timezone.utc).timestamp() * 1_000_000)
 DAY_START_US = 1_714_694_400_000_000
 DAY_STOP_US = DAY_START_US + MICROSECONDS_PER_DAY
 THREE_ORBIT_COLOR = "#0072BD"
@@ -129,8 +137,124 @@ def save_candidate_pair_figure(
     plt.close(figure)
 
 
+def read_yearly_coverage(connection: sqlite3.Connection) -> list[tuple[int, int, int, int, int]]:
+    """Input: read-only v2 database. Output: [(year, expected, source, valid3, valid5), ...]."""
+    coverage = []
+    for year in range(2014, 2027):
+        year_start = max(
+            REPORT_START_TIME_US,
+            int(datetime(year, 1, 1, tzinfo=timezone.utc).timestamp() * 1_000_000),
+        )
+        year_stop = min(
+            REPORT_STOP_TIME_US,
+            int(datetime(year + 1, 1, 1, tzinfo=timezone.utc).timestamp() * 1_000_000),
+        )
+        expected = (year_stop - year_start) // 10_000_000
+        source, valid3, valid5 = connection.execute(f"""
+            SELECT count(*),
+                   sum(orbit_3_decay_rate_m_s IS NOT NULL AND orbit_3_window_start_time_us >= ?),
+                   sum(orbit_5_decay_rate_m_s IS NOT NULL AND orbit_5_window_start_time_us >= ?)
+            FROM {RAW_TABLE} WHERE time_us >= ? AND time_us < ?
+        """, (REPORT_START_TIME_US, REPORT_START_TIME_US, year_start, year_stop)).fetchone()
+        coverage.append((year, expected, source, valid3 or 0, valid5 or 0))
+    return coverage
+
+
+def save_yearly_coverage_figure(coverage: list[tuple[int, int, int, int, int]]) -> None:
+    """Input: yearly scope counts. Output: coverage and valid-rate PNG."""
+    years = [row[0] for row in coverage]
+    observed_fraction = [row[2] / row[1] for row in coverage]
+    valid3_fraction = [row[3] / row[2] if row[2] else 0 for row in coverage]
+    valid5_fraction = [row[4] / row[2] if row[2] else 0 for row in coverage]
+    figure, axes = plt.subplots(2, 1, figsize=(12, 7), sharex=True, constrained_layout=True)
+    axes[0].bar(years, observed_fraction, color="#0072BD")
+    axes[0].set_ylabel("可用點 / 10 秒網格")
+    axes[0].set_ylim(0, 1.05)
+    axes[1].plot(years, valid3_fraction, "o-", label="3 圈", color="#0072BD")
+    axes[1].plot(years, valid5_fraction, "o-", label="5 圈", color="#D95319")
+    axes[1].set_ylabel("有效斜率 / 可用點")
+    axes[1].set_ylim(max(0, min(valid3_fraction + valid5_fraction) - 0.005), 1.001)
+    axes[1].set_xticks(years)
+    axes[1].set_xlabel("UTC 年份；2014 與 2026 為半年")
+    axes[1].legend()
+    for axis in axes:
+        axis.grid(axis="y", alpha=0.2)
+    figure.suptitle("Phase 1R：2014-07 至 2026-06 逐年涵蓋與候選有效比例")
+    figure.savefig(IMAGE_DIRECTORY / "report-12y-05-yearly-coverage.png", dpi=FIGURE_DPI)
+    plt.close(figure)
+
+
+def save_harmonic_example_figure(connection: sqlite3.Connection) -> None:
+    """Input: read-only v2 database. Output: a 2018 H2/H3 fit and residual PNG."""
+    fit = connection.execute(f"""
+        SELECT time_us, orbit_3_window_start_time_us, orbit_3_decay_rate_m_s,
+               orbit_3_h2_cos_m, orbit_3_h2_sin_m, orbit_3_h3_cos_m, orbit_3_h3_sin_m
+        FROM {JOINT_TABLE}
+        WHERE time_us >= ? AND orbit_3_decay_rate_m_s IS NOT NULL
+        ORDER BY time_us LIMIT 1
+    """, (HARMONIC_EXAMPLE_US,)).fetchone()
+    if fit is None:
+        raise ValueError("No 2018 v2 H2/H3 example exists.")
+    end_us, start_us, slope_m_s, h2c, h2s, h3c, h3s = fit
+    rows = list(connection.execute(f"""
+        SELECT time_us, mean_semi_major_axis_m,
+               mean_argument_of_perigee_rad + mean_anomaly_rad
+        FROM {MEAN_TABLE} WHERE time_us BETWEEN ? AND ? ORDER BY time_us
+    """, (start_us, end_us)))
+    if not rows:
+        raise ValueError("No mean-element samples exist for the 2018 v2 example.")
+    times = [utc_datetime(row[0]) for row in rows]
+    elapsed_s = [(row[0] - rows[0][0]) / 1_000_000 for row in rows]
+    harmonics_m = [
+        h2c * cos(2 * row[2]) + h2s * sin(2 * row[2])
+        + h3c * cos(3 * row[2]) + h3s * sin(3 * row[2])
+        for row in rows
+    ]
+    corrected_m = [row[1] - harmonic for row, harmonic in zip(rows, harmonics_m)]
+    intercept_m = mean(corrected_m) - slope_m_s * mean(elapsed_s)
+    raw_detrended_m = [row[1] - intercept_m - slope_m_s * elapsed
+                       for row, elapsed in zip(rows, elapsed_s)]
+    residual_m = [raw - harmonic for raw, harmonic in zip(raw_detrended_m, harmonics_m)]
+    figure, axes = plt.subplots(2, 1, figsize=(12, 7), sharex=True, constrained_layout=True)
+    axes[0].plot(times, raw_detrended_m, linewidth=0.8, label="去除線性趨勢後")
+    axes[0].plot(times, harmonics_m, linewidth=1.2, label="v2 H2/H3 項")
+    axes[0].set_ylabel("半長軸偏差（m）")
+    axes[0].legend()
+    axes[1].plot(times, residual_m, color="#77AC30", linewidth=0.8)
+    axes[1].set_ylabel("扣除 H2/H3 後殘差（m）")
+    axes[1].set_xlabel("UTC")
+    for axis in axes:
+        axis.grid(alpha=0.2)
+    figure.suptitle("2018-01-15：十二年庫 v2 三圈視窗 H2/H3 擬合示例")
+    figure.savefig(IMAGE_DIRECTORY / "report-12y-04-h2h3-example-2018.png", dpi=FIGURE_DPI)
+    plt.close(figure)
+
+
+def save_storm_case_figure(rows: list[tuple]) -> None:
+    """Input: hourly v2 rate and feature medians. Output: storm-case PNG."""
+    if not rows:
+        raise ValueError("No 2024 storm-case rows exist in the twelve-year database.")
+    dates = [row[0] for row in rows]
+    figure, axes = plt.subplots(3, 1, figsize=(12, 8), sharex=True, constrained_layout=True)
+    for axis, column, label, color in (
+        (axes[0], 4, "H2/H3 五圈（m/day）", "#77AC30"),
+        (axes[1], 5, "SYM-H（nT）", "#364fc7"),
+        (axes[2], 6, "Ap", "#d9480f"),
+    ):
+        axis.plot(dates, [row[column] for row in rows], color=color, linewidth=1.2)
+        axis.set_ylabel(label)
+        axis.grid(alpha=0.2)
+    axes[2].set_xlabel("UTC")
+    locator = mdates.AutoDateLocator(minticks=4, maxticks=7)
+    axes[2].xaxis.set_major_locator(locator)
+    axes[2].xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
+    figure.suptitle("2024 年 5 月擾動個案：十二年庫的每小時中位數，僅供描述")
+    figure.savefig(IMAGE_DIRECTORY / "report-12y-06-may-2024-storm-case.png", dpi=FIGURE_DPI)
+    plt.close(figure)
+
+
 def generate_twelve_year_figures() -> None:
-    """Input: fixed twelve-year SQLite database. Output: three report PNGs."""
+    """Input: fixed twelve-year SQLite database. Output: six report PNGs."""
     if not DATABASE_PATH.is_file():
         raise FileNotFoundError(DATABASE_PATH)
     IMAGE_DIRECTORY.mkdir(parents=True, exist_ok=True)
@@ -140,6 +264,11 @@ def generate_twelve_year_figures() -> None:
         daily_rows = read_daily_mean_rows(connection)
         raw_rows = read_candidate_day_rows(connection, RAW_TABLE)
         joint_rows = read_candidate_day_rows(connection, JOINT_TABLE)
+        coverage = read_yearly_coverage(connection)
+        save_harmonic_example_figure(connection)
+        storm_rows = hourly_candidates(connection, STORM_START_US, STORM_STOP_US)
+    save_yearly_coverage_figure(coverage)
+    save_storm_case_figure(storm_rows)
     save_daily_mean_figure(
         daily_rows, IMAGE_DIRECTORY / "report-12y-01-daily-mean-semi-major-axis.png",
     )
