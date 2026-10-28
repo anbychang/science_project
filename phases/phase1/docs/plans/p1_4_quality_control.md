@@ -1,0 +1,222 @@
+# P1.4 POD 品質控制
+
+NOTE: 下文 1,685 份 ZIP、14,558,400 筆和 9 chunks 是舊範圍的
+品質控制紀錄；現行 checkpoint 的 raw states／quality 各有 39,346,560 筆。
+現行 P1.5.6 不讀取這裡的 10 分鐘輸出。數量與階段狀態見
+[phase_1_execution_plan.md](phase_1_execution_plan.md)。
+
+## 目的
+
+P1.4 不會刪除或修改原始 POD。它讀取 `swarm_a_states` 與 P1.3 的
+`swarm_a_orbital_elements`，把每一筆資料的可用性寫入新的
+`swarm_a_pod_quality`。
+
+這張表是後續 P1.5 的唯一入口：平滑與 10 分鐘重採樣只能使用
+`is_usable = 1` 的資料。
+
+## 資料形狀
+
+```text
+swarm_a_pod_quality
+{
+  time_us,
+  is_usable,
+  rejection_reason,
+  chunk_id
+}
+```
+
+- `time_us`：連回同一時間的原始 POD。
+- `is_usable`：`1` 是可用，`0` 是不可用。
+- `rejection_reason`：不可用時的固定英文原因；可用時是 `NULL`。
+- `chunk_id`：可用資料所屬的 final analysis chunk。
+
+## P1.4-A：單筆資料有效性
+
+目前先實作不需要猜測門檻的規則。
+
+| 規則 | 條件 | `rejection_reason` |
+| --- | --- | --- |
+| Q1 | 時間不遞增 | `time_not_increasing` |
+| Q1 | 位置或速度是空值、NaN、無限大 | `non_finite_state` |
+| Q5 | P1.3 沒有對應的半長軸結果 | `missing_orbital_element` |
+| Q5 | P1.3 判定軌道能量無效 | `invalid_orbital_energy` |
+| Q5 | 半長軸是空值、NaN、無限大或不為正 | `invalid_orbital_element` |
+| Q4 | ESA 公告的 orbit-raise campaign 日期 | `planned_orbit_raise_campaign` |
+| Q4 | ESA 公告的 orbit-control maneuver 日期 | `official_orbit_control_manoeuvre` |
+| Q4 | ESA 公告的 collision-avoidance maneuver 日期 | `official_collision_avoidance_manoeuvre` |
+
+P1.3 已在 GCRF 中檢查 radius、specific energy 與 bound orbit；P1.4 直接使用
+那個結果，不再重做昂貴的座標轉換。
+
+## P1.4-C SP3 provenance 結果
+
+每個 ZIP 的固定 SP3 header metadata 已寫入衍生表
+`swarm_a_pod_source_provenance`；這不是逐 epoch 資料，不重複寫入
+`swarm_a_states`。`source_files` 只保留不可變的原始檔案識別資訊。
+
+```text
+swarm_a_pod_source_provenance
+{
+  source_id,
+  sp3_frame_label,
+  coverage_start_time_us,
+  coverage_end_time_us,
+  epoch_count,
+  cadence_s,
+  time_system
+}
+```
+
+| SP3 frame label | source count | first source UTC |
+| --- | ---: | --- |
+| `IGb14` | 331 | 2021-12-31 23:59:42 |
+| `IGS20` | 798 | 2022-11-27 23:59:42 |
+| `IGb20` | 343 | 2025-02-02 23:59:42 |
+| `IGc20` | 213 | 2026-01-11 23:59:42 |
+
+所有 1,685 個 source 都有 `{epoch_count: 8640, cadence_s: 10.0, time_system: GPS}`。
+來源 coverage 是 `2021-12-31 23:59:42 UTC` 至 `2026-08-12 23:59:32 UTC`。
+frame transition 前後各取三個 source 的 usable `semi_major_axis_m`，結果如下。這只是
+read-only 比較；數值包含真實軌道演化，不能解讀成 frame offset，也沒有做任何修正。
+
+| transition | old median [m] | new median [m] | new - old [m] |
+| --- | ---: | ---: | ---: |
+| `IGb14 -> IGS20` | 6,839,461.216 | 6,839,388.974 | -72.242 |
+| `IGS20 -> IGb20` | 6,824,431.993 | 6,824,267.233 | -164.760 |
+| `IGb20 -> IGc20` | 6,799,632.198 | 6,799,435.551 | -196.648 |
+
+每側均是 25,920 筆。這是 frozen release 前的 read-only 調查證據；它沒有進入正式 pipeline。
+
+### Q3 policy
+
+`quality_source: unavailable`
+
+ESA catalog 將 SP3xCOM quality validation 指向獨立 `SP3xVAL_2_` 產品。本機 1,685 個
+POD ZIP 的 header accuracy 都是 unknown；抽查 first epoch 沒有 quality 欄位，完整抽查一檔
+也沒有 `EP` / `EV`。因此目前只能以 `finite / bound / cadence / gap` 作專案完整性檢查；
+不得把資料標成 ESA per-epoch quality passed。完整證據與官方連結見
+`research_p1_4_c_sp3_quality.md`。
+
+重跑 provenance：
+
+```powershell
+python -m phases.phase0.code.data.pod.prep_02_source_provenance
+```
+
+## Q4 已知 Swarm-A orbit event
+
+P1.4 排除三段 Swarm-A/C orbit-raise campaign，以及兩個有官方證據的 Swarm-A 單日
+maneuver：`2022-01-13` orbit-control 與 `2023-01-06` collision avoidance。campaign
+維持 `planned_orbit_raise_campaign`；兩種單日 maneuver 分別以
+`official_orbit_control_manoeuvre`、`official_collision_avoidance_manoeuvre` 標記。原始
+POD 完全保留，下游 chunk、10 分鐘 bin 與 3/6/12 小時 backward derivative interval 不得跨越
+任何一個 event。
+
+官方公開資料沒有每次 firing 的秒級時刻。因此這是 date-level exclusion，不是對個別
+state 的 maneuver 時刻判定。證據與官方連結見
+`research_2022_2023_orbit_raise_campaigns.md`、
+`research_2026_07_swarm_a_semimajor_axis_anomaly.md` 與
+`research_swarm_a_orbit_raise_catalog_audit.md`。所有已確認 event 的集中 memory 與
+canonical half-open date windows 見 `orbit_raise_campaign_memory.md`。
+
+## 未設 rejection rule 的 P1.4 項目
+
+| 規則 | 為何暫緩 |
+| --- | --- |
+| Q3 ESA quality flag | 已判定目前本機 SP3xCOM 無可用官方逐筆 quality；若日後取得 `SP3xVAL_2_`，另立 raw source。 |
+| Q4 未標記 maneuver candidate | audit-only；不以 residual 門檻拒絕資料。已公告的 Swarm-A orbit event 依上一節排除。 |
+
+這些不是漏做；它們目前缺少可辯護的判定依據。先填入任意門檻會把正常的
+storm-time drag 誤判成壞資料。
+
+## P1.4-D maneuver residual audit
+
+已建立 read-only residual audit；它不寫入 `swarm_a_pod_quality`。
+
+```text
+{previous, current, next}
+where {
+  same source_id,
+  same frame,
+  each time gap: 10 s,
+  all states: is_usable = 1
+}
+  -> {
+    position_curvature_m,
+    velocity_residual_m_s
+  }
+```
+
+```text
+position_curvature_m
+  = norm(r[i] - (r[i-1] + r[i+1]) / 2)
+
+velocity_residual_m_s
+  = norm(v[i] - (r[i+1] - r[i-1]) / (t[i+1] - t[i-1]))
+```
+
+固定跨時期 sample：`source_id = [1, 200, 400, 600, 800, 1000, 1200, 1400,
+1600, 1685]`；涵蓋四個 frame、86,380 個 valid window。
+
+| metric | median | MAD | p99 | p99.9 | max |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `position_curvature_m` | 427.103403 | 2.588821 | 432.712843 | 432.809594 | 432.822161 |
+| `velocity_residual_m_s` | 0.160260 | 0.001692 | 0.164351 | 0.164409 | 0.164437 |
+
+synthetic test 已確認 position jump 會提高 curvature、velocity jump 會提高 velocity
+residual；source/frame/gap boundary 不計算 residual。
+
+目前 sample 沒有可用的逐 epoch maneuver label。因此 `median + 10 * MAD` 只能是 audit
+上界，不是可發布的 Q4 rejection threshold；不得改寫 quality table。若日後取得已知
+maneuver event 或可人工確認的 candidate，Q4 應以兩項 residual 的 OR 規則驗證。
+
+這是 frozen release 前的 read-only 調查證據；一次性 audit script 已移除，不能誤當正式品質規則。
+
+## 執行與驗證
+
+執行：
+
+```powershell
+python -m phases.phase1.code.prep_05_pod_quality
+```
+
+測試：
+
+```powershell
+python -m unittest discover -s tests -p 'test_prep_derived_pod_quality.py' -v
+```
+
+測試涵蓋一筆正常資料、NaN、缺少 P1.3 結果、P1.3 拒絕的能量狀態，以及公告 campaign
+日期窗的邊界。
+
+## P1.4-A 實際結果
+
+已對目前 SQLite 中的 14,558,400 筆 POD 執行一次檢查：
+
+| 項目 | 筆數 |
+| --- | ---: |
+| 原始 POD | 14,558,400 |
+| P1.3 半長軸 | 14,558,400 |
+| P1.4-A 品質結果 | 14,558,400 |
+| `is_usable = 1` | 13,495,680 |
+| 被拒絕 | 950,400 |
+| `planned_orbit_raise_campaign` | 950,400 |
+
+Q1/Q5 沒有辨識出的壞列。被拒絕的列全部在 ESA 公告的 orbit-raise campaign 日期窗；
+這個 date-level exclusion 不替代未來可取得的精確 maneuver log。
+
+## P1.4-B final chunk 結果
+
+`swarm_a_states` 的 native cadence 是 10 秒。每日 source-file boundary 不自動切開
+chunk；只有 product stream、SP3 frame、cadence、時間連續性改變或 metadata 不明才切開。
+
+| 項目 | 結果 |
+| --- | ---: |
+| final chunks | 6 |
+| chunk POD 筆數 | 1,054,082 / 1,226,878 / 1,287,362 / 5,235,838 / 2,963,520 / 1,840,320 |
+| chunk 內 time gap | 0 |
+| `is_usable = 1` 但沒有 `chunk_id` | 0 |
+
+同 product stream 的跨日 source 可以留在同一 chunk。Q3 是 `quality_source: unavailable`；
+未標記 Q4 candidate 是 audit-only。ESA 已公告的 orbit-raise campaign 必須切開 chunk。

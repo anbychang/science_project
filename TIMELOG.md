@@ -2,15 +2,15 @@
 
 最後更新：2026-10-28
 
-> 2026-10-18 的 10 分鐘 Phase 1 工作稽核與後續逐 10 秒相位候選，是兩條不同資料產品。舊紀錄提到的 `data/swarm_a_analysis.sqlite` 目前不在工作區；現存三年與 2014–2026 候選工作庫分別位於 `research_workspace/phases/phase1/data/sqlite/` 與 `research_workspace/phases/phase1r/data/sqlite/`，尚非已校準的正式 decay release。
+> 2026-10-18 的 10 分鐘 Phase 1 工作稽核與後續逐 10 秒相位候選，是兩條不同資料產品。舊紀錄提到的 `data/swarm_a_analysis.sqlite` 目前不在工作區；現存三年與 2014–2026 候選工作庫分別位於 `phases/phase1/data/sqlite/` 與 `phases/phase1r/data/sqlite/`，尚非已校準的正式 decay release。
 
-Current status：三年與 2014–2026 工作庫均已完成逐 10 秒的 raw B-L／joint H2/H3 3／5 圈候選、共用 P1.6 v2 feature，以及 P1.7 v2 audit。兩份 audit 各有 6 項、violation 全為 0，metadata status 均為 `pass`。12 年 v2 兩張 rate table 各有 38,378,878 筆；十二年報告限定 2014-07-01 至 2026-06-30。舊 10 分鐘產品的歷史交付與限制見 `research_workspace/phases/phase1/reports/phase_1_final_report.md`。
+Current status：三年與 2014–2026 工作庫均已完成逐 10 秒的 raw B-L／joint H2/H3 3／5 圈候選、共用 P1.6 v2 feature，以及 P1.7 v2 audit。兩份 audit 各有 6 項、violation 全為 0，metadata status 均為 `pass`。12 年 v2 兩張 rate table 各有 38,378,878 筆；十二年報告限定 2014-07-01 至 2026-06-30。舊 10 分鐘產品的歷史交付與限制見 `phases/phase1/reports/phase_1_final_report.md`。
 
-Phase 2 status：[done]，固定交付鏈是 P2.3 v5／P2.4 v5／P2.5 v2／P2.6 final，一分鐘一列，共 25 場、217,912 列。25 張逐場圖直接位於 `research_workspace/phases/phase2/figures/P2.6/`，沒有圖版本子目錄。交付檢查點與研究界線見 `research_workspace/phases/phase2/reports/phase_2_final_report.md`；下方舊版紀錄只供歷史追溯。
+Phase 2 status：[done]，固定交付鏈是 P2.3 v5／P2.4 v5／P2.5 v2／P2.6 final，一分鐘一列，共 25 場、217,912 列。25 張逐場圖直接位於 `phases/phase2/figures/P2.6/`，沒有圖版本子目錄。交付檢查點與研究界線見 `phases/phase2/reports/phase_2_final_report.md`；下方舊版紀錄只供歷史追溯。
 
-Phase 2R status：[done]，把 Phase 2 final 原樣重現於 2014-07-01 至 2026-06-30。7 個 checkpoint 位於 `research_workspace/phases/phase2r/data/sqlite/`；49 場候選中 46 場可用，共 400,696 筆分鐘資料與 46 張逐場圖。完整結果見 `research_workspace/phases/phase2r/reports/phase_2r_final_report.md`。
+Phase 2R status：[done]，把 Phase 2 final 原樣重現於 2014-07-01 至 2026-06-30。7 個 checkpoint 位於 `phases/phase2r/data/sqlite/`；49 場候選中 46 場可用，共 400,696 筆分鐘資料與 46 張逐場圖。完整結果見 `phases/phase2r/reports/phase_2r_final_report.md`。
 
-Phase 3 status：[done]。三年 25 場的離線密度響應分析已結案，214,907 個有效中心相位分鐘與固定共同 $\tau=4.65$ 小時的密度曲線已交付；每場 $R_k$ 已依最終採用規則完成校準。最終結果、適用範圍與保留限制見 `research_workspace/phases/phase3/reports/phase_3_final_report.md`。
+Phase 3 status：[done]。三年 25 場的離線密度響應分析已結案，214,907 個有效中心相位分鐘與固定共同 $\tau=4.65$ 小時的密度曲線已交付；每場 $R_k$ 已依最終採用規則完成校準。最終結果、適用範圍與保留限制見 `phases/phase3/reports/phase_3_final_report.md`。
 
 ## 2026-10-28：Phase 3 結案狀態同步
 
@@ -22,7 +22,7 @@ Phase 3 status：[done]。三年 25 場的離線密度響應分析已結案，21
 
 **結果**：將 Phase 3 程式、測試、計畫、資料血緣、工作報告、18 張圖與分析 CSV 共 85 個檔案提交為 `e3996e39ea2bb8464ed101c9131ef0f61b24b240`，並推送至 `origin/master`；報告的 SQLite 交付邊界另以 `fd0f58c67cb4ba223c2bbd8145515beecc7ee475` 補記並推送。遠端 `master` 已核對到後一提交。
 
-**證據**：25 場逐場索引與 214,907 列有效預測位於本機 `research_workspace/phases/phase3/data/sqlite/swarm_a_phase3_prediction_tau465_exploratory.sqlite`；三個 Phase 3 衍生 SQLite 的 `integrity_check = ok`。Phase 3 相關測試 3 項通過，提交前 `git diff --cached --check` 無錯誤。
+**證據**：25 場逐場索引與 214,907 列有效預測位於本機 `phases/phase3/data/sqlite/swarm_a_phase3_prediction_tau465_exploratory.sqlite`；三個 Phase 3 衍生 SQLite 的 `integrity_check = ok`。Phase 3 相關測試 3 項通過，提交前 `git diff --cached --check` 無錯誤。
 
 **邊界**：`data/` 受 `.gitignore` 排除，三個 Phase 3 SQLite 未上傳；其中最大檔約 106 MB。GitHub 上的是可檢查的回溯試算程式與摘要，不是已校準的 Forecast release。Phase 2R 的未提交工作沒有納入這兩個 Phase 3 提交。
 
@@ -32,7 +32,7 @@ Phase 3 status：[done]。三年 25 場的離線密度響應分析已結案，21
 
 **結果**：P2R.0–P2R.6 全部完成。4,383 天形成 6,311,520 個地磁分鐘；2,461 個 local minima 合併為 49 場事件。46 場有完整連續相位，產生 400,696 個分鐘 key；3 場因 Phase 1 `chunk_id` 邊界排除。324 個事件日 DNSAPOD 已備妥，46 場全部通過兩個 80% coverage。P2R.6 有 46 場 QC，其中 33 場 SME peak 較早、13 場反序。
 
-**輸出**：SQLite 位於 `research_workspace/phases/phase2r/data/sqlite/`；46 張逐場圖位於 `research_workspace/phases/phase2r/figures/P2R.6/`。逐步 Action／Input／Output 見 `research_workspace/phases/phase2r/docs/lineage/phase_2r_12year_replication.md`，檢查點 SHA-256 見 Phase 2R 最終報告。
+**輸出**：SQLite 位於 `phases/phase2r/data/sqlite/`；46 張逐場圖位於 `phases/phase2r/figures/P2R.6/`。逐步 Action／Input／Output 見 `phases/phase2r/docs/lineage/phase_2r_12year_replication.md`，檢查點 SHA-256 見 Phase 2R 最終報告。
 
 **驗證**：7 個 SQLite 的 `integrity_check = ok`，foreign key violation 為 0；P2R.3 與 P2R.4 minute key 雙向完全一致；46 張圖與 46 個 UTC 事件日期一對一。全套 pytest 為 200 passed。Orekit／JVM 仍在 Windows 印出既有 access-violation 診斷，但 pytest exit code 為 0。三年 Phase 2 的 7 個 SHA-256 重新核對為 7／7 不變。
 
@@ -50,7 +50,7 @@ Phase 3 status：[done]。三年 25 場的離線密度響應分析已結案，21
 
 **決定**：Phase 2 只有一個最終版本，固定為來源置中 81 日 F10.7A、SME／密度殘差平滑，以及 `t0 - 12 h` 至 `t0 + 24 h` 的 peak 候選窗。後續研究另開階段；不回寫 P2.0–P2.6 檢查點或 25 張最終圖。
 
-**結果**：建立 `research_workspace/phases/phase2/reports/phase_2_final_report.md`，同步計畫、方法、資料血緣、README 與專案指引。P2.6 目錄只保留 25 場各一張最終圖；繪圖入口改為拒絕覆寫既有圖。舊 SYM-H 單來源及舊合併事件 writer、對應測試，以及已併入最終報告的暫存記憶文件移至 Windows 資源回收筒，可復原。
+**結果**：建立 `phases/phase2/reports/phase_2_final_report.md`，同步計畫、方法、資料血緣、README 與專案指引。P2.6 目錄只保留 25 場各一張最終圖；繪圖入口改為拒絕覆寫既有圖。舊 SYM-H 單來源及舊合併事件 writer、對應測試，以及已併入最終報告的暫存記憶文件移至 Windows 資源回收筒，可復原。
 
 **證據**：7 個現行 SQLite 的 SHA-256、integrity 與 foreign key 均核對通過；25 張圖與 25 場 QC 事件日期一一對應；Phase 2／MSIS 相關測試 22 項通過。此結案是描述性資料與 QC 契約完成，不宣稱已建立因果延遲或軌道衰減標籤。
 
@@ -74,7 +74,7 @@ Phase 3 status：[done]。三年 25 場的離線密度響應分析已結案，21
 
 ## 2026-10-21：P1.5.6 12 年 phase-harmonic decay batch
 
-**輸出完成**：`research_workspace/phases/phase1r/data/sqlite/swarm_a_analysis_2014_2026_phase_candidate_working_v2.sqlite`，31.01 GB。
+**輸出完成**：`phases/phase1r/data/sqlite/swarm_a_analysis_2014_2026_phase_candidate_working_v2.sqlite`，31.01 GB。
 `swarm_a_phase_harmonic_decay_raw_b_l_sets_v2` 與
 `swarm_a_phase_harmonic_decay_joint_h2_h3_sets_v2` 各為 38,378,878 筆。
 
@@ -85,7 +85,7 @@ joint table 以同一 window 聯合擬合 linear trend 與 `H2(u) + H3(u)`。
 **待辦**：完整 `time_us` key-set、rate validity parity 及 table-specific
 `integrity_check` 尚待補跑；先前全表掃描超過 interactive tool 的 120-second limit，不能記為 pass。
 
-這份檔案只記錄時間順序：某一天做了什麼、量到什麼、得到什麼結論。它不放長期規則或完整技術定義；那些放在 `research_workspace/phases/phase1/docs/plans/PLAN.md` 與各階段規格。
+這份檔案只記錄時間順序：某一天做了什麼、量到什麼、得到什麼結論。它不放長期規則或完整技術定義；那些放在 `phases/phase1/docs/plans/PLAN.md` 與各階段規格。
 
 ## 日期可信度
 
@@ -144,7 +144,7 @@ joint table 以同一 window 聯合擬合 linear trend 與 `H2(u) + H3(u)`。
 
 ## 2026-09-21：固定第一階段研究範圍
 
-**做了什麼**：建立 `research_workspace/phases/phase1/docs/plans/PLAN.md`，將正式流程定為：
+**做了什麼**：建立 `phases/phase1/docs/plans/PLAN.md`，將正式流程定為：
 
 ```text
 raw files
@@ -392,7 +392,7 @@ P1.6 final join。
 
 ## 2026-10-17：P1.4-C SP3 provenance 與 Q3 policy
 
-**原始輸入**：1,685 個 `research_workspace/phases/phase0/data/raw/swarm_a_pod/*.ZIP`、`source_files`、
+**原始輸入**：1,685 個 `phases/phase0/data/raw/swarm_a_pod/*.ZIP`、`source_files`、
 `swarm_a_orbital_elements`、`swarm_a_pod_quality`。
 
 **實際操作**：逐 ZIP 讀取 SP3 header，將固定 metadata 寫入每個 source 的
@@ -408,7 +408,7 @@ transition median difference 分別是 `-72.242 m`、`-164.760 m`、`-196.648 m`
 **Q3 結論**：ESA `SP3xCOM_2_` 的 quality indicator 是獨立 `SP3xVAL_2_`。目前本機
 SP3xCOM ZIP 沒有已驗證可用的 official per-epoch quality；policy 是
 `quality_source: unavailable`，只能使用 finite / bound / cadence / gap。證據在
-`research_workspace/phases/phase1/docs/plans/research_p1_4_c_sp3_quality.md`。
+`phases/phase1/docs/plans/research_p1_4_c_sp3_quality.md`。
 
 **下一步**：P1.4-D 以 position/velocity residual 建立 maneuver candidate 分布與
 synthetic jump test；不得因本次 median comparison 直接套用 frame offset。
@@ -502,8 +502,8 @@ SQLite `metadata`。
 3. 完成官方 catalog 稽核；沒有找到 2024--2025 或 `2026-08-13` 前另一段可精確指向
    Swarm-A 的公開 raise/CAM 日期。
 4. 將所有官方 event 與已檢查觀測時段記入
-   `research_workspace/phases/phase1/docs/plans/orbit_raise_campaign_memory.md`；詳細證據在
-   `research_workspace/phases/phase1/docs/plans/research_swarm_a_orbit_raise_catalog_audit.md`。
+   `phases/phase1/docs/plans/orbit_raise_campaign_memory.md`；詳細證據在
+   `phases/phase1/docs/plans/research_swarm_a_orbit_raise_catalog_audit.md`。
 
 **流程決定**：Brouwer-Lyddane mean orbit 僅依 P1.3 valid state 計算，執行順序改為
 `P1.3 -> P1.5 mean orbit -> P1.4 quality -> 10-minute -> backward 12h`。P1.4 只決定哪些
@@ -535,7 +535,7 @@ fresh rebuild。
 
 1. 更新 signed-rate table、analysis table、release audit、schema 文件與測試；舊欄位不再存在。
 2. POD processing module 改為 `prep_01` 至 `prep_07`，analysis 與 release audit 為
-   `prep_08`、`prep_09`；順序寫入 `research_workspace/phases/phase1/docs/plans/pod_pipeline.md`。
+   `prep_08`、`prep_09`；順序寫入 `phases/phase1/docs/plans/pod_pipeline.md`。
 3. 從 v3 複製建立 `data/swarm_a_phase1_rebuild_v4.sqlite`，只重建 rate、analysis、audit；
    mean orbit 沒有重算，v3 保留。
 
@@ -558,7 +558,7 @@ SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
 
 ## 2026-10-20：建立三年軌道分析報告與圖表
 
-**結果**：建立 `research_workspace/phases/phase1/reports/orbit_analysis_report.md` 與資料來源圖。工作期間為
+**結果**：建立 `phases/phase1/reports/orbit_analysis_report.md` 與資料來源圖。工作期間為
 `2023-07-01` 至 `2026-07-01` UTC；主文以 ITRF/GCRF、平均元素、品質與 `chunk`、H2/H3、
 3/5 圈 OLS、特徵對齊及稽核為順序。2023 年軌道抬升事件圖標示排除區間與兩側切段。
 
@@ -579,9 +579,9 @@ SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
 
 ## 2026-10-21：拆分圖 6，建立十二年工作版報告
 
-**結果**：三年版圖 6 拆為無 H2/H3 與含 H2/H3 兩張；兩圖均以藍色表示 3 圈、橘色表示 5 圈，並共用縱軸範圍。舊的四線圖與四張單線圖移至 `research_workspace/phases/phase1/figures/test/`，未刪除。三年版報告及圖片已推至 GitHub `master`（`e8c3e47`）。
+**結果**：三年版圖 6 拆為無 H2/H3 與含 H2/H3 兩張；兩圖均以藍色表示 3 圈、橘色表示 5 圈，並共用縱軸範圍。舊的四線圖與四張單線圖移至 `phases/phase1/figures/test/`，未刪除。三年版報告及圖片已推至 GitHub `master`（`e8c3e47`）。
 
-**結果**：新增 `research_workspace/phases/phase1r/reports/orbit_analysis_report_2014_2026.md`，使用十二年庫實際筆數，不由三年結果外推。另產生平均半長軸每日總覽，以及 `2024-05-03` 無／含 H2/H3 的兩張逐 10 秒候選圖；候選圖各有 8,640 個時間點，使用相同縱軸。平均半長軸總覽保留 P1.4 官方事件排除前的變化，候選圖則使用 v2 結果。
+**結果**：新增 `phases/phase1r/reports/orbit_analysis_report_2014_2026.md`，使用十二年庫實際筆數，不由三年結果外推。另產生平均半長軸每日總覽，以及 `2024-05-03` 無／含 H2/H3 的兩張逐 10 秒候選圖；候選圖各有 8,640 個時間點，使用相同縱軸。平均半長軸總覽保留 P1.4 官方事件排除前的變化，候選圖則使用 v2 結果。
 
 **決定**：十二年報告排除 2014 年上半年，分析期間改為 `[2014-07-01, 2026-07-01)` UTC。圖 1 已重產；每張 v2 表在此期間有 36,815,038 個右端點，3／5 圈每種模型分別採用 36,794,802／36,781,317 個斜率，且視窗起點不能早於 2014-07-01。原始 POD 與既有工作庫未刪改。
 
@@ -591,7 +591,7 @@ SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
 
 **決定**：SME 是地面磁力站的地磁活動指數，DNSAPOD 是 Swarm-A POD 反演的衛星位置密度；兩者不互換。P2.4 使用 `SW_OPER_DNSAPOD_2_` 的原生 `density`，不使用 DNSAACC，也不從 Phase 1 的 10-second 軌道列內插密度。每一步複製前一 SQLite，原始檔和舊檢查點不覆寫。
 
-**來源**：現行 P2.2 的 25 場候選窗口需要 217 個 UTC DNSAPOD 日檔。舊窗口已有 181 個；從 ESA 補 36 個，另存 `research_workspace/phases/phase0/data/raw/swarm_density_pod/manifest_p2_4_v2.json`。217 檔均為產品版本 `0301`，HDR `Quality_Indicator = 000`，manifest 逐檔記錄 SHA-256 並綁定 P2.3 SQLite SHA-256。舊 manifest 保留供稽核。
+**來源**：現行 P2.2 的 25 場候選窗口需要 217 個 UTC DNSAPOD 日檔。舊窗口已有 181 個；從 ESA 補 36 個，另存 `phases/phase0/data/raw/swarm_density_pod/manifest_p2_4_v2.json`。217 檔均為產品版本 `0301`，HDR `Quality_Indicator = 000`，manifest 逐檔記錄 SHA-256 並綁定 P2.3 SQLite SHA-256。舊 manifest 保留供稽核。
 
 **結果**：P2.3 `storm_orbit_1min_v2` 有 280,055 個事件窗口分鐘格，均為 `complete`。P2.4 在原生 L2 時間與 geodetic 位置呼叫 `pymsis` 的 NRLMSIS 2.0，將相同有效樣本上的 L2／MSIS 密度各自平均。624,960 筆 DNSAPOD 原生列中，`validity_flag = 0` 有 624,230 筆、`1` 有 730 筆；559,440 筆落在事件窗口並成功配對。`storm_density_1min_v2` 有 279,720 個配對分鐘格，另有 335 格保留 `NULL`。輸出為 `data/sqlite/2023/swarm_a_phase2_sme_p2_4_v2.sqlite`，SHA-256 `f3ac15792c4c5bdd7af68f56d0a538e0134c9e854f49e3bd0f622a3a1827d8dc`。
 
@@ -605,7 +605,7 @@ SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
 
 **結果**：先核對 P2.3 的 25 場事件窗口：280,055 個分鐘格均有有效 SME，所需 217 個 DNSAPOD 日檔已在本機。再從 ESA 補下載三年 pilot 缺少的 879 個 DNSAPOD 日檔；連同沿用的 217 檔，`2023-07-01` 至 `2026-06-30` UTC 共 1,096 檔、152,923,221 bytes，檔名版本均為 `0301`。原始 ZIP 與 P2.0–P2.4 SQLite 都沒有覆寫。
 
-**證據**：每檔通過 ESA byte count、ZIP 完整性及 SHA-256 核對；日期無缺漏。`research_workspace/phases/phase0/data/raw/swarm_density_pod/manifest_dnsapod_20230701_20260630.json` SHA-256 為 `47c55aaf2f25b7adb373148786e7b36b00c54b1b655250cc36810bbdfd159152`；舊事件 manifest SHA-256 維持 `d1eb2a15f862eaedf6841d8399bf8fa63aa5cabe31a71671133b9ae5b2251c07`。下載選日測試及既有 POD 下載測試共 6 項通過。
+**證據**：每檔通過 ESA byte count、ZIP 完整性及 SHA-256 核對；日期無缺漏。`phases/phase0/data/raw/swarm_density_pod/manifest_dnsapod_20230701_20260630.json` SHA-256 為 `47c55aaf2f25b7adb373148786e7b36b00c54b1b655250cc36810bbdfd159152`；舊事件 manifest SHA-256 維持 `d1eb2a15f862eaedf6841d8399bf8fa63aa5cabe31a71671133b9ae5b2251c07`。下載選日測試及既有 POD 下載測試共 6 項通過。
 
 **未解決**：SME 三年 1,096 個日檔已存在，但 `2026-05-07T02:35:00Z` 起的 79,045 分鐘仍是來源填充值。環境未設定 `SUPERMAG_USER_ID`；無法重新查詢並判定來源是否已補值。三年 DNSAPOD 目前只有原始檔，尚未建立三年密度衍生表。
 
@@ -667,13 +667,13 @@ SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
 
 **結果**：`storm_geomag_orbit_v1` 共 2,325 圈，SME 與 SYM-H 分鐘覆蓋率均為 100%，全部達到 80% 門檻；SMEnum 範圍 71–133。21 場 P2.4 密度合格事件中，5 場符合 SME 峰 < 密度差峰 < SYM-H `t0`，20 場為複合事件。2024-05-11 案例的三個時刻依序是 SYM-H `t0` 0 h、密度差峰 +1.2 h、每圈 SME 峰 +12.2 h；已產生 F2-3 案例圖與 21 場散點圖。
 
-**證據**：P2.5 SQLite SHA-256 `c0221fe1f7c368aa1f25b753d2105bcc6d0956e12f7b7964c278e7cc8a41a005`；P2.4 SQLite SHA-256 維持 `4fc0085035f268fc8fd3ec6798856018760ee5eb2cc43a50873f13e20118e214`。當時的 P2.6 CSV SHA-256 為 `9e75f60dafcd31598d2d5363fc889fa1961af113ca3efb032d717368b68ebb43`；後續改以 SQLite 重算、逐欄核對一致，並刪除 CSV。當時 P2.0–P2.6 相關測試 38 項通過。輸出樣本、時間語意與來源鍵見 `research_workspace/phases/phase2/docs/lineage/phase_2_storm_dataset.md`。
+**證據**：P2.5 SQLite SHA-256 `c0221fe1f7c368aa1f25b753d2105bcc6d0956e12f7b7964c278e7cc8a41a005`；P2.4 SQLite SHA-256 維持 `4fc0085035f268fc8fd3ec6798856018760ee5eb2cc43a50873f13e20118e214`。當時的 P2.6 CSV SHA-256 為 `9e75f60dafcd31598d2d5363fc889fa1961af113ca3efb032d717368b68ebb43`；後續改以 SQLite 重算、逐欄核對一致，並刪除 CSV。當時 P2.0–P2.6 相關測試 38 項通過。輸出樣本、時間語意與來源鍵見 `phases/phase2/docs/lineage/phase_2_storm_dataset.md`。
 
 **未解決**：原報告的峰值順序不能當作本資料的普遍事實；複合事件、峰值選法與軌道採樣位置需在延遲模型前分層檢驗。4 場 MSIS 配對缺口仍受 `INT` 日限制。機動排除、獨立軌道衰減標籤與延遲核不屬本次已完成的 SME 資料產物。
 
 ## 2026-10-23：匯出 21 場 Phase 2.6 峰值比較圖
 
-**決定**：沿用 P2.6 的 `t0` 前後 24 h 峰值定義，不改動事件篩選或來源 SQLite。「密度峰」指每圈配對密度比 `ln(L2/MSIS)` 最大值，不是原始 L2 密度最大值。圖檔以 SYM-H `t0` 的 UTC 日期與時間命名，集中於 `research_workspace/phases/phase2/figures/P2.6/`。
+**決定**：沿用 P2.6 的 `t0` 前後 24 h 峰值定義，不改動事件篩選或來源 SQLite。「密度峰」指每圈配對密度比 `ln(L2/MSIS)` 最大值，不是原始 L2 密度最大值。圖檔以 SYM-H `t0` 的 UTC 日期與時間命名，集中於 `phases/phase2/figures/P2.6/`。
 
 **結果**：產生 21 張逐場 PNG、當時的 21 列 `peak_times.csv` 與資料夾內的說明檔。每張圖標出每圈 SME 峰、配對密度比峰及 1 分鐘 SYM-H 最低點；CSV 後續已刪除，峰值時間以 P2.6 SQLite 為準。未修改 P2.4、P2.5 或原有圖檔。
 
@@ -705,7 +705,7 @@ SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
 
 **決定**：沿用 `storm_minute_analysis_v1` 的 25 場 `used` 事件，不新增或修改 SQLite table。每張圖直接使用一分鐘 `sme_nt`、`symh_nt` 與 `log_ratio_obs`；峰值由完整事件窗選出，顯示範圍至少為 `t0 +/- 12 h`，必要時延伸到峰值。檔名使用 SYM-H `t0` 的 UTC 日期 `YYYY-MM-DD.png`；日期碰撞時停止，不能靜默覆蓋。
 
-**結果**：`research_workspace/phases/phase2/figures/P2.6/` 現有 25 張 PNG，日期從 `2023-08-05.png` 到 `2026-04-18.png`。舊的單場檔名 `F2-3-S20231105T1654-minute-peak-order.png` 已由日期檔名 `2023-11-05.png` 取代。每張圖標出完整事件窗的 SME 最大值、密度殘差最大值及 SYM-H 最低點 `t0`。
+**結果**：`phases/phase2/figures/P2.6/` 現有 25 張 PNG，日期從 `2023-08-05.png` 到 `2026-04-18.png`。舊的單場檔名 `F2-3-S20231105T1654-minute-peak-order.png` 已由日期檔名 `2023-11-05.png` 取代。每張圖標出完整事件窗的 SME 最大值、密度殘差最大值及 SYM-H 最低點 `t0`。
 
 **證據**：25 個不同 `storm_id` 對應 25 個不同 UTC 日期，實際 PNG 數量為 25。`prep_phase2_f2_3_minute.py` 通過 `py_compile` 並完整重跑；P2.6 targeted tests 2 項通過。抽查 `2023-11-05.png`、`2024-05-11.png` 與 `2026-04-18.png`，標記、座標軸、單位與標題完整。
 
@@ -745,7 +745,7 @@ SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
 
 **決定**：P2.6 最後一版同時包含 SME／密度平滑、來源 `F10.7_OBS_CENTER81` 與 `t0 - 12 h` 至 `t0 + 24 h` 的 peak 候選窗。25 場各有一張圖，直接放在 P2.6 圖目錄；不再區分圖版本。
 
-**結果**：新增 `research_workspace/phases/phase2/docs/plans/PLAN.md`；繪圖入口固定從 P2.6 final SQLite 產生 `research_workspace/phases/phase2/figures/P2.6/` 的 25 張圖。重複圖組與誤產生的單張圖已移至 Windows 資源回收筒，可復原。P2.6 SQLite 與全部 25 場 QC 均未刪除。
+**結果**：新增 `phases/phase2/docs/plans/PLAN.md`；繪圖入口固定從 P2.6 final SQLite 產生 `phases/phase2/figures/P2.6/` 的 25 張圖。重複圖組與誤產生的單張圖已移至 Windows 資源回收筒，可復原。P2.6 SQLite 與全部 25 場 QC 均未刪除。
 
 **證據**：25 個檔名日期與 `storm_minute_peak_qc_v4` 的 25 場事件相符；圖檔經逐張 SHA-256 比對一致。P2.6 圖目錄只含這 25 張 PNG。
 

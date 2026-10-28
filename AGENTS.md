@@ -4,8 +4,8 @@ The research goal is to study how geomagnetic storms affect Swarm-A orbital
 decay. XYZ orbit prediction is a later validation tool, not the main research
 question. Phase 2 and its 12-year Phase 2R replication are complete and
 frozen. Their reproducible 1-minute datasets and descriptive peak QC are
-documented in `research_workspace/phases/phase2/reports/phase_2_final_report.md` and
-`research_workspace/phases/phase2r/reports/phase_2r_final_report.md`. Treat both
+documented in `phases/phase2/reports/phase_2_final_report.md` and
+`phases/phase2r/reports/phase_2r_final_report.md`. Treat both
 checkpoint chains as read-only; new research needs a separate phase and
 output. Do not revise either chain without Anby's explicit request. Do not add
 machine learning or connect atmospheric drag until the phase plan requires it.
@@ -15,7 +15,7 @@ working branch. Keep their SQLite, reports, and figures in separate phase
 directories. Neither candidate decay-rate database is a calibrated release.
 
 Phase 3's three-year density-response analysis is complete. Its final record is
-`research_workspace/phases/phase3/reports/phase_3_final_report.md`; its per-event $R_k$
+`phases/phase3/reports/phase_3_final_report.md`; its per-event $R_k$
 calibration is final and must not be relabeled as provisional. Treat the Phase
 3 result as read-only; any extension needs a separate phase and output.
 
@@ -76,8 +76,8 @@ Historical reports keep only date, result, evidence, decision, and unresolved
 work. A reader should be able to scan any section without reading every line.
 
 Before creating, editing, or reviewing lineage Markdown under
-`research_workspace/`, read and apply
-`research_workspace/docs/data_lineage/RULES.md`; check every affected
+`phases/` or `docs/data_lineage/`, read and apply
+`docs/data_lineage/RULES.md`; check every affected
 step's action, Input, Output, and example against that format before finishing.
 
 Every function must show its input and output in a short docstring. Prefer visual

@@ -5,11 +5,11 @@
 | Phase | 狀態 | 報告 | 圖與表 |
 | --- | --- | --- | --- |
 | Phase 0 | 共用來源，無獨立研究輸出 | — | — |
-| Phase 1（三年） | 工作版；衰減候選尚未校準 | [現行狀態](research_workspace/phases/phase1/reports/phase_1_final_report.md)、[軌道分析](research_workspace/phases/phase1/reports/orbit_analysis_report.md) | [圖檔](research_workspace/phases/phase1/figures/) |
-| Phase 1R（十二年） | 工作版；衰減候選尚未校準 | [十二年軌道分析](research_workspace/phases/phase1r/reports/orbit_analysis_report_2014_2026.md) | [圖檔](research_workspace/phases/phase1r/figures/) |
-| Phase 2（三年） | 已結案 | [最終報告](research_workspace/phases/phase2/reports/phase_2_final_report.md)、[SME 方法報告](research_workspace/phases/phase2/reports/phase_2_sme_report.md) | [25 場 P2.6 圖](research_workspace/phases/phase2/figures/P2.6/) |
-| Phase 2R（十二年） | 已結案 | [最終報告](research_workspace/phases/phase2r/reports/phase_2r_final_report.md) | [46 場 P2R.6 圖](research_workspace/phases/phase2r/figures/P2R.6/) |
-| Phase 3（三年） | 已結案 | [密度響應最終報告](research_workspace/phases/phase3/reports/phase_3_final_report.md) | [25 場總覽圖](research_workspace/phases/phase3/figures/prediction_tau465_25storm_overview.png)、[全部圖檔](research_workspace/phases/phase3/figures/)、[分析 CSV](research_workspace/phases/phase3/data/analysis/) |
+| Phase 1（三年） | 工作版；衰減候選尚未校準 | [現行狀態](phases/phase1/reports/phase_1_final_report.md)、[軌道分析](phases/phase1/reports/orbit_analysis_report.md) | [圖檔](phases/phase1/figures/) |
+| Phase 1R（十二年） | 工作版；衰減候選尚未校準 | [十二年軌道分析](phases/phase1r/reports/orbit_analysis_report_2014_2026.md) | [圖檔](phases/phase1r/figures/) |
+| Phase 2（三年） | 已結案 | [最終報告](phases/phase2/reports/phase_2_final_report.md)、[SME 方法報告](phases/phase2/reports/phase_2_sme_report.md) | [25 場 P2.6 圖](phases/phase2/figures/P2.6/) |
+| Phase 2R（十二年） | 已結案 | [最終報告](phases/phase2r/reports/phase_2r_final_report.md) | [46 場 P2R.6 圖](phases/phase2r/figures/P2R.6/) |
+| Phase 3（三年） | 已結案 | [密度響應最終報告](phases/phase3/reports/phase_3_final_report.md) | [25 場總覽圖](phases/phase3/figures/prediction_tau465_25storm_overview.png)、[全部圖檔](phases/phase3/figures/)、[分析 CSV](phases/phase3/data/analysis/) |
 | Phase 4 | 尚在規劃，無輸出 | — | — |
 
 Phase 2、2R、3 的報告與檢查點已固定。Phase 1／1R 的舊 10 分鐘結果不代表現行逐 10 秒候選。

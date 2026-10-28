@@ -1,9 +1,9 @@
 __pycache__/
 *.py[cod]
 .orekitvenv/
-/research_workspace/phases/phase0/data/raw/*
-!/research_workspace/phases/phase0/data/raw/space_weather/
-/research_workspace/phases/phase0/data/raw/space_weather/*
-!/research_workspace/phases/phase0/data/raw/space_weather/SW-All.csv
-/research_workspace/phases/*/data/sqlite/
+/phases/phase0/data/raw/*
+!/phases/phase0/data/raw/space_weather/
+/phases/phase0/data/raw/space_weather/*
+!/phases/phase0/data/raw/space_weather/SW-All.csv
+/phases/*/data/sqlite/
 tmp/
