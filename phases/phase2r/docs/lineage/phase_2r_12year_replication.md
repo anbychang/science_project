@@ -146,9 +146,7 @@ storm_event_v2 (derived；欄位節錄)
   },
   ...
 ]
-```
 
-```text
 swarm_a_mean_orbit_elements_v1 (derived；欄位節錄)
 [
   {
@@ -157,9 +155,7 @@ swarm_a_mean_orbit_elements_v1 (derived；欄位節錄)
   },
   ...
 ]
-```
 
-```text
 swarm_a_pod_quality (raw；欄位節錄)
 [
   {
@@ -182,9 +178,7 @@ storm_event_t0_phase_v5 (derived；欄位節錄)
   },
   ...
 ]
-```
 
-```text
 storm_minute_feature_v5 (derived；欄位節錄)
 [
   {
@@ -243,9 +237,7 @@ storm_density_1min_v5 (derived；欄位節錄)
   },
   ...
 ]
-```
 
-```text
 storm_event_coverage_v5 (derived；欄位節錄)
 [
   {
@@ -281,9 +273,7 @@ storm_minute_feature_v5 (derived；join key)
   },
   ...
 ]
-```
 
-```text
 storm_density_1min_v5 (derived；join key)
 [
   {
@@ -345,9 +335,7 @@ storm_minute_smooth_v4 (derived；欄位節錄)
   },
   ...
 ]
-```
 
-```text
 storm_minute_peak_qc_v4 (derived；欄位節錄)
 [
   {

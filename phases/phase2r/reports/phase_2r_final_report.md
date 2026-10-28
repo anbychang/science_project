@@ -73,7 +73,7 @@ python -m phases.phase2r.code.prep_phase2r_smoothed_candidate_figures
 ## 驗證
 
 - 7 個 Phase 2R SQLite：`integrity_check = ok`，foreign key violation 為 0。
-- 全專案 pytest：200 passed。Orekit／JVM 在 Windows 印出 access-violation 診斷，
+- 結案當時全專案 pytest：200 passed。Orekit／JVM 在 Windows 印出 access-violation 診斷，
   但 pytest exit code 為 0；這是已知環境警告，不應被隱藏。
 - 46 張圖與 46 場 QC 日期一對一；無缺圖、重複日期或額外圖。
 - Phase 2 七個已封存 checkpoint 的 SHA-256 重新核對，7／7 與 Phase 2 final report 一致。

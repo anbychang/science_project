@@ -57,7 +57,7 @@ python -m phases.phase2.code.prep_phase2_smoothed_candidate_figures
 - 25 張圖的 UTC 日期與 `storm_minute_peak_qc_v4` 的 25 場事件一一對應；無缺圖、重複日期或額外圖檔。
 - P2.6 metadata 記錄上游 P2.5 SHA-256、平滑規則、80% 有效門檻及 `[-12,24]` 小時候選窗。
 - 現行圖目錄已有檔案時，繪圖入口拒絕覆寫；7 個資料 writer 同樣拒絕覆寫既有檢查點。
-- 研究文件的本機連結及現行程式路徑已核對；舊 SYM-H 單來源與舊合併事件 writer 及其測試已移至 Windows 資源回收筒，可復原，不屬現行鏈。
+- 研究文件的本機連結及現行程式路徑已核對。
 
 ## 未宣稱的結果
 

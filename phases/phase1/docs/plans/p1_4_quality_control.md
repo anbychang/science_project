@@ -173,9 +173,9 @@ maneuver event 或可人工確認的 candidate，Q4 應以兩項 residual 的 OR
 
 這是 frozen release 前的 read-only 調查證據；一次性 audit script 已移除，不能誤當正式品質規則。
 
-## 執行與驗證
+## 當時的執行與驗證 [retained]
 
-執行：
+下列 writer 需要當時的 raw SQLite；不可直接對現行 checkpoint 重跑。當時的執行入口：
 
 ```powershell
 python -m phases.phase1.code.prep_05_pod_quality
@@ -184,7 +184,7 @@ python -m phases.phase1.code.prep_05_pod_quality
 測試：
 
 ```powershell
-python -m unittest discover -s tests -p 'test_prep_derived_pod_quality.py' -v
+python -m pytest -q phases/phase1/tests/test_prep_derived_pod_quality.py
 ```
 
 測試涵蓋一筆正常資料、NaN、缺少 P1.3 結果、P1.3 拒絕的能量狀態，以及公告 campaign

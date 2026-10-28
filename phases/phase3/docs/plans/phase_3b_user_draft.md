@@ -1,4 +1,4 @@
-# Phase 3B 新版報告：使用者提供草稿
+# Phase 3B 使用者原始草稿（歷史）
 
 狀態：[retained]。2026-10-26 由使用者貼入的來源草稿，保留原始主張與符號供追溯；它不是 Phase 3 的現行方法或待辦。Phase 3 已結案，採用結果以[Phase 3 最終報告](../../reports/phase_3_final_report.md)為準。
 

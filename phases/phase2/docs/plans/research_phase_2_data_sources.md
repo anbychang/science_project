@@ -12,7 +12,7 @@
 ## SuperMAG SME
 
 - 原始論文指出 SME 使用比傳統 AE 更多的測站；它與 nightside auroral power 高度相關，但不是直接量測 Joule heating。[Newell 與 Gjerloev 2011](https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2011JA016779)
-- 本地 `phases/phase0/data/raw/sme/manifest_p2_0_sme.json` 登錄 1,096 個日檔；原始 CSV 自 2026-05-07 02:35 UTC 起到 2026-06-30 結束共 79,045 分鐘為 `SME = 999999`、`SMEnum = 0`，這是**本地檔案稽核觀察**，不是已查得的官方通用填充值規格。[本地稽核](../../data/sqlite/phase2_p2_0_source_audit.json)
+- 本地 `phases/phase0/data/raw/sme/manifest_p2_0_sme.json` 登錄 1,096 個日檔；原始 CSV 自 2026-05-07 02:35 UTC 起到 2026-06-30 結束共 79,045 分鐘為 `SME = 999999`、`SMEnum = 0`，這是**本地檔案稽核觀察**，不是已查得的官方通用填充值規格。本地稽核檔為 `phases/phase2/data/sqlite/phase2_p2_0_source_audit.json`（未上傳 GitHub）。
 - CDPP/AMDA 的 SuperMAG SME 資源描述目前列出 1-minute cadence，時間範圍終點為 2026-05-07 23:59 UTC；它與本地末段缺值相容，但不能證明此後官方永遠沒有資料，亦不能取代逐筆稽核。[CDPP/AMDA 目錄](https://amda.irap.omp.eu/help/auto/ground-based-sme)
 - 本機下載請求包含 `sme,num`，回傳欄名是 `tval,SME,SMEnum`。尚未找到 SuperMAG 一手文件直接定義 `SMEnum` 欄位的涵蓋站點集合或品質門檻；暫把它當來源提供的數量欄並保存原值，不自行賦予「全球可靠度」的物理意義。
 

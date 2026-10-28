@@ -6,7 +6,7 @@ P1.5.6 v2 的輸出。現行 10 秒局部斜率見
 
 ## 狀態
 
-這是已發布 P1.5 10 分鐘軌道產物的規格；final P1.7 table 另外是
+這是當時完成的 P1.5 10 分鐘軌道產物規格；舊 P1.7 table 另外是
 `swarm_a_analysis_10min`。每個 row 同時保存 3、6、12 小時 backward difference；
 為使三組 rate 同時存在，每個連續 run 的前 72 列排除。
 

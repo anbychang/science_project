@@ -1,9 +1,13 @@
 # 軌道衰減擬合方法研究
 
+狀態：早期方法研究。下文的 daily OLS 與 centered 12/24 h 結果不是現行
+P1.5.6 v2；現行方法是逐 10 秒右端點回看完整 3／5 個 phase orbit 的 raw B-L／joint H2/H3
+局部 OLS，見 [現行執行計畫](phase_1_execution_plan.md)。
+
 ## 決定
 
 正式論文對照保留「完整 phase 定義的逐圈平均 `a`，再對每一 UTC day 的逐圈平均值做 ordinary
-linear least-squares slope」。這是目前找到、最貼近 Swarm-A 精密星曆的已發表做法。P1.5.6 另輸出
+linear least-squares slope」。這是當時找到、最貼近 Swarm-A 精密星曆的已發表做法。當時的探索表另輸出
 centered 12/24 h local OLS，僅用於觀察日內時間結構，不能取代 daily OLS 的文獻對照地位。
 
 逐圈 bin 必須由 unwrapped `u = mean_argument_of_perigee_rad + mean_anomaly_rad` 或
@@ -26,7 +30,7 @@ a(t) = trend(t)
 這是 estimation 方法，尚不是「已乾淨量到地磁暴造成的衰減」。maneuver、source 邊界、
 POD method anomaly 仍需保留為 flags。
 
-目前 P1.5.4--P1.5.6 已在三年 working copy 寫出 16,843 complete-orbit mean、3 個 H2/H3
+當時 P1.5.4--P1.5.6 在三年 working copy 寫出 16,843 complete-orbit mean、3 個 H2/H3
 chunk diagnostic、1,096 daily OLS，以及 16,825 個 12 h 和 16,807 個 24 h local OLS。這些都是
 descriptive candidate，不進 P1.6/P1.7。
 

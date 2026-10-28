@@ -6,8 +6,9 @@ phase-harmonic v2 使用 `swarm_a_phase_harmonic_features_v2`：每個 usable 10
 三年 feature table 有 9,469,438 rows；12 年 writer metadata 記錄 38,378,878 rows。
 兩份 P1.7 v2 audit 各有 6 項、violation 全為 0；這不代表物理衰減率已校準。
 
-欄位型態、最終分析 schema 與每個 feature 從原始來源到 P1.6 的完整追溯，見
-`p1_6_analysis_schema.md`。
+現行 v2 feature 的欄位與來源見 [space_weather.md](../lineage/space_weather.md)、
+[geomagnetic.md](../lineage/geomagnetic.md) 及 [orbit_analysis.md](../lineage/orbit_analysis.md)；
+`p1_6_analysis_schema.md` 只保留舊 10 分鐘分支的 schema。
 
 ## 已完成範圍
 

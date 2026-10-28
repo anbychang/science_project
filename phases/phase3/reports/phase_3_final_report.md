@@ -129,7 +129,7 @@ $$
 
 ## 6. 逐場結果與交付（P3.6）
 
-交付庫 [swarm_a_phase3_prediction_tau465_exploratory.sqlite](../data/sqlite/swarm_a_phase3_prediction_tau465_exploratory.sqlite) 內，`phase3_prediction_minute` 以 `{storm_id, time_us}` 為鍵存 214,907 列；`phase3_25storm_overview` 以 `storm_id` 為主鍵存 25 列，保留來源 `t0_time_us` 與 `algorithm_version`。每場有效分鐘數介於 8,320–8,677，與逐分鐘表相符。[逐場誤差 CSV](../data/analysis/phase3_prediction_tau465_exploratory.csv)、[選段 CSV](../data/analysis/phase3_rquiet_near_zero_25.csv)和[格點 CSV](../data/analysis/phase3_tau_grid_005h_exploratory.csv)供查核；完整逐分鐘輸出以 SQLite 為準。
+本機交付庫 `phases/phase3/data/sqlite/swarm_a_phase3_prediction_tau465_exploratory.sqlite` 內，`phase3_prediction_minute` 以 `{storm_id, time_us}` 為鍵存 214,907 列；`phase3_25storm_overview` 以 `storm_id` 為主鍵存 25 列，保留來源 `t0_time_us` 與 `algorithm_version`。每場有效分鐘數介於 8,320–8,677，與逐分鐘表相符。[逐場誤差 CSV](../data/analysis/phase3_prediction_tau465_exploratory.csv)、[選段 CSV](../data/analysis/phase3_rquiet_near_zero_25.csv)和[格點 CSV](../data/analysis/phase3_tau_grid_005h_exploratory.csv)供查核；完整逐分鐘輸出以 SQLite 為準。
 
 此 SQLite 位於本機 `phases/phase3/data/sqlite/`，依專案 `.gitignore` 不納入 GitHub 提交。GitHub 版本提供重算程式、報告、圖和分析 CSV；要取得完整逐分鐘 SQLite，仍須另行交付資料庫檔案。
 

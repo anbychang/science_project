@@ -1,4 +1,4 @@
-# Phase 1 最終整理
+# Phase 1 舊 10 分鐘分支結案紀錄
 
 ## 狀態
 
@@ -8,11 +8,11 @@ Phase 1 的 `phases/phase1/data/sqlite/` 與 Phase 1R 的 `phases/phase1r/data/s
 mean-orbit cache 與重算結果一致，
 只用於避免昂貴的重算；它不形成第二個 database 或 release。
 P1.7 metadata 為 `status = working_audit_pass`、`rebuild_status = not_executed`、
-`audit_outcome = pass`。archive/cache 只保留復原與比較證據。
+`audit_outcome = pass`。當時的 archive/cache 僅用於復原與比較，不是現行交付。
 
 ## 範圍與排除項目
 
-Phase 1 的交付物是可追溯的 10 分鐘分析 table。
+本報告當時的交付物是可追溯的 10 分鐘分析 table。
 
 - 包含：POD 轉換、品質/chunk、mean orbit、10-minute bins、decay rate、causal weather/geomagnetic features、SQLite provenance/audit。
 - 排除：ML、atmospheric drag propagator、XYZ prediction、DNSAACC density core join、Q4 maneuver rejection rule。
@@ -31,7 +31,7 @@ swarm_a_states                    14,558,400
   -> swarm_a_analysis_10min          224,280
 ```
 
-當時 target 的 mean table 只含 13,495,680 個 usable rows。archive/cache 早於
+當時 target 的 mean table 只含 13,495,680 個 usable rows。當時的 archive/cache 早於
 campaign date-level exclusion 的 rows 只供比較，不作交付依據。
 
 `swarm_a_analysis_10min` UTC coverage：`2022-01-01 12:10` 至 `2026-08-13 00:00`，中間有
@@ -111,7 +111,7 @@ abs(rate) > 100 m/day: 141,094 rows
 ```
 
 Q4 目前是 audit-only；沒有 external maneuver labels 或已校準 rejection rule，這些 rows 必須保留。
-因此 `swarm_a_analysis_10min` 是可追溯的 Phase 1 working output，不可直接當作已清除 maneuver / source / method anomaly 的 geomagnetic-decay inference dataset。
+因此 `swarm_a_analysis_10min` 是當時可追溯的 Phase 1 working output，不可直接當作已清除 maneuver / source / method anomaly 的 geomagnetic-decay inference dataset。
 
 ## Provenance 與可重建性
 
@@ -119,14 +119,14 @@ P1.7 audit 在 `metadata` 記錄 raw signature aggregate、coverage、Git revisi
 
 `source_files` is immutable raw history. Parsed SP3 frame, cadence, coverage, epoch count, and time system live in derived `swarm_a_pod_source_provenance`, keyed by `source_id`.
 
-Raw tables are immutable. Derived calculations write separate tables. 現行 SQLite 不提交至 Git；archive/cache 也不是正式輸出。
+Raw tables are immutable. Derived calculations write separate tables. 現行 SQLite 不提交至 Git；當時的 archive/cache 不是正式輸出。
 
 ## Cache-reuse 證據
 
-已執行：
+舊 10 分鐘分支的重現入口（現行參數順序）：
 
    ```powershell
-   python -m phases.phase1.code.prep_phase1_rebuild CACHE_DATABASE RECOVERY_DATABASE
+   python -m phases.phase1.code.prep_phase1_rebuild NEW_DATABASE P1_5_CACHE_DATABASE
    ```
 
 P1.3 與 mean-orbit 在 source/state exact-match 驗證後可重用 cache；其值不會形成另一個

@@ -16,6 +16,8 @@ P3.1–P3.6 的主線結果與適用範圍見[Phase 3 結案報告](../../report
 - `phases/phase3/data/sqlite/swarm_a_phase3_m1a_zero_sme_v1.sqlite`
 - `phases/phase3/data/sqlite/swarm_a_phase3_m1a_event_tau_v1.sqlite`
 
+`r_candidate`、`r_near_zero_median_candidate` 與 `provisional_R_exploratory` 是產出時保存的欄名或狀態值；本 phase 已採用這套低活動段規則作為最終操作性 $R_k$，資料欄名不代表研究仍未結案。
+
 前三個庫及第五個庫的分鐘表以 `{storm_id, time_us}` 為 key；逐場總覽、增益診斷及 M0 校正摘要以 `storm_id` 為 key，均保留各自的 `algorithm_version`。`time_us` 是 UTC 分鐘標籤；相位平均的數值以該分鐘為中心，使用前後 $u\pm\pi$ 的樣本。25 場事件起自 2023-08-05 至 2026-04-18。完整來源與已凍結的 Phase 2 步驟見 [Phase 2 lineage](../../../phase2/docs/lineage/phase_2_storm_dataset.md)。
 
 ```text
@@ -27,7 +29,7 @@ P3.1 + P3.2 + P3.3 -> P3.4 共同 tau／G
                     -> P3.6 25 場索引與總覽
                     -> P3.7 固定共同 tau 的逐場 G 幅度診斷
 DNSAPOD + weather + P2.6 -> P3.8 無擬合的 M0 Ap 歷史對齊
-P2.6 + P3.3 + 暫定 R -> P3.9 七場延長 tau 診斷
+P2.6 + P3.3 + 已採用 R_k -> P3.9 七場延長 tau 診斷
 P3.8 + P3.5 的 SME 響應 -> P3.10 M2 完整 MSIS 殘差診斷
 P2.6 + P3.3 + 原事前窗口 -> P3.11 M1A 零 SME 基準與共同擬合
                               -> P3.12 M1A 逐場 tau 診斷
@@ -294,7 +296,7 @@ phases/phase3/data/analysis/phase3_tau_grid_005h_exploratory.csv (analysis；欄
 ```text
 prep_prediction_tau465.py -> main()
 
-H_4.65,phase + 同樣本平靜 MSIS + 暫定 R_k -> rho_M1=rho_MSIS,q,phase * R_k * exp(G H_4.65,phase)。
+H_4.65,phase + 同樣本平靜 MSIS + 已採用 R_k -> rho_M1=rho_MSIS,q,phase * R_k * exp(G H_4.65,phase)。
 另固定共同 tau，對每一場只排除該場對 G 的估計，產生 G-excluded 曲線；tau 仍由全部 25 場選出。
 完整 MSIS M0 原始相位曲線一起保存供診斷，不在此步作公平勝負宣稱。
 ```
@@ -355,7 +357,7 @@ phase3_prediction_minute (derived；欄位節錄)
 ```text
 prep_25storm_overview.py -> main()
 
-以 storm_id 連接 P2 事件、P3 暫定 R 與固定 tau 的逐場誤差，寫入預測 SQLite 的獨立 25 場索引表。
+以 storm_id 連接 P2 事件、P3 已採用 R_k 與固定 tau 的逐場誤差，寫入預測 SQLite 的獨立 25 場索引表。
 逐場核對索引表的有效分鐘數與逐分鐘預測列數。
 25 格圖按各場 t0 排列，只為檢查 L2／M0／M1 曲線；M0 未獲與 M1 同等的暴前倍率校準。
 ```
@@ -422,14 +424,14 @@ phase3_25storm_overview (derived；欄位節錄)
 ]
 ```
 
-逐場索引與逐分鐘預測同在 Phase 3 預測 SQLite；索引表有 25 列、`t0_time_us` 唯一，且與事件 ID 完全一致。有效分鐘介於 8,320–8,677，每場計數與逐分鐘表一致。按分鐘合併的 G-excluded M1 RMSE 是 0.2105，未校準 M0 是 0.2343；前者在 15／25 場較低，但校準機會不等，不能據此宣稱 M1 優於 M0。[逐場索引與逐分鐘預測 SQLite](../../data/sqlite/swarm_a_phase3_prediction_tau465_exploratory.sqlite)和[25 格曲線圖](../../figures/prediction_tau465_25storm_overview.png)是目前的總覽入口。
+逐場索引與逐分鐘預測同在 Phase 3 預測 SQLite；索引表有 25 列、`t0_time_us` 唯一，且與事件 ID 完全一致。有效分鐘介於 8,320–8,677，每場計數與逐分鐘表一致。按分鐘合併的 G-excluded M1 RMSE 是 0.2105，未校準 M0 是 0.2343；前者在 15／25 場較低，但校準機會不等，不能據此宣稱 M1 優於 M0。本機資料庫為 `phases/phase3/data/sqlite/swarm_a_phase3_prediction_tau465_exploratory.sqlite`；GitHub 可讀的總覽入口是[25 格曲線圖](../../figures/prediction_tau465_25storm_overview.png)。
 
 #### [P3.7] 固定共同時間常數 -> 逐場增益診斷 [done]
 
 ```text
 prep_event_gain_tau465.py -> main()
 
-只讀 P3.5 的有效相位分鐘、P3.6 的逐場候選 R 與 P3.4 的共同 G 格點；tau 固定 4.65 h，不重選延遲。
+只讀 P3.5 的有效相位分鐘、P3.6 的逐場已採用 R_k 與 P3.4 的共同 G 格點；tau 固定 4.65 h，不重選延遲。
 z_i = ln(rho_L2,phase,i / rho_MSIS,q,phase,i) - ln(R_k)。
 每場只用該場全部事件分鐘估 G_k = sum(H_i z_i) / sum(H_i^2)。
 同場比較共同 G 和 G_k 的對數密度 RMSE；結果僅是樣本內幅度診斷。
@@ -580,7 +582,7 @@ phase3_m0_ap_alignment_storm (derived；欄位節錄)
 prep_tau_extended_diagnostic.py -> main()
 
 只取原逐場擬合卡在 10 h 的 7 場。連續 1-minute SME - 65 nT 用同一指數核濾波；每個 tau 再按相同 u±pi、配對樣本權重與 80% coverage 取相位平均。
-tau=10..72 h 每 0.5 h、73..240 h 每 1 h。固定暫定 R_k，每場每個 tau 過原點重新估 G_k 與 RMSE。
+tau=10..72 h 每 0.5 h、73..240 h 每 1 h。固定同一套 R_k，每場每個 tau 過原點重新估 G_k 與 RMSE。
 10 h 的每場 RMSE 與原 41 格點結果交叉核對。輸出以 {storm_id, tau_seconds} 為 key；不產生新的逐分鐘資料。
 ```
 
@@ -606,7 +608,7 @@ phase3_quiet_density_minute (derived；欄位節錄)
   ...
 ]
 
-phases/phase3/data/analysis/phase3_rquiet_near_zero_25.csv (候選；欄位節錄)
+phases/phase3/data/analysis/phase3_rquiet_near_zero_25.csv (已採用倍率；歷史欄名；欄位節錄)
 [
   {
     storm_id: S20231201T1330,

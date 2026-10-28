@@ -608,72 +608,6 @@ swarm_a_mean_orbit_elements_v1 (derived；欄位節錄)
 ```
 
 ```text
-swarm_a_phase_harmonic_decay_candidates_v1 (derived；retained legacy)
-[
-  {
-    time_us: 1688190222000000 (us),
-    decay_method: "joint_h2_h3_local_ols",
-    orbit_window: 3,
-    decay_rate_m_day: 2.266e1 (m/day),
-    decay_rate_1sigma_m_day: 1.584e1 (m/day),
-    fit_residual_std_m: 3.657e1 (m),
-    sample_count: 1698,
-    window_start_time_us: 1688173252000000 (us),
-    chunk_id: 11,
-    harmonic_orders: "2,3",
-    algorithm_version: "raw_and_joint_h2_h3_trailing_orbit_ols_v1"
-  },
-  ...
-]
-
-swarm_a_phase_harmonic_decay_raw_b_l_sets_v1 (derived)
-[
-  {
-    time_us: 1688201552000000 (us),
-    chunk_id: 11,
-    available_window_count: 2,
-    orbit_3_window_start_time_us: 1688184572000000 (us),
-    orbit_3_sample_count: 1699,
-    orbit_3_decay_rate_m_day: -3.135e1 (m/day),
-    orbit_3_decay_rate_1sigma_m_day: 1.804e1 (m/day),
-    orbit_3_fit_residual_std_m: 4.220e1 (m),
-    orbit_5_window_start_time_us: 1688173252000000 (us),
-    orbit_5_sample_count: 2831,
-    orbit_5_decay_rate_m_day: -2.865e1 (m/day),
-    orbit_5_decay_rate_1sigma_m_day: 1.006e1 (m/day),
-    orbit_5_fit_residual_std_m: 5.065e1 (m),
-    harmonic_orders: "",
-    algorithm_version: "phase_harmonic_decay_raw_b_l_sets_v1"
-  },
-  ...
-]
-
-swarm_a_phase_harmonic_decay_joint_h2_h3_sets_v1 (derived)
-[
-  {
-    time_us: 1688201552000000 (us),
-    chunk_id: 11,
-    available_window_count: 2,
-    orbit_3_window_start_time_us: 1688184572000000 (us),
-    orbit_3_sample_count: 1699,
-    orbit_3_decay_rate_m_day: -4.309e1 (m/day),
-    orbit_3_decay_rate_1sigma_m_day: 1.335e1 (m/day),
-    orbit_3_fit_residual_std_m: 3.086e1 (m),
-    orbit_5_window_start_time_us: 1688173252000000 (us),
-    orbit_5_sample_count: 2831,
-    orbit_5_decay_rate_m_day: -2.171e1 (m/day),
-    orbit_5_decay_rate_1sigma_m_day: 8.022e0 (m/day),
-    orbit_5_fit_residual_std_m: 4.020e1 (m),
-    harmonic_orders: "2,3",
-    algorithm_version: "phase_harmonic_decay_joint_h2_h3_sets_v1"
-  },
-  ...
-]
-```
-
-`v1` long table 與其 two wide tables 保留給既有 P1.6/P1.7 branch，不是 current P1.5.6 output。
-
-```text
 swarm_a_phase_harmonic_decay_raw_b_l_sets_v2 (derived)
 [
   {
@@ -717,6 +651,8 @@ swarm_a_phase_harmonic_decay_joint_h2_h3_sets_v2 (derived)
   ...
 ]
 ```
+
+v1 long table 與兩張 wide table 只供舊 P1.6/P1.7 branch 追溯，不是現行 P1.5.6 輸出；舊範例留在後段歷史資料區。
 
 三年 working copy 的 raw 與 joint table 各有 9,469,438 rows；每個可用 10 s source epoch 一列。3-orbit 有 9,464,376 valid fits，5-orbit 有 9,461,003 valid fits；其餘分別是 5,062 與 8,435 個 `insufficient_N_orbits`。`time_us` 是 trailing window 的右端點。OLS slope 是 descriptive candidate；maneuver、source、method anomaly 未校準前不得解讀為 storm-caused decay。
 
@@ -911,7 +847,9 @@ metadata
 
 三年 audit 有 67,328 P1.5.6 candidates 與 67,328 P1.6 rows；candidate identity、future feature reference、non-finite value、scope、field mismatch 與 P1.6 foreign-key violation 都是 0。scope 固定為 [2023-07-01, 2026-07-01) UTC。`working_audit_pass` 只表示資料契約通過，不表示 decay 已校準。
 
-## 資料與範例
+## 歷史 v1 資料與範例 [retained]
+
+以下保留舊候選分支的資料形狀與範例，供追溯；現行 v2 的 Input／Output 以上方步驟為準。
 
 以下用真實的 2023-07-01 POD row 作範例。浮點數用科學記號（尾數小數三位）；`time_us`、ID、計數保留原值。
 顯示精度不供差分或擬合，計算須用 SQLite 原值。SP3 的 `time_system` 是 GPS；SQLite 的 `time_us` 是 UTC Unix 微秒。

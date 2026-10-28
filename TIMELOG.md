@@ -2,6 +2,8 @@
 
 最後更新：2026-10-28
 
+本檔依日期保留當時的決定與證據。舊段落中的路徑、檔名與待辦是當時狀態，不作現行操作指引；目前入口見 [README.md](README.md) 與 [CATALOG.md](CATALOG.md)。
+
 > 2026-10-18 的 10 分鐘 Phase 1 工作稽核與後續逐 10 秒相位候選，是兩條不同資料產品。舊紀錄提到的 `data/swarm_a_analysis.sqlite` 目前不在工作區；現存三年與 2014–2026 候選工作庫分別位於 `phases/phase1/data/sqlite/` 與 `phases/phase1r/data/sqlite/`，尚非已校準的正式 decay release。
 
 Current status：三年與 2014–2026 工作庫均已完成逐 10 秒的 raw B-L／joint H2/H3 3／5 圈候選、共用 P1.6 v2 feature，以及 P1.7 v2 audit。兩份 audit 各有 6 項、violation 全為 0，metadata status 均為 `pass`。12 年 v2 兩張 rate table 各有 38,378,878 筆；十二年報告限定 2014-07-01 至 2026-06-30。舊 10 分鐘產品的歷史交付與限制見 `phases/phase1/reports/phase_1_final_report.md`。
@@ -11,6 +13,8 @@ Phase 2 status：[done]，固定交付鏈是 P2.3 v5／P2.4 v5／P2.5 v2／P2.6 
 Phase 2R status：[done]，把 Phase 2 final 原樣重現於 2014-07-01 至 2026-06-30。7 個 checkpoint 位於 `phases/phase2r/data/sqlite/`；49 場候選中 46 場可用，共 400,696 筆分鐘資料與 46 張逐場圖。完整結果見 `phases/phase2r/reports/phase_2r_final_report.md`。
 
 Phase 3 status：[done]。三年 25 場的離線密度響應分析已結案，214,907 個有效中心相位分鐘與固定共同 $\tau=4.65$ 小時的密度曲線已交付；每場 $R_k$ 已依最終採用規則完成校準。最終結果、適用範圍與保留限制見 `phases/phase3/reports/phase_3_final_report.md`。
+
+Phase 4 status：[plan]。GPR 殘差修正已有計畫，尚無模型結果；見 `phases/phase4/docs/plans/PLAN.md`。
 
 ## 2026-10-28：Phase 3 結案狀態同步
 
@@ -84,8 +88,6 @@ joint table 以同一 window 聯合擬合 linear trend 與 `H2(u) + H3(u)`。
 
 **待辦**：完整 `time_us` key-set、rate validity parity 及 table-specific
 `integrity_check` 尚待補跑；先前全表掃描超過 interactive tool 的 120-second limit，不能記為 pass。
-
-這份檔案只記錄時間順序：某一天做了什麼、量到什麼、得到什麼結論。它不放長期規則或完整技術定義；那些放在 `phases/phase1/docs/plans/PLAN.md` 與各階段規格。
 
 ## 日期可信度
 

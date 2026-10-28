@@ -9,7 +9,7 @@ P1.6 v2 的資料或路徑。現行 v2 feature 的 Input／Output 見
 
 這份文件保留舊 `swarm_a_analysis_10min` 的欄位定義與追溯，不作現行 target。
 
-P1.6-A/B 已完成：P1.5 先產生並驗證 10 分鐘軌道列，P1.6 再建立 224,280 列 final table；沒有以每 10 秒 POD 建立替代品。
+當時 P1.6-A/B 已完成：P1.5 先產生並驗證 10 分鐘軌道列，P1.6 再建立 224,280 列舊版 table。現行逐 10 秒 v2 feature 另存於 Phase 1／1R working copy。
 
 ## SQLite 型態約定
 

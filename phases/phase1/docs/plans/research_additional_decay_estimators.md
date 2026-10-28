@@ -1,5 +1,7 @@
 # 磁暴事件的額外 orbit-decay 估計選項
 
+狀態：方法選項研究；未列入現行 P1.5.6 v2 輸出或已校準的 decay release。
+
 ## 結論
 
 沒有一個「更高級」的方法能同時給出乾淨的長期 decay、數小時 storm onset、物理 drag，且不引入新假設。

@@ -28,11 +28,6 @@
 | [later] | 本機沒有 `ruff` executable。 | unittest 與 `compileall` 可驗證目前行為；不為 lint 新增臨時依賴。 | 開發環境明確安裝並固定 Ruff 版本。 |
 | [later] | `quality_flags` 目前只適合 P1.6 feature-missing token。 | 若 Q3/Q4 要同時保存多個 POD flag，逗號字串不是資料模型。 | 出現多重 POD flag 需求時，新建 keyed-by-`time_us` flag table。 |
 
-## 結構與文件
-
-| 狀態 | 問題 | 暫緩原因 | 解除條件 |
-| --- | --- | --- | --- |
-
 ## 結構原則
 
 ```text

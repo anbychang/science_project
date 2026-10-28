@@ -6,9 +6,9 @@
 
 ## 目的與使用方式
 
-這份文件是明天開始工作的可執行清單，不是新的研究規格。正式規格仍以
-`PLAN.md` 為準；本文件把尚未完成的 P1.4 至 P1.7 拆成可獨立開始、可平行
-進行，以及必須等待前項完成的工作。
+這是當時的工作拆分紀錄，當時的規格以 `PLAN.md` 為準；現行主線以
+[phase_1_execution_plan.md](phase_1_execution_plan.md) 為準。以下「尚未完成」
+與執行順序只代表當時狀態。
 
 第一階段的交付物只有可重建的 10 分鐘分析資料集。不要在這個階段加入 ML、
 大氣阻力或軌道預報。`swarm_a_states`、`space_weather`、`geomagnetic` 與
@@ -57,11 +57,11 @@ P1.4 complete + P1.5 complete + P1.6 complete --> P1.7 release
 
 ## 共通工作規則
 
-每個工作包開始前，先執行：
+當時的工作規則是每個工作包開始前先檢查 Git 與測試；現行測試路徑如下：
 
 ```powershell
 git status --short --branch
-python -m unittest discover -s tests -v
+python -m pytest -q phases/phase0/tests phases/phase1/tests
 ```
 
 每個工作包完成後：

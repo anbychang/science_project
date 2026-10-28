@@ -6,10 +6,11 @@ P1.5.6 v2／P1.6 v2／P1.7 v2。現行 checkpoint 與下游 working copy 的接�
 
 決定：POD 的可執行 processing module 使用兩位數編號。編號是資料依賴順序；`load_` 是 reader helper，`down_` 是下載工具，report/audit 是檢查工具，均不編入寫入順序。
 
-完整 rebuild 只由下列入口執行：
+舊 10 分鐘分支的完整 rebuild 入口如下；`NEW_DATABASE` 必須是新檔，
+`P1_5_CACHE_DATABASE` 必須是已驗證的 mean-orbit cache：
 
 ```powershell
-python -m phases.phase1.code.prep_phase1_rebuild NEW_DATABASE
+python -m phases.phase1.code.prep_phase1_rebuild NEW_DATABASE P1_5_CACHE_DATABASE
 ```
 
 ```text
@@ -27,9 +28,9 @@ python -m phases.phase1.code.prep_phase1_rebuild NEW_DATABASE
    -> 10-minute mean-orbit bins
 07 prep_07_decay_rate.py
    -> signed 3h/6h/12h semi-major-axis rates
-08 phase1/prep_08_analysis_10min.py
+08 prep_08_analysis_10min.py
    -> causal SYM-H and space-weather features
-09 phase1/prep_09_release_audit.py
+09 prep_09_release_audit.py
    -> manifest and integrity audit
 ```
 

@@ -1,6 +1,8 @@
 # 資料血緣索引
 
-## 現行資料庫
+Phase 1／1R 是未校準的候選工作庫；Phase 2／2R 與 Phase 3 已結案，詳細入口見下方「文件」。Phase 4 只有計畫，尚無資料輸出。各步以所屬 Phase 的血緣文件與結案報告為準。
+
+## Phase 1／1R 工作資料庫
 
 目前保留兩份完成 P1.5.1 的 checkpoint：
 
@@ -73,7 +75,7 @@ retained legacy，不是上述 v2 主線的輸入。
 Phase 2 原始下載檔保留 CSV／ZIP；正式衍生結果只讀取 `phases/phase2/data/sqlite/` 的版本化 SQLite。
 Phase 2R 重用相同資料契約，獨立檢查點只寫入 `phases/phase2r/data/sqlite/`。
 
-## Phase 2 新版 P2.0 SME 原始下載 [done]
+## Phase 2 P2.0 SME 原始下載 [done]
 
 ```text
 down_supermag_sme.py -> download_range()
@@ -140,7 +142,7 @@ CSV 與 manifest 的 SHA-256 全部相符；manifest SHA-256 為
 `2026-05-08` 至 `2026-06-30` 的有效值均為 0；來源仍未補回缺口。
 這次只查詢，不另存重複的填充值，也不修改既有 raw CSV、manifest 或 SQLite。
 
-## Phase 2 新版 P2.0 GFZ ap 原始下載 [done]
+## Phase 2 P2.0 GFZ ap 原始下載 [done]
 
 ```text
 down_gfz_ap.py -> download_ap()
@@ -185,7 +187,7 @@ phases/phase0/data/raw/geomagnetic/gfz_ap_2023-07-01_2026-06-30.manifest.json (r
 
 GFZ JSON 的 8,768 個 slot 全是 `def`；首筆為 `[2023-07-01T00:00:00Z, 2023-07-01T03:00:00Z)`，末筆起點為 `2026-06-30T21:00:00Z`。與既有 CelesTrak `AP1`–`AP8` 逐格比對，差異為 0；兩個來源仍分開保留。`def` 是現在取得的 retrospective 版本，不證明當時已有此值。
 
-## Phase 2 新版 P2.0 來源稽核 [done]
+## Phase 2 P2.0 來源稽核 [done]
 
 ```text
 prep_20_source_audit.py -> build_audit()
