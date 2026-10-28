@@ -1,1 +1,0 @@
-"""Twelve-year storm replication."""

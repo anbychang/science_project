@@ -1,1 +1,0 @@
-"""Three-year storm validation."""

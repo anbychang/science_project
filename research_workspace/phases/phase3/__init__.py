@@ -1,1 +1,0 @@
-"""Three-year density response."""
