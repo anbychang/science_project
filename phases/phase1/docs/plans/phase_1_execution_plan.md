@@ -3,7 +3,7 @@
 ## 目標
 
 現行主線由 mean-element checkpoint 建立逐 10 秒的 raw B-L 與 joint H2/H3
-局部斜率候選、共用 causal feature，以及 P1.7 v2 working audit。
+局部斜率候選、共用 causal feature，以及 P1.7 v2 資料契約稽核。三年候選資料產品已產出；物理校準另待完成。
 `swarm_a_analysis_10min` 是保留的舊分支，不是現行輸出。
 
 ```text
@@ -12,7 +12,7 @@ raw POD / weather / geomagnetic
   -> quality + P1.5.1 mean-element checkpoint
   -> P1.5.6 raw / joint H2/H3 3／5 圈局部斜率
   -> P1.6 shared causal feature
-  -> P1.7 v2 working audit
+  -> P1.7 v2 資料契約稽核
 ```
 
 不做：ML、drag propagator、把 DNSAACC density 強行放入 core table。
@@ -60,14 +60,14 @@ any uncertainty or change
 | P1.5.1 three-year checkpoint | [done] | `phases/phase1/data/sqlite/swarm_a_analysis_2023_2026_p1_5_iter5000.sqlite`；9,469,438 verified Orekit B-L mean rows；rejection 0 |
 | P1.5-B 10-minute orbit | [retained] | 224,928 `swarm_a_orbit_10min` 是舊範圍結果，不在現行 v2 主線 |
 | P1.5-C/D derivative | [retained] | 10 分鐘分支的 3／6／12 小時 backward difference；不是現行 3／5 圈 OLS |
-| P1.5.4 phase complete-orbit mean | [working] | 三年 16,844 `swarm_a_phase_orbit_mean_v2`；phase-weighted、chunk-local |
-| P1.5.5 H2/H3 diagnostic | [working] | 三年 3 `swarm_a_phase_harmonic_diagnostic_v1` rows；只作週期殘留診斷 |
-| P1.5.6 local decay candidates | [working] | active v2：三年 raw B-L / joint H2H3 各 9,469,438 rows；12 年各 38,378,878 rows；每個 usable 10 s epoch 一列。v1 long candidates retained legacy |
+| P1.5.4 phase complete-orbit mean | [done: candidate] | 三年 16,844 `swarm_a_phase_orbit_mean_v2`；phase-weighted、chunk-local |
+| P1.5.5 H2/H3 diagnostic | [done: diagnostic] | 三年 3 `swarm_a_phase_harmonic_diagnostic_v1` rows；只作週期殘留診斷 |
+| P1.5.6 local decay candidates | [done: candidate] | active v2：三年 raw B-L / joint H2H3 各 9,469,438 rows；12 年各 38,378,878 rows；每個 usable 10 s epoch 一列。v1 long candidates retained legacy |
 | P1.6 legacy causal join | [retained] | 224,280 `swarm_a_analysis_10min`；舊 10-minute backward-rate branch |
-| P1.6 phase-candidate causal join | [working] | v1 long-table join retained legacy；active v2 feature 三年 9,469,438 rows、12 年 writer metadata 38,378,878 rows；每個 `time_us` 一列 |
+| P1.6 phase-candidate causal join | [done: candidate] | v1 long-table join retained legacy；active v2 feature 三年 9,469,438 rows、12 年 writer metadata 38,378,878 rows；每個 `time_us` 一列 |
 | P1.7 legacy working-DB audit | [retained] | 226,368 rows；舊 10-minute backward-rate branch |
 | P1.7 phase-candidate audit | [done] | 三年與 12 年 v2 audit 各 6 rows、violation 全為 0，metadata status 均為 `pass`；v1 audit retained legacy |
-| P1.5.4--P1.7 current output | [working] | 三年 `phases/phase1/data/sqlite/swarm_a_analysis_2023_2026_phase_candidate_working_v1.sqlite` 與 12 年 `phases/phase1r/data/sqlite/swarm_a_analysis_2014_2026_phase_candidate_working_v2.sqlite`；檔名版本不同，但現行 table 均為 v2 |
+| P1.5.4--P1.7 current output | [candidate] | 三年 `phases/phase1/data/sqlite/swarm_a_analysis_2023_2026_phase_candidate_working_v1.sqlite` 與 12 年 `phases/phase1r/data/sqlite/swarm_a_analysis_2014_2026_phase_candidate_working_v2.sqlite`；檔名版本不同，但現行 table 均為 v2。檔名保留既有本機資料，不代表物理校準完成 |
 
 全期 raw／quality 有兩筆 2014-01-01 UTC 前的 state：
 2013-12-31 23:59:44 與 23:59:54。它們的 `is_usable = 1`，但在
@@ -77,7 +77,7 @@ P1.5.1 起始範圍外。因此 39,346,560 raw rows 對應 39,346,558 mean rows�
 
 ## 尚未由 P1.7 v2 證明的事項
 
-- 6 項 audit 不包含逐列精確 phase span、source gap／chunk window 邊界與拒絕原因的獨立重算。
+- 6 項 P1.7 audit 不包含逐列精確 phase span、source gap／chunk window 邊界與拒絕原因的獨立重算。2026-10-28 另做三年唯讀全表欄位與邊界檢查：raw／joint 視窗 metadata 不一致 0、有效值與拒絕原因欄位違規 0、跨 `chunk_id` 或大於 20 秒來源缺口的視窗起點違規 0。這仍非獨立重算每個 OLS 視窗。
 - 12 年工作庫的 audit scope 從 2014-01-01 起；2014-07-01 起的報告篩選結果尚未獨立稽核。
 - maneuver、POD source 差異與模型偏差尚未校準；`pass` 不等於真實 drag 或正式 release。
 
@@ -263,7 +263,7 @@ target 為 13,608,000 個 usable POD 產生 mean rows。
 
 驗收：constant derivative 為零；linear decline sign/size 正確；沒有 NaN/inf、跨 chunk 或跨 gap interval。
 
-## 工作包 3.1：P1.5.4--P1.5.6 phase-defined candidate [working]
+## 工作包 3.1：P1.5.4--P1.5.6 phase-defined candidate [done: candidate]
 
 目的：以每筆 mean element 的 phase `u = omega + M` 定義完整 orbit，避免把固定 UTC window 當成軌道週期；先量化 H2/H3 殘留，再對同一個 3 或 5 complete-orbit window 保留 raw B-L 與 joint H2/H3 兩種局部 slope。
 
@@ -280,7 +280,7 @@ target 為 13,608,000 個 usable POD 產生 mean rows。
 
 驗收：synthetic periodogram、chunk boundary、known linear OLS slope 均通過。三年資料有 16,844 complete-orbit mean；2023-12-25 至 2024-01-01 quiet periodogram 的最大 peak 是 47.10 min。5-orbit quiet rate standard deviation 是 35.06 m/day。這些 slope 仍是 descriptive candidate，不是已校準 storm decay。
 
-## 工作包 4：P1.6 causal feature join [working]
+## 工作包 4：P1.6 causal feature join [done: candidate]
 
 目的：每個 P1.5.6 v2 `time_us` 只寫一筆 causal feature，供兩張 rate table 共用；不複製四份 feature。
 

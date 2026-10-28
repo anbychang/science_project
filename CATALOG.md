@@ -3,7 +3,8 @@
 專案現行資料與文件入口。`phases/<phase>/` 內的 `code/`、`data/`、`docs/`、`figures/`、`reports/`、`tests/` 依責任歸屬存放；不是每個 Phase 都有全部目錄。
 
 ```text
-[working] 仍在修訂或尚未校準
+[done: candidate] 候選資料產品已完成；物理校準尚未完成
+[working] 仍在修訂
 [final]   已結案；資料與報告只讀
 [plan]    已立計畫，尚無研究結果
 ```
@@ -20,7 +21,7 @@
 
 | Phase | 狀態 | 資料位置與主要檢查點 | 閱讀入口 |
 | --- | --- | --- | --- |
-| Phase 1（三年） | [working] | `phases/phase1/data/sqlite/`（本機）：`swarm_a_analysis_2023_2026_p1_5_iter5000.sqlite` 是 mean-element checkpoint；`swarm_a_analysis_2023_2026_phase_candidate_working_v1.sqlite` 是逐 10 秒候選工作版。 | [工作報告](phases/phase1/reports/orbit_analysis_report.md)、[舊 10 分鐘紀錄](phases/phase1/reports/phase_1_final_report.md)、[現行執行計畫](phases/phase1/docs/plans/phase_1_execution_plan.md)、[資料血緣](phases/phase1/docs/lineage/orbit_analysis.md) |
+| Phase 1（三年） | [done: candidate] | `phases/phase1/data/sqlite/`（本機）：`swarm_a_analysis_2023_2026_p1_5_iter5000.sqlite` 是 mean-element checkpoint；`swarm_a_analysis_2023_2026_phase_candidate_working_v1.sqlite` 是逐 10 秒候選資料庫。物理校準未完成。 | [候選資料報告](phases/phase1/reports/orbit_analysis_report.md)、[舊 10 分鐘紀錄](phases/phase1/reports/phase_1_final_report.md)、[現行執行計畫](phases/phase1/docs/plans/phase_1_execution_plan.md)、[資料血緣](phases/phase1/docs/lineage/orbit_analysis.md) |
 | Phase 1R（十二年） | [working] | `phases/phase1r/data/sqlite/`（本機）：`swarm_a_analysis_2014_2026_p1_5_iter5000.sqlite` 是 mean-element checkpoint；`swarm_a_analysis_2014_2026_phase_candidate_working_v2.sqlite` 是逐 10 秒候選工作版。 | [計畫](phases/phase1r/docs/plans/PLAN.md)、[工作報告](phases/phase1r/reports/orbit_analysis_report_2014_2026.md) |
 | Phase 2（三年） | [final] | `phases/phase2/data/sqlite/`（本機檢查點鏈）：P2.0 至 P2.6；最終檔為 `swarm_a_phase2_sme_p2_6_final.sqlite`。 | [最終報告](phases/phase2/reports/phase_2_final_report.md)、[資料血緣](phases/phase2/docs/lineage/phase_2_storm_dataset.md) |
 | Phase 2R（十二年） | [final] | `phases/phase2r/data/sqlite/`（本機檢查點鏈）：P2R.0 至 P2R.6；最終檔為 `swarm_a_phase2r_p2r_6_final_v1.sqlite`。 | [最終報告](phases/phase2r/reports/phase_2r_final_report.md)、[資料血緣](phases/phase2r/docs/lineage/phase_2r_12year_replication.md) |

@@ -557,11 +557,13 @@ def generate_figures(database_path: Path, output_directory: Path) -> None:
     save_h2h3_residual_figure(
         reconstruction_rows, output_directory / "report-04b-h2-h3-residual.png",
     )
+    historical_directory = output_directory / "test"
+    historical_directory.mkdir(parents=True, exist_ok=True)
     save_raw_ols_example_figure(
-        ols_example_samples, output_directory / "report-05a-raw-ols-three-orbit-example.png",
+        ols_example_samples, historical_directory / "report-05a-raw-ols-three-orbit-example.png",
     )
     save_corrected_ols_example_figure(
-        ols_example_samples, output_directory / "report-05b-h2-h3-corrected-ols-three-orbit-example.png",
+        ols_example_samples, historical_directory / "report-05b-h2-h3-corrected-ols-three-orbit-example.png",
     )
     comparison_figures = (
         (("2024 年 5 月：原始模型（無 H2/H3）", "raw_b_l_local_ols",
@@ -572,7 +574,7 @@ def generate_figures(database_path: Path, output_directory: Path) -> None:
          "report-06b-may-2024-with-h2-h3.png"),
     )
     for details, filename in comparison_figures:
-        save_candidate_pair_figure(candidate_rate_rows, details, output_directory / filename)
+        save_candidate_pair_figure(candidate_rate_rows, details, historical_directory / filename)
 
 
 def main() -> None:

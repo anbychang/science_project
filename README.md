@@ -9,7 +9,7 @@
 | Phase | 狀態 | 目前結果與入口 |
 | --- | --- | --- |
 | [Phase 0](phases/phase0/docs/plans/PLAN.md) | 共用基礎 | 保存原始來源、下載／載入程式與共用計算；沒有獨立研究結果。 |
-| [Phase 1](phases/phase1/reports/orbit_analysis_report.md) | [working] 三年 | P1.5.1 mean-element checkpoint 與逐 10 秒衰減候選工作庫；P1.7 v2 資料契約稽核通過，候選值未校準。 |
+| [Phase 1](phases/phase1/reports/orbit_analysis_report.md) | [done: candidate] 三年 | 逐 10 秒衰減候選、對齊特徵與資料契約稽核已完成；真實阻力衰減的物理校準未完成。 |
 | [Phase 1R](phases/phase1r/reports/orbit_analysis_report_2014_2026.md) | [working] 十二年 | 獨立的 P1.5.1 checkpoint 與逐 10 秒候選工作庫；尚非正式衰減率 release。 |
 | [Phase 2](phases/phase2/reports/phase_2_final_report.md) | [done] 三年 | 25 場磁暴、一分鐘事件資料與 P2.6 描述性 peak QC；檢查點已固定。 |
 | [Phase 2R](phases/phase2r/reports/phase_2r_final_report.md) | [done] 十二年 | Phase 2 方法的獨立重現；49 場候選中 46 場有完整分鐘資料；檢查點已固定。 |
