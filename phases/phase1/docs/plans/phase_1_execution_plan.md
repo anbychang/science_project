@@ -77,7 +77,7 @@ P1.5.1 起始範圍外。因此 39,346,560 raw rows 對應 39,346,558 mean rows�
 
 ## 尚未由 P1.7 v2 證明的事項
 
-- 6 項 P1.7 audit 不包含逐列精確 phase span、source gap／chunk window 邊界與拒絕原因的獨立重算。2026-10-28 另做三年唯讀全表欄位與邊界檢查：raw／joint 視窗 metadata 不一致 0、有效值與拒絕原因欄位違規 0、跨 `chunk_id` 或大於 20 秒來源缺口的視窗起點違規 0。這仍非獨立重算每個 OLS 視窗。
+- 6 項 P1.7 audit 不包含逐列精確 phase span、source gap／chunk window 邊界與拒絕原因的獨立重算。2026-10-28 另做三年唯讀全表欄位與邊界檢查：raw／joint 視窗 metadata 不一致 0、有效值與拒絕原因欄位違規 0、跨 `chunk_id` 或大於 20 秒來源缺口的視窗起點違規 0。跨 2023--2026 六個日期的 12 個 3／5 圈視窗，獨立重建相位起點與 raw／joint OLS 也通過。抽樣仍非逐列獨立重算。
 - 12 年工作庫的 audit scope 從 2014-01-01 起；2014-07-01 起的報告篩選結果尚未獨立稽核。
 - maneuver、POD source 差異與模型偏差尚未校準；`pass` 不等於真實 drag 或正式 release。
 
