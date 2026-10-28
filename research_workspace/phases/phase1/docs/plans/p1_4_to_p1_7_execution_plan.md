@@ -1,0 +1,343 @@
+# P1.4 至 P1.7 執行計畫 [superseded historical plan]
+
+此檔記錄 Phase 1 尚未完成時的工作拆分，保留作歷史證據，不可用來判斷 current status。
+現行資料狀態見 [phase_1_execution_plan.md](phase_1_execution_plan.md)；
+[phase_1_final_report.md](../../reports/phase_1_final_report.md) 記錄舊 10 分鐘 run。
+
+## 目的與使用方式
+
+這份文件是明天開始工作的可執行清單，不是新的研究規格。正式規格仍以
+`PLAN.md` 為準；本文件把尚未完成的 P1.4 至 P1.7 拆成可獨立開始、可平行
+進行，以及必須等待前項完成的工作。
+
+第一階段的交付物只有可重建的 10 分鐘分析資料集。不要在這個階段加入 ML、
+大氣阻力或軌道預報。`swarm_a_states`、`space_weather`、`geomagnetic` 與
+`swarm_a_density` 是 raw table；不得更新或刪除其 observation。
+
+## 先讀這些事實
+
+- P1.2 raw SQLite 與 P1.3 `swarm_a_orbital_elements` 已存在。
+- P1.4-A/B 已有基本實作：`swarm_a_pod_quality` 會處理 Q1/Q5、量測 native
+  cadence，並建立 provisional `interval_id`。final `chunk_id` 允許同 stream 跨 ZIP，
+  只在 product stream/frame/cadence/gap 改變或不確定時切開。
+- P1.4 的 Q3 與 Q4 尚未校準，因此 P1.4 不能標成完成。
+- P1.5 不可直接把 osculating `semi_major_axis_m` 做 spline 後當成 drag；短週期項
+  的處理方法尚未決定。
+- SYM-H、Ap 與 F10.7 raw data 可用，但 P1.6 的 10 分鐘 join 尚未實作。
+- POD 的 SP3 frame label、coverage、epoch count、cadence、time system 已存入
+  `source_files`；跨 frame transition 的可比性尚未驗證。
+
+## 依賴與可平行工作
+
+```text
+P1.4-A/B existing output
+        |
+        +--> P1.4-C frame / Q3 audit ------+
+        |                                   |
+        +--> P1.4-D Q4 calibration --------+--> P1.4 complete
+        |
+        +--> P1.5-A Brouwer-Lyddane method [done]
+        |           |
+        |           +--> full mean batch --> P1.5-B/C/D
+        |
+        +--> P1.6-A source audit + fixed rules [complete] --> P1.6-B join writer + tests
+
+P1.4 complete + P1.5 complete + P1.6 complete --> P1.7 release
+```
+
+| 工作包 | 可立即開始 | 可與誰平行 | 不可做的事 |
+| --- | --- | --- | --- |
+| P1.4-C SP3/frame/Q3 audit | 是 | P1.4-D、P1.5-A | 不可假設所有 SP3 都是同一 ITRF realization |
+| P1.4-D Q4 maneuver calibration | 是 | P1.4-C、P1.5-A | 不可以衰減率大小當 maneuver rule |
+| P1.5 full mean batch | 等安全 persistent runner | 全部 P1.4 | 不可同時啟動第二個 SQLite writer |
+| P1.6-A feature source audit 與規則 | 已完成 | 無 | 不可 join future feature |
+| P1.5-B/C/D 正式 smoothing/output | 否，等 full mean + final chunk | P1.6-B 可平行 | 不可跨 chunk fit |
+| P1.6-B 正式 join writer | 等 P1.6-A 規則與 P1.5 output schema | P1.5-B/C/D | 不可補值跨過 source gap |
+| P1.7 release | 否 | 無 | 不可把未校準或未驗證資料發布為完成品 |
+
+## 共通工作規則
+
+每個工作包開始前，先執行：
+
+```powershell
+git status --short --branch
+python -m unittest discover -s tests -v
+```
+
+每個工作包完成後：
+
+1. 保留一個小型、可重跑的 unit test 或 synthetic test。
+2. 在 `TIMELOG.md` 記錄 input 範圍、演算法版本、選擇的門檻與實測結果。
+3. 只寫新的 derived table；不得修改 raw table。
+4. 對資料表輸出 row count、首尾 UTC、缺失數與設定值。
+5. 獨立 commit；不要把未決定的方法和已驗證結果混在同一 commit。
+
+`time_us` 是 SQLite 裡的 UTC Unix microseconds。任何 CSV/Parquet 才轉成 ISO 8601
+`timestamp`。所有計算維持 SI units。
+
+---
+
+## P1.4：品質控制與連續區間
+
+### P1.4-C：SP3 frame 與 Q3 官方品質資訊 audit
+
+**目的**：確認 POD 的 frame/provenance，並確認是否真的有可用的 ESA per-epoch
+quality flag。這是資料解讀工作，不先寫任何 filter。
+
+**輸入**：`research_workspace/phases/phase0/data/raw/swarm_a_pod/*.ZIP`、`source_files`、SP3 header、ESA product
+documentation。
+
+**執行步驟**：
+
+1. [done] 寫一個只讀 inventory，逐 ZIP 讀 SP3 header，輸出檔名、header frame label、
+   first/last GPS epoch、UTC first/last epoch、epoch count、相鄰 epoch differences。
+2. [done] 對照 `source_files`，確認每個 SQLite source 都有一筆 inventory；列出缺檔、
+   重複檔名、frame label 缺失與 frame transition date。
+3. [done] 查 ESA POD/SP3 文件：SP3xCOM catalog 的 quality validation 是獨立
+   `SP3xVAL_2_`；目前 ZIP 無可用逐 epoch quality，policy 是
+   `quality_source: unavailable`，不要杜撰規則。
+4. [done] 在正式資料庫的 provenance 層保存 inventory 結果。優先擴充 `source_files` 的
+   frame/provenance 欄位；不要把同一檔案的固定 metadata 重複寫進每個 state。
+5. [done] 在每個 frame transition 前後各抽一段無 gap 的 POD，檢查
+   `semi_major_axis_m` 的 median 與分布是否發生不合理跳變。此處只報告，不先用
+   人為 offset 修正。
+
+**完成條件**：有可重跑的 inventory 報告；每個 source 的 frame label 可追溯；Q3
+要嘛有文件化 filter，要嘛有文件化的「不可用」結論；frame transition 不再被隱藏。
+
+**驗收輸出**：`source count`、`frame label -> source count`、transition dates、缺失
+header/epoch 數、Q3 policy、transition 前後的半長軸統計。
+
+### P1.4-D：Q4 maneuver candidate 校準
+
+**目的**：找出 POD sequence 的不連續候選，切開 chunk；不是把真實 storm-time
+decay 排除掉。
+
+**輸入**：同一 source、相鄰且已通過 Q1/Q5 的 ITRF state；P1.4-C 的 frame audit。
+
+**先做的可平行小工作**：
+
+1. 寫 pure function，對三個等 cadence 的 state 計算：
+   - centered velocity residual：`norm(v[i] - (r[i+1] - r[i-1]) / (t[i+1] - t[i-1]))`
+   - centered position curvature：`norm(r[i] - (r[i-1] + r[i+1]) / 2)`
+2. 只在同一 source、同一 frame label、無 gap 的三點 window 計算；boundary 和 gap
+   的 row 不計算 Q4。
+3. 先輸出每個 residual 的 median、MAD、p99、p99.9 與最大值；用跨多天 clean
+   sample 確認分布，而不是直接寫死 `10 m/s`。
+4. 人工檢查最高 residual 的前後 state、檔案邊界與對應日期，確認它們是資料跳變、
+   maneuver candidate 或正常數值行為。
+
+**門檻決定**：只有在 residual 分布與人工樣本都留存後，才選擇可重現的 robust
+threshold，例如各 residual 超過 `median + k * MAD`。`k`、sample range、兩項規則
+是 AND 或 OR、以及 candidate 前後要切開哪些 row，都要放在 metadata 與 `TIMELOG.md`。
+
+**寫入策略**：Q4 candidate 在 `swarm_a_pod_quality` 以明確的
+`rejection_reason` 表示並切開 chunk。只保存 `chunk_id`，不保存 chunk reason；
+row-level `rejection_reason` 只描述被拒絕的 state。
+
+**完成條件**：synthetic injected jump 一定被抓到；正常連續 sequence 不被切斷；
+候選清單與 threshold 可重跑；rebuild 後 quality row count 等於 raw POD row count。
+
+### P1.4 最後整合與報告
+
+執行 `python -m research_workspace.phases.phase1.code.prep_05_pod_quality`，再輸出：
+
+- raw、usable、rejected row counts；每個 `rejection_reason` 的數量。
+- measured cadence、gap count、chunk count、每個 chunk 的 row count 與 duration。
+- Q3/Q4 版本、frame label 及不能比較的 transition。
+- 可供 P1.5 使用的 chunk 清單。不要只報一個總數。
+
+P1.4 的完成 gate：Q1 至 Q5 都有「已實作」或「沒有可用原始資訊」的明確結論；任何
+不能安全跨越的位置都已切 chunk；報告可由 raw input 重建。
+
+---
+
+## P1.5：10 分鐘軌道處理與衰減率
+
+### P1.5-A：方法選擇前的獨立驗證
+
+**目的**：先量到 osculating short-period variation 與取樣條件，避免直接把錯誤
+slope 發布成 drag。
+
+**可立即實作，且不寫正式 table 的項目**：
+
+1. 建立 synthetic input helper：constant `semi_major_axis_m`、已知線性下降、單一
+   gap、單一 chunk boundary。每筆要帶 `time_us`、`chunk_id` 與有效標記。
+2. 對數個真實 clean interval 量測 orbit period、raw 半長軸的 peak-to-peak
+   variation，以及不同 orbit-average window 下的殘餘 variation。
+3. 寫 held-out 評估設計：在 interval 中保留連續 block，評估 mean/smoothed
+   series 對保留 block 的 error 與 slope stability。資料切分不可跨 chunk。
+
+**已完成的 direct raw-SG 分支**：歷史 synthetic experiment 用已知的
+`1 m/day` decline、兩個代表性 short-period terms 和固定 random seed，測試 raw
+10 秒列上的 6 個 Savitzky-Golay candidate。全部不符合預先定義的 slope error gate；詳細
+數值在 `p1_5_resample_and_decay.md`。這個分支的結論是「不要直接 SG osculating
+semi-major axis」，不是 SG 已被選為 final method。
+
+**仍未完成**：以真實 orbit-average / mean-element conversion 驗證 residual 與 input contract。
+這個 method decision 完成前，P1.5-A 仍是 open，P1.5-B/C/D 不得開始。
+
+**本次 P1.5-A 已完成的基礎證據**：
+
+1. `interval_id = 1, 2, 3, 1685` 的 read-only audit 都量到約 19.5 km peak-to-peak，最強
+   short-period component 均為 46.452 分鐘、振幅約 9.5 km。
+2. mean-like 10-minute synthetic series 上，73-sample / order-2 SG candidate 在 fit 與
+   different-seed held-out case 都通過 slope gate。
+
+未完成的唯一 method gate 是：以真實 orbit-average / mean-element conversion 證明它符合
+mean-like input contract。這是 method decision，不應偷換成 P1.5-B writer。
+
+**決策會議要選的事**：
+
+- 先做 orbit-average/low-pass 再 derivative，或採用有清楚物理依據的
+  osculating-to-mean conversion。
+- 10 分鐘 bin 的最小 POD count、最大 gap 與 edge window 規則。
+- orbit-average definition；若其後仍需要 Savitzky-Golay，才決定 window、polynomial order
+  與 selection objective。SciPy 已明確鎖定於 `requirements.txt`，不可改回依賴本機環境。
+
+停止條件：若 synthetic linear decline 無法穩定恢復 slope，或真實 raw variation 仍遠大於
+預期 decay signal，就停在 P1.5-A；不要建立 `decay_rate` table。
+
+### P1.5-B：orbit-average 與 10 分鐘候選列
+
+**前置條件**：P1.4 complete，且 P1.5-A 已選定 window 規則。
+
+**輸入**：`swarm_a_orbital_elements` join final chunk quality output，只讀
+`is_usable = 1`、單一 `chunk_id` 內的列。
+
+**輸出 table 建議**：`swarm_a_orbit_10min`。一列代表可用的 UTC 10 分鐘 bin，至少有：
+
+```text
+time_us,
+semi_major_axis_orbit_mean_m,
+pod_count,
+max_pod_gap_s,
+chunk_id,
+algorithm_version
+```
+
+**步驟**：
+
+1. 以 UTC epoch 對齊 10 分鐘 boundary；每個 bin 不可混入兩個 chunk。
+2. 依已決定的 orbit-average window 算 `semi_major_axis_orbit_mean_m`；window 不可
+   離開 chunk，也不可跨 chunk boundary。
+3. 記錄 `pod_count`、max gap 與 edge-window exclusion reason。
+4. 只將完整且通過門檻的 bin 寫入新 table；raw、P1.3、P1.4 table 都不得改動。
+
+**驗證**：10 秒 POD 的完整 10 分鐘 bin 期望為 60 observations；`pod_count >= 56` 才可輸出。
+gap 兩側必是不同 chunk，不能湊成同一 bin。測試 same-stream cross-ZIP、gap、chunk boundary、
+56/55 boundary 與第一/最後一個 window。
+
+### P1.5-C：smoothing 與 derivative
+
+**前置條件**：P1.5-B table 與選定 smoothing policy。
+
+**步驟**：
+
+1. 每個 `chunk_id` 獨立 fit；不可拼接 chunk。
+2. 以 P1.5-B 的 orbit-mean series 作輸入，輸出
+   `semi_major_axis_smooth_m` 與 `da_dt_smooth_m_s`。
+3. 用 `decay_rate_smooth_m_day = -da_dt_smooth_m_s * 86400` 寫正值代表下降。
+4. 把選定的 smoothing parameters、input window、selection score 與 code revision 寫入
+   metadata。不能只留在 Python constant。
+
+**驗證**：constant input 的 derivative 接近零；linear decline 的大小與符號正確；gap
+兩側不互相影響；held-out score 與 parameter selection 可重跑。
+
+### P1.5-D：P1.5 release gate
+
+每次寫入後檢查：無 NaN/inf、每列有合法 chunk、沒有跨 gap、`pod_count` 與
+`max_pod_gap_s` 合理、raw/orbit-mean/smooth 三者的 plot 抽樣檢查，以及所有 metadata
+存在。只在這些全部通過時，才可把 P1.5 視為 P1.6 的輸入。
+
+---
+
+## P1.6：space-weather 與 geomagnetic 對齊
+
+### P1.6-A：先固定防止未來資訊的 join contract
+
+**目的**：把 feature 的 source-time 規則先寫成 pure tests，再寫 SQLite join。此工作
+可與 P1.4/P1.5-A 完全平行。
+
+| 特徵 | 可用值 | source timestamp | 禁止事項 |
+| --- | --- | --- | --- |
+| SYM-H | exact minute；或兩側 valid minute 內插 | exact 時間或左右兩端時間 | 不可跨 source gap；不可只拿下一筆 |
+| Ap | 當前 official 3-hour block | block start UTC | 不可在 03:00 前用下一 block |
+| F10.7 | 原始檔定義的當日/前日值 | F10.7 原始日期 UTC | 不可用晚於 orbit time 的日值 |
+| F10.7A | 前一日 `F10.7_OBS_LAST81` | F10.7A 原始日期 UTC | 不可用 centered 81-day 值或 future source |
+
+注意：既有 `load_space_weather.py` 的 `f107_sfu` 是前一日 `F10.7_OBS`，而
+`f107a_sfu` 是 NRLMSIS 使用的當日 `F10.7_OBS_CENTER81`。P1.6 分析改用前一日
+`F10.7_OBS_LAST81`，因為 centered 81-day value 會使用未來資料。final schema 仍保留
+`f107_source_time` 與 `f107a_source_time` 兩欄，讓兩個 feature 可各自追溯。
+
+**P1.6-B 實作前先寫的測試案例**：exact SYM-H minute、兩分鐘內合法 bracket、缺一端、過大 gap、
+00:00 UTC、02:59:59/03:00:00 Ap boundary、F10.7/F10.7A source date、任何 future
+source date。每個 test 的 input 都是少量 dict/list，不讀 1 GiB database。
+
+### P1.6-B：寫入 feature-derived table
+
+**前置條件**：P1.5 final output schema 與 P1.6-A 規則已固定。
+
+**輸入**：P1.5 `swarm_a_orbit_10min`、raw `geomagnetic`、raw `space_weather`。
+
+**輸出 table 建議**：`swarm_a_analysis_10min`，key 為 P1.5 的 `time_us`。它至少包括：
+
+```text
+time_us,
+semi_major_axis_smooth_m,
+da_dt_smooth_m_s,
+decay_rate_smooth_m_day,
+pod_count,
+max_pod_gap_s,
+chunk_id,
+sym_h_nt,
+sym_h_left_time_us,
+sym_h_right_time_us,
+ap_now,
+ap_source_time_us,
+f107_sfu,
+f107_source_time_us,
+f107a_sfu,
+f107a_source_time_us,
+f107_data_type,
+quality_flags
+```
+
+缺 feature 時保留 orbit row，把 feature 欄位設為 `NULL`，並在 `quality_flags` 用受控
+機器可讀值標記，例如 `missing_sym_h`；不要刪除軌道列，也不要用 future value 填補。
+
+**驗證**：final join 的每個 source time 都必須 `<= time_us`，除了 SYM-H interpolation
+明確記錄的 right endpoint；該 endpoint 只能在同一有效 source window 中使用。輸出每種
+缺失旗標數及 time range。
+
+---
+
+## P1.7：發布可重建資料集
+
+### 發布前固定內容
+
+1. 確認 canonical table 為 `swarm_a_analysis_10min`，並明確區分工作 SQLite table 與
+   可選的 CSV/Parquet export。
+2. 建立 metadata 檔或 metadata table entries，至少包含：raw source signatures、source
+   coverage、code revision、Python/dependency versions、frame labels/transition policy、
+   Earth `mu`、P1.4 threshold versions、P1.5 parameters、P1.6 join rules、row count、
+   first/last UTC、missing-feature counts。
+3. 建立一個乾淨資料夾重建流程：raw files -> raw SQLite -> P1.3 -> P1.4 -> P1.5 ->
+   P1.6 -> export。每一步列出 command、輸入、輸出與預期 summary。
+
+### 最終驗收
+
+- schema 與此文件及 `pod_final_output_spec.md` 一致；沒有舊名稱混入。
+- 所有 `time_us` 唯一、排序遞增、轉出的 timestamp 是 UTC。
+- `decay_rate_smooth_m_day` 的正負號符合定義，且沒有 NaN/inf。
+- 每列的 POD provenance、chunk 與 feature source time 可追溯。
+- 不跨 chunk、quality gap 或未處理的 frame transition。
+- 由 raw input 在新資料庫可重建出相同 schema、metadata 和可解釋的 row count。
+
+### P1.7 明確不做
+
+- 不將 `swarm_a_density` 強行 join 成核心資料集；它是獨立原始資料來源，需另立對齊與
+  provenance 規格。
+- 不訓練 ML，不定義 storm classifier，不把 atmospheric drag 加入 RK4。
+- 不以圖表看起來平滑作為數值驗證。

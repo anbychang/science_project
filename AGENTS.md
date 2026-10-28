@@ -2,12 +2,22 @@
 
 The research goal is to study how geomagnetic storms affect Swarm-A orbital
 decay. XYZ orbit prediction is a later validation tool, not the main research
-question. Phase 2 is complete and frozen. Its reproducible 1-minute dataset
-and descriptive peak QC are documented in
-`plans/phase_2_density_validation/PHASE_2_FINAL_REPORT.md`. Treat Phase 2
-checkpoints as read-only; new research needs a separate phase and output.
-Do not revise Phase 2 without Anby's explicit request. Do not add machine
-learning or connect atmospheric drag until the phase plan requires it.
+question. Phase 2 and its 12-year Phase 2R replication are complete and
+frozen. Their reproducible 1-minute datasets and descriptive peak QC are
+documented in `research_workspace/phases/phase2/reports/phase_2_final_report.md` and
+`research_workspace/phases/phase2r/reports/phase_2r_final_report.md`. Treat both
+checkpoint chains as read-only; new research needs a separate phase and
+output. Do not revise either chain without Anby's explicit request. Do not add
+machine learning or connect atmospheric drag until the phase plan requires it.
+
+Phase 1 is the three-year working branch; Phase 1R is its 2014–2026 twelve-year
+working branch. Keep their SQLite, reports, and figures in separate phase
+directories. Neither candidate decay-rate database is a calibrated release.
+
+Phase 3's three-year density-response analysis is complete. Its final record is
+`research_workspace/phases/phase3/reports/phase_3_final_report.md`; its per-event $R_k$
+calibration is final and must not be relabeled as provisional. Treat the Phase
+3 result as read-only; any extension needs a separate phase and output.
 
 The existing support code has two-body gravity, J2, RK4 integration, and
 NRLMSIS 2.0 density calculation. Atmospheric drag is not connected to the
@@ -65,9 +75,10 @@ icons, emoji, prose summaries of tables, or a second explanation of a diagram.
 Historical reports keep only date, result, evidence, decision, and unresolved
 work. A reader should be able to scan any section without reading every line.
 
-Before creating, editing, or reviewing `data_lineage/*.md`, read and apply
-`data_lineage/RULES.md`; check every affected step's action, Input, Output, and
-example against that format before finishing.
+Before creating, editing, or reviewing lineage Markdown under
+`research_workspace/`, read and apply
+`research_workspace/docs/data_lineage/RULES.md`; check every affected
+step's action, Input, Output, and example against that format before finishing.
 
 Every function must show its input and output in a short docstring. Prefer visual
 shapes such as `Input: [state_1, state_2, ...]` and

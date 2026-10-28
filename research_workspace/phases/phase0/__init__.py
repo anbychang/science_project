@@ -1,0 +1,1 @@
+"""Shared sources and calculations."""
