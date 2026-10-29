@@ -2,7 +2,7 @@
 
 ## 狀態與決定
 
-狀態：[done]。2026-10-28 使用者檢視[一圈／兩圈對照](phase_4_two_cycle_window_qc.md)後，選擇 Phase 3 的 $u\pm\pi$ 一圈窗口作 Phase 4 正式資料單位。本報告保留資料單位的目視決定；後續的[25 場 GPR 留一場結果](phase_4_gpr_loso_report.md)已產生，模型判讀仍待看圖。
+狀態：[done]。2026-10-28 使用者檢視[一圈／兩圈對照](phase_4_two_cycle_window_qc.md)後，選擇 Phase 3 的 $u\pm\pi$ 一圈窗口作 Phase 4 正式資料單位。本報告保留資料單位的目視決定；後續的[25 場 GPR 留一場結果](phase_4_gpr_loso_report.md)已產生，使用者判斷目前四特徵模型效果不理想。
 
 ## 資料與方法
 
@@ -23,4 +23,4 @@
 
 ## 後續結果
 
-2,295 筆代表錨點已用於正式 GPR 留一場驗證。逐場 L2、M1、M1+GPR 與條件式 95% 區間見[結果報告](phase_4_gpr_loso_report.md)；模型好壞仍由使用者看圖判斷。
+2,295 筆代表錨點已用於正式 GPR 留一場驗證。逐場 L2、M1、M1+GPR、條件式 95% 區間與看圖後的失效診斷見[結果報告](phase_4_gpr_loso_report.md)。

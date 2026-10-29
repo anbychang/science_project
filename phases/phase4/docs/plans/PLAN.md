@@ -2,7 +2,7 @@
 
 ## 狀態與研究界線
 
-狀態：[working]。本文件保存 2026-10-28 提出的 GPR 殘差修正設定，並對齊 [Phase 3 結案報告](../../../phase3/reports/phase_3_final_report.md)。使用者看過一圈／兩圈 L2 對照圖後，選回一圈窗口作正式資料單位。25 折 GPR 留一場驗證與逐場 M1/GPR 比較圖已交付，詳見[Phase 4 結果報告](../../reports/phase_4_gpr_loso_report.md)與[資料血緣](../lineage/phase_4_gpr_loso.md)；模型好壞待使用者目視判斷。Phase 5 的題目另定；原提案其餘特徵留待 Phase 6 討論。
+狀態：[working]。本文件保存 2026-10-28 提出的 GPR 殘差修正設定，並對齊 [Phase 3 結案報告](../../../phase3/reports/phase_3_final_report.md)。使用者看過一圈／兩圈 L2 對照圖後，選回一圈窗口作正式資料單位。25 折 GPR 留一場驗證與逐場 M1/GPR 比較圖已交付；使用者看圖後判斷四特徵版本效果不理想，診斷見[Phase 4 結果報告](../../reports/phase_4_gpr_loso_report.md)，來源見[資料血緣](../lineage/phase_4_gpr_loso.md)。Phase 5 的題目另定；原提案其餘特徵留待 Phase 6 討論。
 
 Phase 4 讀取既有結果，寫入獨立的 Phase 4 輸出；Phase 2、Phase 2R、Phase 3 的檢查點與報告不回寫。研究仍是磁暴與 Swarm-A 密度響應；本步不接大氣阻力或軌道傳播。
 

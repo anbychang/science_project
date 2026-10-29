@@ -2,7 +2,7 @@
 
 ## 狀態與資料邊界
 
-狀態：[working]。25 場留一場驗證與逐場圖已產出；模型表現待使用者看圖判斷。[結果報告](../../reports/phase_4_gpr_loso_report.md)記錄數值與限制。Phase 4 讀取下列凍結來源，寫自己的衍生庫；來源庫不是工作副本，沒有回寫。
+狀態：[working]。25 場留一場驗證與逐場圖已產出；使用者看圖後判斷目前四特徵 GPR 效果不理想。[結果報告](../../reports/phase_4_gpr_loso_report.md)記錄數值、失效診斷與限制。Phase 4 讀取下列凍結來源，寫自己的衍生庫；來源庫不是工作副本，沒有回寫。
 
 - `phases/phase2/data/sqlite/swarm_a_phase2_sme_p2_6_final.sqlite`
 - `phases/phase3/data/sqlite/swarm_a_phase3_quiet_density_v1.sqlite`
