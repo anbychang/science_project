@@ -14,13 +14,13 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from phases.phase4.code.calc_phase4_trial4_gpr import (
+from phases.phase4_shared.code.calc_phase4_trial4_gpr import (
     FEATURE_NAMES,
     fit_gpr,
     hyperparameters,
     score,
 )
-from phases.phase4.code.calc_phase4_trial4_groupcv import split_storm_folds
+from phases.phase4_shared.code.calc_phase4_trial4_groupcv import split_storm_folds
 
 
 ROOT = Path("phases/phase4-trial2")

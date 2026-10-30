@@ -10,8 +10,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from phases.phase4.code.calc_phase4_trial4_gpr import FEATURE_NAMES
-from phases.phase4.code.calc_phase4_trial4_groupcv_diagnostics import (
+from phases.phase4_shared.code.calc_phase4_trial4_gpr import FEATURE_NAMES
+from phases.phase4_shared.code.calc_phase4_trial4_groupcv_diagnostics import (
     feature_shift,
     nearest_distances,
     scaled_features,

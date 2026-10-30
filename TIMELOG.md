@@ -14,7 +14,7 @@ Phase 2R status：[done]，把 Phase 2 final 原樣重現於 2014-07-01 至 2026
 
 Phase 3 status：[done]。三年 25 場的離線密度響應分析已結案，214,907 個有效中心相位分鐘與固定共同 $\tau=4.65$ 小時的密度曲線已交付；每場 $R_k$ 已依最終採用規則完成校準。最終結果、適用範圍與保留限制見 `phases/phase3/reports/phase_3_final_report.md`。
 
-Phase 4 status：[plan]。GPR 殘差修正已有計畫，尚無模型結果；見 `phases/phase4/docs/plans/PLAN.md`。
+Phase 4 status：[working]。Trial1--Trial7 已有結果，跨場 GPR 未通過採用條件；總結與目前入口見 `phases/phase4/README.md`。Phase4 Final 尚未建立。
 
 ## 2026-10-28：Phase 3 結案狀態同步
 

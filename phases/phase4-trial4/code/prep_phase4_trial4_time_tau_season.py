@@ -19,10 +19,10 @@ sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PHASES_ROOT / "phase4-trial2/code"))
 sys.path.insert(0, str(PHASES_ROOT / "phase4-trial3/code"))
 
-from phases.phase4.code.calc_phase4_trial4_gpr import score
-from phases.phase4.code.calc_phase4_trial4_groupcv import split_storm_folds
-from phases.phase4.code.calc_phase4_trial4_time_tau_season import FEATURE_NAMES, feature_matrix
-from phases.phase4.code.calc_phase4_trial4_trial3 import (
+from phases.phase4_shared.code.calc_phase4_trial4_gpr import score
+from phases.phase4_shared.code.calc_phase4_trial4_groupcv import split_storm_folds
+from phases.phase4_shared.code.calc_phase4_trial4_time_tau_season import FEATURE_NAMES, feature_matrix
+from phases.phase4_shared.code.calc_phase4_trial4_trial3 import (
     FINAL_RESTARTS,
     RANDOM_STATE,
     Candidate,

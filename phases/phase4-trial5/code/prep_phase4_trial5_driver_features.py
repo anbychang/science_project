@@ -13,7 +13,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from phases.phase4.code.calc_phase4_trial5_drivers import backward_rate
+from phases.phase4_shared.code.calc_phase4_trial5_drivers import backward_rate
 
 
 ROOT = Path("phases/phase4-trial5")

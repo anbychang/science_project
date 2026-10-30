@@ -20,10 +20,13 @@
 | [Phase4 Trial3](phases/phase4-trial3/reports/phase_4_trial4_nested_groupcv_report.md) | [done] | nested 20/5 storm-group 四特徵 GPR；RMSE 0.12014，劣於 Trial4 的 0.11005。 |
 | [Phase4 Trial4](phases/phase4-trial4/reports/phase_4_time_tau_season_report.md) | [done] | 時間、固定 Trial4 tau、季節 nested GPR；RMSE 0.11323，仍劣於 Trial4。 |
 | [Phase4 Trial5](phases/phase4-trial5/reports/phase_4_trial5_driver_report.md) | [done] | 新 geomagnetic driver nested GPR；RMSE 0.13203，明顯劣於 Trial4。 |
-| [Phase4 Trial6](phases/phase4-trial6/docs/plans/PLAN.md) | [plan] | 複合磁暴的日夜／磁緯度分區與同場事後 Ridge；資料尚未準備。 |
-| Phase4 Final | [not created] | 保留給通過明確驗收條件的最終方法；不得把 Trial1--Trial5 升格為 final。 |
+| [Phase4 總報告](phases/phase4/reports/phase_4_report.md) | [done: descriptive] | Trial1--Trial7 的跨場負結果、短缺口補值和一分鐘更新；尚無通用最終修正。 |
+| [Phase4 Trial6](phases/phase4-trial6/reports/trial6_within_storm_ridge_report.md) | [done: descriptive] | 同場六小時缺口內插與壓力測試；平均改善，但部分區段補壞。 |
+| [Phase4 Trial7](phases/phase4-trial7/reports/trial7_25storm_past_mean_report.md) | [done: descriptive] | 一分鐘只用過去 60 分鐘殘差；20/25 場改善，非獨立預測。 |
+| Phase4 Final | [not created] | 保留給通過明確驗收條件的最終方法；Trial1--Trial7 都不能直接升格。 |
 
-Phase4 Trial1--Trial5 的特徵組合比較與每個欄位目前可主張的範圍，見[特徵貢獻整理](phases/phase4/reports/phase_4_feature_contribution_summary.md)。
+Phase4 Trial1--Trial5 的特徵組合比較與每個欄位目前可主張的範圍，見[特徵貢獻整理](phases/phase4-trial2/reports/phase_4_feature_contribution_summary.md)。
+七個 Trial 的完整脈絡與圖，見[Phase4 總報告](phases/phase4/reports/phase_4_report.md)。
 所有歷史、現行與 working Trial 的狀態及報告入口，見 [Trial 索引](docs/trial_index.md)。
 
 Phase 1／1R 的舊 10 分鐘分支是歷史資料，不能與現行逐 10 秒候選混用。Phase 2／2R 的 peak QC 是描述性結果；Trial4 是現行修正的資料內基線，不能當作外測預報，也不能把它的參數解釋成物理量。舊 Phase 3 M1 與 M0 比較使用不同校準機會，不能宣稱 M1 已勝出。現階段沒有完成 drag propagator 或 XYZ 預報。

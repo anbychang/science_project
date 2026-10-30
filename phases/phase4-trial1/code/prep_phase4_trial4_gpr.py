@@ -28,7 +28,7 @@ from phases.phase2.code.prep_24_density_t0_phase import (
 )
 from phases.phase3.code.calc_h_tau import filtered_sme, phase_weighted_mean
 from phases.phase3.code.prep_h_tau_phase import SOURCE, load_event, load_sme
-from phases.phase4.code.calc_phase4_trial4_gpr import (
+from phases.phase4_shared.code.calc_phase4_trial4_gpr import (
     ALPHA,
     FEATURE_NAMES,
     RANDOM_STATE,

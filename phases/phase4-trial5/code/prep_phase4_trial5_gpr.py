@@ -18,9 +18,9 @@ TRIAL3_CODE = Path(__file__).resolve().parents[2] / "phase4-trial3/code"
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(TRIAL3_CODE))
 
-from phases.phase4.code.calc_phase4_trial4_gpr import score
-from phases.phase4.code.calc_phase4_trial4_groupcv import split_storm_folds
-from phases.phase4.code.calc_phase4_trial4_trial3 import (
+from phases.phase4_shared.code.calc_phase4_trial4_gpr import score
+from phases.phase4_shared.code.calc_phase4_trial4_groupcv import split_storm_folds
+from phases.phase4_shared.code.calc_phase4_trial4_trial3 import (
     FINAL_RESTARTS,
     Candidate,
     fit_candidate,
