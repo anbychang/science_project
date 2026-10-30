@@ -20,7 +20,7 @@
 | `phase3-trial4/` | [done: descriptive] | 每場自由 $R_k,\tau_k$ 與共同正 $G$；D-model RMSE 0.109953，是現行下游基線 | [joint-fit 報告](../phases/phase3-trial4/reports/trial4_joint_fit_tau15_report.md)、[資料血緣](../phases/phase3-trial4/docs/lineage/trial4_joint_fit_tau15.md) |
 | `phase3-trial5/` | [working] | Trial4 上加入每場 recovery 起始項與共同恢復時間；目前只改善同資料貼合，未獨立驗證 | [Trial5 報告](../phases/phase3-trial5/reports/trial5_recovery_first_fit.md) |
 
-## Phase4 殘差 GPR 試驗
+## Phase4 殘差模型試驗
 
 共同規則：Trial2--Trial5 對固定 Trial4 D-model 做 20-train/5-test storm-group 評估，基線對數 RMSE 為 0.11005。Trial1 是同資料描述，不能與後四者並列為驗證成績。
 
@@ -31,7 +31,7 @@
 | 3 | [done: negative] | 移除高度的四 geomagnetic 特徵 nested GPR | RMSE 0.12014，較基線 +0.01009 | [Trial3](../phases/phase4-trial3/reports/phase_4_trial4_nested_groupcv_report.md) |
 | 4 | [done: negative] | `relative_time, tau, season_sin, season_cos` nested GPR | RMSE 0.11323，較基線 +0.00318；`tau` 只可回溯使用 | [Trial4](../phases/phase4-trial4/reports/phase_4_time_tau_season_report.md) |
 | 5 | [done: negative] | `dSYM-H/dt, ap_step, F10.7` nested GPR | RMSE 0.13203，較基線 +0.02198 | [Trial5](../phases/phase4-trial5/reports/phase_4_trial5_driver_report.md) |
-| 6 | [not created] | 複合事件日夜／磁緯度分區與同場事後殘差 GPR | 工作空間與方法已建立；尚無數值結果 | [Trial6 計畫](../phases/phase4-trial6/docs/plans/PLAN.md) |
+| 6 | [not created] | 複合事件日夜／磁緯度分區與同場事後殘差 Ridge | 工作空間與方法已建立；尚無數值結果 | [Trial6 計畫](../phases/phase4-trial6/docs/plans/PLAN.md) |
 
 Phase4 Final：[not created]。特徵組合比較、各欄位現有證據與不可主張的範圍，見 [Phase4 特徵貢獻整理](../phases/phase4/reports/phase_4_feature_contribution_summary.md)；五欄 `only-feature`／`drop-feature` 結果見 [單一特徵 GPR 消融](../phases/phase4/reports/phase_4_feature_ablation_report.md)。
 

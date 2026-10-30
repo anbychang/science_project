@@ -20,6 +20,7 @@
 | [Phase4 Trial3](phases/phase4-trial3/reports/phase_4_trial4_nested_groupcv_report.md) | [done] | nested 20/5 storm-group 四特徵 GPR；RMSE 0.12014，劣於 Trial4 的 0.11005。 |
 | [Phase4 Trial4](phases/phase4-trial4/reports/phase_4_time_tau_season_report.md) | [done] | 時間、固定 Trial4 tau、季節 nested GPR；RMSE 0.11323，仍劣於 Trial4。 |
 | [Phase4 Trial5](phases/phase4-trial5/reports/phase_4_trial5_driver_report.md) | [done] | 新 geomagnetic driver nested GPR；RMSE 0.13203，明顯劣於 Trial4。 |
+| [Phase4 Trial6](phases/phase4-trial6/docs/plans/PLAN.md) | [plan] | 複合磁暴的日夜／磁緯度分區與同場事後 Ridge；資料尚未準備。 |
 | Phase4 Final | [not created] | 保留給通過明確驗收條件的最終方法；不得把 Trial1--Trial5 升格為 final。 |
 
 Phase4 Trial1--Trial5 的特徵組合比較與每個欄位目前可主張的範圍，見[特徵貢獻整理](phases/phase4/reports/phase_4_feature_contribution_summary.md)。

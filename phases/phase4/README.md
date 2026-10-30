@@ -9,7 +9,7 @@
 | Trial3 | nested 20/5 四特徵 GPR | [Trial3 報告](../phase4-trial3/reports/phase_4_trial4_nested_groupcv_report.md) |
 | Trial4 | 時間、固定 Trial4 tau、季節 nested GPR | [Trial4 報告](../phase4-trial4/reports/phase_4_time_tau_season_report.md) |
 | Trial5 | `dSYM-H/dt`、`ap_step`、`F10.7` nested GPR | [Trial5 報告](../phase4-trial5/reports/phase_4_trial5_driver_report.md) |
-| Trial6 | 複合磁暴日夜／磁緯度分區與同場事後 GPR | [Trial6 計畫](../phase4-trial6/docs/plans/PLAN.md)；結果 [not created] |
+| Trial6 | 複合磁暴日夜／磁緯度分區與同場事後 Ridge | [Trial6 計畫](../phase4-trial6/docs/plans/PLAN.md)；結果 [not created] |
 
 檔名中的 `trial4` 多半指「以 Phase3 Trial4 D-model 為基線」，不是該檔屬於 Phase4 Trial4。這是舊命名，不能用檔名前綴判定 Phase4 Trial 編號。
 

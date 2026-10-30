@@ -1,4 +1,4 @@
-# Phase4 Trial1--Trial6 計畫：Trial4 殘差 GPR
+# Phase4 Trial1--Trial6 計畫：Trial4 殘差模型
 
 狀態：[done]。Phase 4 接續 `Phase 2 -> Phase 3 -> Trial4`。Trial4 的 D-model 固定每場 $R_k$、$\tau_k$ 與共同 $G$；Phase 4 不重估這些參數，只描述 Trial4 尚未解釋的對數密度殘差。
 

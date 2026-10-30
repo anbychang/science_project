@@ -33,6 +33,7 @@
 | Phase4 Trial3 | [done] | `swarm_a_phase4_trial4_nested_groupcv_v3.sqlite` 是 nested 20/5 的四特徵 held-out 結果；RMSE 0.12014，劣於 Trial4 0.11005。 | [計畫](phases/phase4/docs/plans/PLAN.md)、[報告](phases/phase4-trial3/reports/phase_4_trial4_nested_groupcv_report.md)、[資料血緣](phases/phase4-trial3/docs/lineage/phase_4_trial4_nested_groupcv.md) |
 | Phase4 Trial4 | [done] | `swarm_a_phase4_trial4_time_tau_season_nested_v4.sqlite` 是時間、固定 Trial4 tau、季節 nested held-out 結果；RMSE 0.11323，劣於 Trial4 0.11005。 | [計畫](phases/phase4/docs/plans/PLAN.md)、[報告](phases/phase4-trial4/reports/phase_4_time_tau_season_report.md)、[資料血緣](phases/phase4-trial4/docs/lineage/phase_4_time_tau_season.md) |
 | Phase4 Trial5 | [done] | `swarm_a_phase4_trial5_driver_gpr_v5.sqlite` 是新 geomagnetic driver nested held-out 結果；RMSE 0.13203，劣於 Trial4 0.11005。 | [計畫](phases/phase4/docs/plans/PLAN.md)、[報告](phases/phase4-trial5/reports/phase_4_trial5_driver_report.md)、[資料血緣](phases/phase4-trial5/docs/lineage/phase_4_trial5_driver.md) |
+| Phase4 Trial6 | [plan] | 複合磁暴日夜／磁緯度分區與同場事後 Ridge；尚未有衍生資料或模型結果。 | [計畫](phases/phase4-trial6/docs/plans/PLAN.md) |
 | Phase4 Final | [plan] | 保留給最終版；尚無資料、程式或輸出。 | [Trial 計畫](phases/phase4/docs/plans/PLAN.md)、[特徵貢獻整理](phases/phase4/reports/phase_4_feature_contribution_summary.md) |
 
 Phase 1／1R 的候選資料尚未校準為正式衰減率。舊 10 分鐘分支只供歷史比較，不作現行輸入。Phase 2、2R、3 的檢查點不回寫；下游密度分析讀 Trial4 D-model，不讀 Phase 3 固定 M1。
