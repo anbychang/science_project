@@ -2,7 +2,7 @@
 
 ## 狀態與資料邊界
 
-狀態：[done]。Phase4 Trial2 只讀取 Phase4 Trial1 的已保存錨點與固定 Trial4 D-model，不回寫 Trial1、Trial4、Phase 3 或 Phase 2。SQLite 為 `phases/phase4/data/sqlite/swarm_a_phase4_trial4_altitude_groupcv20_5_v2.sqlite`；它的 2,295 個 prediction rows 都是 held-out GPR 預測。Trial4 本身已見過全部 25 場，因此 Trial2 只驗證 GPR 跨 storm 泛化。
+狀態：[done]。Phase4 Trial2 只讀取 Phase4 Trial1 的已保存錨點與固定 Trial4 D-model，不回寫 Trial1、Trial4、Phase 3 或 Phase 2。SQLite 為 `phases/phase4-trial2/data/sqlite/swarm_a_phase4_trial4_altitude_groupcv20_5_v2.sqlite`；它的 2,295 個 prediction rows 都是 held-out GPR 預測。Trial4 本身已見過全部 25 場，因此 Trial2 只驗證 GPR 跨 storm 泛化。
 
 ```text
 Phase4 Trial1 anchors

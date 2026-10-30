@@ -2,7 +2,7 @@
 
 ## 狀態與資料界線
 
-狀態：[done]。Trial5 只讀取 Phase4 Trial1 anchors 與 Phase2.6 minute driver，不回寫任何既有 Trial 或 Phase2。feature SQLite 是 `phases/phase4/data/sqlite/swarm_a_phase4_trial5_driver_features_v5.sqlite`；prediction SQLite 是 `phases/phase4/data/sqlite/swarm_a_phase4_trial5_driver_gpr_v5.sqlite`。2,295 個 prediction rows 都是 outer held-out 預測。
+狀態：[done]。Trial5 只讀取 Phase4 Trial1 anchors 與 Phase2.6 minute driver，不回寫任何既有 Trial 或 Phase2。feature SQLite 是 `phases/phase4-trial5/data/sqlite/swarm_a_phase4_trial5_driver_features_v5.sqlite`；prediction SQLite 是 `phases/phase4-trial5/data/sqlite/swarm_a_phase4_trial5_driver_gpr_v5.sqlite`。2,295 個 prediction rows 都是 outer held-out 預測。
 
 #### [P4.7] Trial1 anchors 加 Phase2 minute drivers -> Trial5 held-out GPR [done]
 

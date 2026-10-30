@@ -2,10 +2,13 @@
 
 import csv
 import sqlite3
+import sys
 from contextlib import closing
 from pathlib import Path
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from phases.phase4.code.calc_phase4_trial4_gpr import FEATURE_NAMES
 from phases.phase4.code.calc_phase4_trial4_groupcv_diagnostics import (
@@ -15,8 +18,8 @@ from phases.phase4.code.calc_phase4_trial4_groupcv_diagnostics import (
 )
 
 
-ROOT = Path("phases/phase4")
-SOURCE = ROOT / "data/sqlite/swarm_a_phase4_trial4_altitude_gpr_v1.sqlite"
+ROOT = Path("phases/phase4-trial2")
+SOURCE = Path("phases/phase4-trial1/data/sqlite/swarm_a_phase4_trial4_altitude_gpr_v1.sqlite")
 PREDICTION = ROOT / "data/sqlite/swarm_a_phase4_trial4_altitude_groupcv20_5_v2.sqlite"
 HYPERPARAMS = ROOT / "data/analysis/phase4_trial4_groupcv20_5_hyperparams.csv"
 FEATURE_SHIFT = ROOT / "data/analysis/phase4_trial4_groupcv20_5_feature_shift.csv"

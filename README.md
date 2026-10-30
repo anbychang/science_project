@@ -15,11 +15,11 @@
 | [Phase 2R](phases/phase2r/reports/phase_2r_final_report.md) | [done] 十二年 | Phase 2 方法的獨立重現；49 場候選中 46 場有完整分鐘資料；檢查點已固定。 |
 | [Phase 3](phases/phase3/reports/phase_3_final_report.md) | [retained] 三年 | 唯讀歷史 M1 基線；固定 $R_k$／共同 $\tau$ 的設定不作後續密度分析基線。 |
 | [Phase 3 Trial4](phases/phase3-trial4/reports/trial4_joint_fit_tau15_report.md) | [done: descriptive] | 現行修正基線；25 場自由 $R_k$／$\tau_k$ 的 joint fit，已核對來源、公式與保存輸出，仍未外測。 |
-| [Phase4 Trial1](phases/phase4/reports/phase_4_trial4_altitude_gpr_report.md) | [done] | Trial4 固定基線上的五特徵資料內 GPR；只量測貼合能力。 |
-| [Phase4 Trial2](phases/phase4/reports/phase_4_trial4_groupcv20_5_report.md) | [done] | 20/5 storm-group held-out GPR；RMSE 0.11028，未改善 Trial4 的 0.11005。 |
-| [Phase4 Trial3](phases/phase4/reports/phase_4_trial4_nested_groupcv_report.md) | [done] | nested 20/5 storm-group 四特徵 GPR；RMSE 0.12014，劣於 Trial4 的 0.11005。 |
-| [Phase4 Trial4](phases/phase4/reports/phase_4_time_tau_season_report.md) | [done] | 時間、固定 Trial4 tau、季節 nested GPR；RMSE 0.11323，仍劣於 Trial4。 |
-| [Phase4 Trial5](phases/phase4/reports/phase_4_trial5_driver_report.md) | [done] | 新 geomagnetic driver nested GPR；RMSE 0.13203，明顯劣於 Trial4。 |
+| [Phase4 Trial1](phases/phase4-trial1/reports/phase_4_trial4_altitude_gpr_report.md) | [done] | Trial4 固定基線上的五特徵資料內 GPR；只量測貼合能力。 |
+| [Phase4 Trial2](phases/phase4-trial2/reports/phase_4_trial4_groupcv20_5_report.md) | [done] | 20/5 storm-group held-out GPR；RMSE 0.11028，未改善 Trial4 的 0.11005。 |
+| [Phase4 Trial3](phases/phase4-trial3/reports/phase_4_trial4_nested_groupcv_report.md) | [done] | nested 20/5 storm-group 四特徵 GPR；RMSE 0.12014，劣於 Trial4 的 0.11005。 |
+| [Phase4 Trial4](phases/phase4-trial4/reports/phase_4_time_tau_season_report.md) | [done] | 時間、固定 Trial4 tau、季節 nested GPR；RMSE 0.11323，仍劣於 Trial4。 |
+| [Phase4 Trial5](phases/phase4-trial5/reports/phase_4_trial5_driver_report.md) | [done] | 新 geomagnetic driver nested GPR；RMSE 0.13203，明顯劣於 Trial4。 |
 | Phase4 Final | [not created] | 保留給通過明確驗收條件的最終方法；不得把 Trial1--Trial5 升格為 final。 |
 
 Phase4 Trial1--Trial5 的特徵組合比較與每個欄位目前可主張的範圍，見[特徵貢獻整理](phases/phase4/reports/phase_4_feature_contribution_summary.md)。

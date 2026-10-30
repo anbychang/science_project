@@ -1,6 +1,6 @@
 # Phase4 Trial1--Trial5：特徵貢獻整理
 
-狀態：[done]。目前沒有任何 Phase4 特徵組合能穩定改善固定 Trial4 D-model；Phase4 Final 維持 `[not created]`。現有試驗只能判定「特徵組合」的 held-out 貢獻，不能把每個單一特徵誠實拆成獨立 RMSE 貢獻，因為沒有做預先定義的單欄消融。
+狀態：[done]。目前沒有任何 Phase4 特徵組合能穩定改善固定 Trial4 D-model；Phase4 Final 維持 `[not created]`。單欄 GPR 消融現已完成，但它使用已被多次探索的同一批 25 場，只能作探索性 held-out 診斷，不能當確認性貢獻或物理效應。
 
 ## 共同比較基準
 
@@ -16,15 +16,17 @@ Trial2--Trial5 都以相同 25 場 storm 的 2,295 個 anchors，做 20-train/5-
 
 Trial1 和 Trial2--Trial5 不能直接比較：Trial1 的資料內分數不是 held-out 分數。
 
+單欄 `only-feature` 與 `drop-feature` 的實測結果見[單一特徵 GPR 消融](phase_4_feature_ablation_report.md)。完整五欄快速重算是 0.110281154，與 Trial2 原始五 restart 的 0.110281140 相差 $1.41\times10^{-8}$。
+
 ## 特徵帳本
 
 | 特徵 | 出現的 Trial | 現有證據 | 可下的結論 |
 | --- | --- | --- | --- |
-| `H_tau_k` | 1, 2, 3 | Trial2 五特徵無改善；Trial3 四特徵變差；ARD 平均尺度為 0.598 SD | 未證明跨 storm 貢獻；不能單獨判定好或壞 |
-| `H_24h` | 1, 2, 3 | 同上；Trial2 的資料內 ARD 平均尺度為 0.285 SD | 在資料內是四個 geomagnetic 欄位中較局部敏感者；不是泛化貢獻或因果排序 |
-| `SME` | 1, 2, 3 | 同上；ARD 平均尺度為 3.309 SD | 資料內敏感度最低；沒有獨立外測增益 |
-| `SYM-H` | 1, 2, 3 | 同上；ARD 平均尺度為 0.844 SD | 沒有獨立外測增益 |
-| `altitude` | 1, 2 | Trial2 每折 ARD 都卡在 0.010 SD 下界；fold 3、4 有約 20% 測試高度超出訓練範圍 | 強烈資料內局部插值跡象；不能當作高度因果，亦未證明可轉移貢獻 |
+| `H_tau_k` | 1, 2, 3、消融 | only RMSE +0.001388；drop RMSE +0.000682；移除後 5/5 fold 變差 | 無單獨訊號；五欄內有小條件增益 |
+| `H_24h` | 1, 2, 3、消融 | only +0.000849；drop +0.001140；移除後 4/5 fold 變差 | 無單獨訊號；五欄內有小條件增益 |
+| `SME` | 1, 2, 3、消融 | only +0.000729；drop -0.000084；移除後 4/5 fold 略好 | 沒有額外訊號，與其餘欄位冗餘 |
+| `SYM-H` | 1, 2, 3、消融 | only +0.003273；drop -0.001039；fold 間不一致 | 單獨最差；整體移除較好，但不能下物理結論 |
+| `altitude` | 1, 2、消融 | only +0.000001；drop +0.007851；移除後 3/5 fold 變差 | 像五欄 GPR 的局部化 gate，不是獨立預測或高度因果 |
 | `relative_time_hours` | 4 | 與 `tau`、季節合併後 RMSE 變差 | 沒有獨立貢獻估計 |
 | `tau_hours` | 4 | 同上；它來自同一場 Trial4 密度擬合 | 只能做 retrospective 描述，不可當未見 storm 的預報輸入 |
 | `season_sin`, `season_cos` | 4 | 同上 | 沒有獨立貢獻估計 |
@@ -42,14 +44,15 @@ Trial2 的 ARD 只是 GPR 在該折訓練資料內的局部距離尺度：尺度
 
 - Phase4 Final 不採用 Trial1--Trial5 任一 GPR。
 - 不再對同一 25 場任意混搭既有特徵；繼續嘗試只會把 held-out 標籤用於反覆選模。
-- 若真的需要「單一特徵貢獻」，必須先鎖定一個候選模型，對未接觸的事件資料做預先定義的 leave-one-feature-out 消融；不能再使用這五個 Trial 的分數補算後宣稱為確認性結論。
+- 若要確認單一特徵貢獻，必須先鎖定候選模型，對未接觸的事件資料做預先定義的 leave-one-feature-out 消融；不得把現有 25 場的探索性數字升格為確認性結論。
 
 ## 證據
 
-- [Trial1 資料內報告](phase_4_trial4_altitude_gpr_report.md)
-- [Trial2 五特徵 held-out 報告](phase_4_trial4_groupcv20_5_report.md)
-- [Trial3 四特徵 nested 報告](phase_4_trial4_nested_groupcv_report.md)
-- [Trial4 時間、tau、季節報告](phase_4_time_tau_season_report.md)
-- [Trial5 新 geomagnetic driver 報告](phase_4_trial5_driver_report.md)
-- [Trial2 ARD 參數](../data/analysis/phase4_trial4_groupcv20_5_hyperparams.csv)
-- [Trial5 新特徵 audit](../data/analysis/phase4_trial5_driver_feature_audit.csv)
+- [Trial1 資料內報告](../../phase4-trial1/reports/phase_4_trial4_altitude_gpr_report.md)
+- [Trial2 五特徵 held-out 報告](../../phase4-trial2/reports/phase_4_trial4_groupcv20_5_report.md)
+- [Trial3 四特徵 nested 報告](../../phase4-trial3/reports/phase_4_trial4_nested_groupcv_report.md)
+- [Trial4 時間、tau、季節報告](../../phase4-trial4/reports/phase_4_time_tau_season_report.md)
+- [Trial5 新 geomagnetic driver 報告](../../phase4-trial5/reports/phase_4_trial5_driver_report.md)
+- [單一特徵 GPR 消融](phase_4_feature_ablation_report.md)
+- [Trial2 ARD 參數](../../phase4-trial2/data/analysis/phase4_trial4_groupcv20_5_hyperparams.csv)
+- [Trial5 新特徵 audit](../../phase4-trial5/data/analysis/phase4_trial5_driver_feature_audit.csv)

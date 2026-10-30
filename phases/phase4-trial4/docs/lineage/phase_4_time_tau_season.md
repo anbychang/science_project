@@ -2,7 +2,7 @@
 
 ## 狀態與資料界線
 
-狀態：[done]。Phase4 Trial4 只讀取 Phase4 Trial1 的保存錨點與固定 Phase3 Trial4 D-model，不回寫 Trial1--Trial3、Phase3 Trial4、Phase 3 或 Phase 2。SQLite 為 `phases/phase4/data/sqlite/swarm_a_phase4_trial4_time_tau_season_nested_v4.sqlite`；它的 2,295 個 prediction rows 都是 outer held-out GPR 預測。`tau_hours` 是固定的 Phase3 Trial4 event fit，只允許 retrospective 解讀。
+狀態：[done]。Phase4 Trial4 只讀取 Phase4 Trial1 的保存錨點與固定 Phase3 Trial4 D-model，不回寫 Trial1--Trial3、Phase3 Trial4、Phase 3 或 Phase 2。SQLite 為 `phases/phase4-trial4/data/sqlite/swarm_a_phase4_trial4_time_tau_season_nested_v4.sqlite`；它的 2,295 個 prediction rows 都是 outer held-out GPR 預測。`tau_hours` 是固定的 Phase3 Trial4 event fit，只允許 retrospective 解讀。
 
 ```text
 Phase4 Trial1 anchors

@@ -5,11 +5,14 @@ import json
 import math
 import os
 import sqlite3
+import sys
 import tempfile
 from contextlib import closing
 from pathlib import Path
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from phases.phase4.code.calc_phase4_trial4_gpr import (
     FEATURE_NAMES,
@@ -20,8 +23,8 @@ from phases.phase4.code.calc_phase4_trial4_gpr import (
 from phases.phase4.code.calc_phase4_trial4_groupcv import split_storm_folds
 
 
-ROOT = Path("phases/phase4")
-SOURCE = ROOT / "data/sqlite/swarm_a_phase4_trial4_altitude_gpr_v1.sqlite"
+ROOT = Path("phases/phase4-trial2")
+SOURCE = Path("phases/phase4-trial1/data/sqlite/swarm_a_phase4_trial4_altitude_gpr_v1.sqlite")
 OUTPUT = ROOT / "data/sqlite/swarm_a_phase4_trial4_altitude_groupcv20_5_v2.sqlite"
 EVENT_METRICS = ROOT / "data/analysis/phase4_trial4_groupcv20_5_event_metrics.csv"
 FOLD_METRICS = ROOT / "data/analysis/phase4_trial4_groupcv20_5_fold_metrics.csv"
@@ -241,7 +244,7 @@ def main() -> None:
     write_csv(FOLD_METRICS, result["fold_metrics"])
     write_csv(HYPERPARAMS, result["parameters"])
     FOLD_ASSIGNMENT.write_text(json.dumps(result["assignments"], indent=2), encoding="utf-8")
-    from phases.phase4.code.prep_phase4_trial4_groupcv_figures import main as draw_figures
+    from prep_phase4_trial4_groupcv_figures import main as draw_figures
 
     draw_figures()
     print("Saved Phase 4 20/5 group-CV GPR for 2,295 held-out anchors")

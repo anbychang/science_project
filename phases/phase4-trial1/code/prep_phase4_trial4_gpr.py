@@ -5,11 +5,14 @@ import json
 import math
 import os
 import sqlite3
+import sys
 import tempfile
 from contextlib import closing
 from pathlib import Path
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from phases.phase0.code.calculation.density.calc_msis_p2_4 import (
     load_msis_weather,
@@ -35,7 +38,7 @@ from phases.phase4.code.calc_phase4_trial4_gpr import (
 )
 
 
-ROOT = Path("phases/phase4")
+ROOT = Path("phases/phase4-trial1")
 TRIAL4_SOURCE = Path(
     "phases/phase3-trial4/data/sqlite/swarm_a_trial4_joint_fit_tau15.sqlite"
 )
@@ -338,7 +341,7 @@ def main() -> None:
         "scale": result["scaler"].scale_.tolist(),
         "anchor_count": len(result["rows"]),
     }, indent=2), encoding="utf-8")
-    from phases.phase4.code.prep_phase4_trial4_figures import main as draw_figures
+    from prep_phase4_trial4_figures import main as draw_figures
 
     draw_figures()
     print(f"Saved Phase 4 Trial4 GPR for {len(result['rows'])} anchors")

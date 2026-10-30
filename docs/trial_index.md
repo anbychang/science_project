@@ -1,6 +1,6 @@
 # Trial 索引
 
-狀態：[done]。本頁是所有 Trial 的入口，不把不同資料、不同校準機會或資料內／held-out 分數混成同一場競賽。現行下游密度基線只有 `Phase 3 Trial4 D-model`；Phase4 Trial1--Trial5 都未進入 Final。
+狀態：[done]。本頁是所有 Trial 的入口，不把不同資料、不同校準機會或資料內／held-out 分數混成同一場競賽。現行下游密度基線只有 `Phase 3 Trial4 D-model`；Phase4 Trial1--Trial5 都未進入 Final，Trial6 尚未執行。
 
 ## 狀態定義
 
@@ -8,6 +8,7 @@
 - `[done: descriptive]`：完成資料內描述，不能視為外測或預報。
 - `[done: negative]`：完成 held-out 檢查，沒有通過採用條件。
 - `[working]`：有初步結果，尚未成為下游輸入或結論。
+- `[not created]`：已保留位置或計畫，沒有研究輸出。
 
 ## Phase3 試驗
 
@@ -25,13 +26,14 @@
 
 | Trial | 狀態 | 特徵／方法 | 結果 | 報告 |
 | --- | --- | --- | --- | --- |
-| 1 | [historical] | `H_tau_k, H_24h, SME, SYM-H, altitude` 的資料內 GPR | RMSE 0.02029；只代表貼合能力 | [Trial1](../phases/phase4/reports/phase_4_trial4_altitude_gpr_report.md) |
-| 2 | [done: negative] | 同五特徵固定 20/5 GPR | RMSE 0.11028，較基線 +0.00023 | [Trial2](../phases/phase4/reports/phase_4_trial4_groupcv20_5_report.md) |
-| 3 | [done: negative] | 移除高度的四 geomagnetic 特徵 nested GPR | RMSE 0.12014，較基線 +0.01009 | [Trial3](../phases/phase4/reports/phase_4_trial4_nested_groupcv_report.md) |
-| 4 | [done: negative] | `relative_time, tau, season_sin, season_cos` nested GPR | RMSE 0.11323，較基線 +0.00318；`tau` 只可回溯使用 | [Trial4](../phases/phase4/reports/phase_4_time_tau_season_report.md) |
-| 5 | [done: negative] | `dSYM-H/dt, ap_step, F10.7` nested GPR | RMSE 0.13203，較基線 +0.02198 | [Trial5](../phases/phase4/reports/phase_4_trial5_driver_report.md) |
+| 1 | [historical] | `H_tau_k, H_24h, SME, SYM-H, altitude` 的資料內 GPR | RMSE 0.02029；只代表貼合能力 | [Trial1](../phases/phase4-trial1/reports/phase_4_trial4_altitude_gpr_report.md) |
+| 2 | [done: negative] | 同五特徵固定 20/5 GPR | RMSE 0.11028，較基線 +0.00023 | [Trial2](../phases/phase4-trial2/reports/phase_4_trial4_groupcv20_5_report.md) |
+| 3 | [done: negative] | 移除高度的四 geomagnetic 特徵 nested GPR | RMSE 0.12014，較基線 +0.01009 | [Trial3](../phases/phase4-trial3/reports/phase_4_trial4_nested_groupcv_report.md) |
+| 4 | [done: negative] | `relative_time, tau, season_sin, season_cos` nested GPR | RMSE 0.11323，較基線 +0.00318；`tau` 只可回溯使用 | [Trial4](../phases/phase4-trial4/reports/phase_4_time_tau_season_report.md) |
+| 5 | [done: negative] | `dSYM-H/dt, ap_step, F10.7` nested GPR | RMSE 0.13203，較基線 +0.02198 | [Trial5](../phases/phase4-trial5/reports/phase_4_trial5_driver_report.md) |
+| 6 | [not created] | 複合事件日夜／磁緯度分區與同場事後殘差 GPR | 工作空間與方法已建立；尚無數值結果 | [Trial6 計畫](../phases/phase4-trial6/docs/plans/PLAN.md) |
 
-Phase4 Final：[not created]。特徵組合比較、各欄位現有證據與不可主張的範圍，見 [Phase4 特徵貢獻整理](../phases/phase4/reports/phase_4_feature_contribution_summary.md)。
+Phase4 Final：[not created]。特徵組合比較、各欄位現有證據與不可主張的範圍，見 [Phase4 特徵貢獻整理](../phases/phase4/reports/phase_4_feature_contribution_summary.md)；五欄 `only-feature`／`drop-feature` 結果見 [單一特徵 GPR 消融](../phases/phase4/reports/phase_4_feature_ablation_report.md)。
 
 ## 採用界線
 

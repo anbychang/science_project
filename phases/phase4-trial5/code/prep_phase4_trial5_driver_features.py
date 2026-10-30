@@ -4,17 +4,20 @@ import csv
 import math
 import os
 import sqlite3
+import sys
 import tempfile
 from contextlib import closing
 from pathlib import Path
 
 import numpy as np
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+
 from phases.phase4.code.calc_phase4_trial5_drivers import backward_rate
 
 
-ROOT = Path("phases/phase4")
-SOURCE = ROOT / "data/sqlite/swarm_a_phase4_trial4_altitude_gpr_v1.sqlite"
+ROOT = Path("phases/phase4-trial5")
+SOURCE = Path("phases/phase4-trial1/data/sqlite/swarm_a_phase4_trial4_altitude_gpr_v1.sqlite")
 P2_SOURCE = Path("phases/phase2/data/sqlite/swarm_a_phase2_sme_p2_6_final.sqlite")
 OUTPUT = ROOT / "data/sqlite/swarm_a_phase4_trial5_driver_features_v5.sqlite"
 AUDIT = ROOT / "data/analysis/phase4_trial5_driver_feature_audit.csv"

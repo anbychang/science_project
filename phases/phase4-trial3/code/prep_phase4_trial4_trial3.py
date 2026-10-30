@@ -6,12 +6,18 @@ import json
 import math
 import os
 import sqlite3
+import sys
 import tempfile
 from contextlib import closing
 from pathlib import Path
 
 import numpy as np
 from sklearn.model_selection import GroupKFold
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+TRIAL2_CODE = Path(__file__).resolve().parents[2] / "phase4-trial2/code"
+sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(TRIAL2_CODE))
 
 from phases.phase4.code.calc_phase4_trial4_gpr import FEATURE_NAMES, score
 from phases.phase4.code.calc_phase4_trial4_groupcv import split_storm_folds
@@ -24,10 +30,10 @@ from phases.phase4.code.calc_phase4_trial4_trial3 import (
     predict_candidate,
     select_candidate,
 )
-from phases.phase4.code.prep_phase4_trial4_groupcv import feature_matrix, load_anchor_rows
+from prep_phase4_trial4_groupcv import feature_matrix, load_anchor_rows
 
 
-ROOT = Path("phases/phase4")
+ROOT = Path("phases/phase4-trial3")
 OUTPUT = ROOT / "data/sqlite/swarm_a_phase4_trial4_nested_groupcv_v3.sqlite"
 EVENT_METRICS = ROOT / "data/analysis/phase4_trial4_trial3_event_metrics.csv"
 FOLD_METRICS = ROOT / "data/analysis/phase4_trial4_trial3_fold_metrics.csv"
@@ -254,7 +260,7 @@ def write_sqlite(result: dict) -> None:
             metadata = {
                 "evaluation": "five outer 20/5 storm splits; four inner 15/5 splits select kernel; Trial4 baseline fixed",
                 "candidates": ",".join(candidate.name for candidate in SELECTION_CANDIDATES),
-                "source_phase4_v1": "phases/phase4/data/sqlite/swarm_a_phase4_trial4_altitude_gpr_v1.sqlite",
+                "source_phase4_v1": "phases/phase4-trial1/data/sqlite/swarm_a_phase4_trial4_altitude_gpr_v1.sqlite",
             }
             database.executemany(
                 "INSERT INTO phase4_trial3_metadata VALUES (?,?)", metadata.items()

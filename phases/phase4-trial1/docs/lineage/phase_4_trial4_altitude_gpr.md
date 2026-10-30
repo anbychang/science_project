@@ -73,6 +73,6 @@ prep_phase4_trial4_gpr.py -> write_sqlite(), write_csv()
 prep_phase4_trial4_figures.py -> main()
 ```
 
-輸出 SQLite 為 `phases/phase4/data/sqlite/swarm_a_phase4_trial4_altitude_gpr_v1.sqlite`。它有 2,295 個 prediction rows、25 場與 `PRAGMA integrity_check=ok`。CSV 保存逐場及全部錨點的資料內指標；圖保存 25 場 L2、Trial4、Trial4+GPR、條件式區間與高度。
+輸出 SQLite 為 `phases/phase4-trial1/data/sqlite/swarm_a_phase4_trial4_altitude_gpr_v1.sqlite`。它有 2,295 個 prediction rows、25 場與 `PRAGMA integrity_check=ok`。CSV 保存逐場及全部錨點的資料內指標；圖保存 25 場 L2、Trial4、Trial4+GPR、條件式區間與高度。
 
 這些輸出只描述同一批資料內曲線。Trial4 和 GPR 都已見過事件期間 L2；不可轉述為獨立預測或高度的因果效果。

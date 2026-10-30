@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-SOURCE = Path("phases/phase4/data/sqlite/swarm_a_phase4_trial4_altitude_groupcv20_5_v2.sqlite")
-FIGURE = Path("phases/phase4/figures/phase4_trial4_groupcv20_5_25storm.png")
+SOURCE = Path("phases/phase4-trial2/data/sqlite/swarm_a_phase4_trial4_altitude_groupcv20_5_v2.sqlite")
+FIGURE = Path("phases/phase4-trial2/figures/phase4_trial4_groupcv20_5_25storm.png")
 MICROSECONDS_PER_HOUR = 3_600_000_000
 
 
