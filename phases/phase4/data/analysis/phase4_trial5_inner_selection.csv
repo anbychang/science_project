@@ -1,0 +1,11 @@
+﻿outer_fold_index,candidate_name,feature_names,kernel_name,inner_validation_anchor_count,inner_validation_storm_count,inner_rmse_log_density,inner_mae_log_density,selected
+1,new_drivers_rbf,"symh_rate_nt_s,ap_step,f107_sfu",rbf,1836,20,0.12952533243389752,0.09602605495716487,0
+1,new_drivers_matern32,"symh_rate_nt_s,ap_step,f107_sfu",matern32,1836,20,0.12267930404082981,0.09078341266698926,1
+2,new_drivers_rbf,"symh_rate_nt_s,ap_step,f107_sfu",rbf,1835,20,0.13298355463898262,0.09876808075458499,0
+2,new_drivers_matern32,"symh_rate_nt_s,ap_step,f107_sfu",matern32,1835,20,0.12621079928894488,0.09372643926072091,1
+3,new_drivers_rbf,"symh_rate_nt_s,ap_step,f107_sfu",rbf,1835,20,0.127119466038438,0.09790674962285577,0
+3,new_drivers_matern32,"symh_rate_nt_s,ap_step,f107_sfu",matern32,1835,20,0.1220172485622652,0.09363926689203861,1
+4,new_drivers_rbf,"symh_rate_nt_s,ap_step,f107_sfu",rbf,1838,20,0.11777477522718492,0.08758353944086303,1
+4,new_drivers_matern32,"symh_rate_nt_s,ap_step,f107_sfu",matern32,1838,20,0.11977937757284969,0.08849846842261241,0
+5,new_drivers_rbf,"symh_rate_nt_s,ap_step,f107_sfu",rbf,1836,20,0.11019734352982292,0.0800898262626,0
+5,new_drivers_matern32,"symh_rate_nt_s,ap_step,f107_sfu",matern32,1836,20,0.10760920630043548,0.07875488179222069,1

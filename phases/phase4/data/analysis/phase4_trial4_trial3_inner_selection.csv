@@ -1,0 +1,11 @@
+﻿outer_fold_index,candidate_name,feature_names,kernel_name,inner_validation_anchor_count,inner_validation_storm_count,inner_rmse_log_density,inner_mae_log_density,selected
+1,geomagnetic_rbf,"h_tau_phase_nt,h_24h_phase_nt,sme_phase_nt,symh_phase_nt",rbf,1836,20,0.11180133526737572,0.08121085386105845,1
+1,geomagnetic_matern32,"h_tau_phase_nt,h_24h_phase_nt,sme_phase_nt,symh_phase_nt",matern32,1836,20,0.11238037077495716,0.08229779550594876,0
+2,geomagnetic_rbf,"h_tau_phase_nt,h_24h_phase_nt,sme_phase_nt,symh_phase_nt",rbf,1835,20,0.12378529774816066,0.09261558370059148,1
+2,geomagnetic_matern32,"h_tau_phase_nt,h_24h_phase_nt,sme_phase_nt,symh_phase_nt",matern32,1835,20,0.12475165776880634,0.09437166578196257,0
+3,geomagnetic_rbf,"h_tau_phase_nt,h_24h_phase_nt,sme_phase_nt,symh_phase_nt",rbf,1835,20,0.11842648734020746,0.08972171739832328,0
+3,geomagnetic_matern32,"h_tau_phase_nt,h_24h_phase_nt,sme_phase_nt,symh_phase_nt",matern32,1835,20,0.11783946271310111,0.09016087812175173,1
+4,geomagnetic_rbf,"h_tau_phase_nt,h_24h_phase_nt,sme_phase_nt,symh_phase_nt",rbf,1838,20,0.11963640749569705,0.08804271185901766,0
+4,geomagnetic_matern32,"h_tau_phase_nt,h_24h_phase_nt,sme_phase_nt,symh_phase_nt",matern32,1838,20,0.11917383754765921,0.08821133768861815,1
+5,geomagnetic_rbf,"h_tau_phase_nt,h_24h_phase_nt,sme_phase_nt,symh_phase_nt",rbf,1836,20,0.11894968932444239,0.08974882951413768,1
+5,geomagnetic_matern32,"h_tau_phase_nt,h_24h_phase_nt,sme_phase_nt,symh_phase_nt",matern32,1836,20,0.11934938123037762,0.09028466643010354,0

@@ -1,0 +1,4 @@
+﻿model,event_equal_tail_mse_log_density,event_equal_tail_rmse_log_density,events_improved
+D_trial4_tail_baseline,0.007969113463530957,0.08926989113654703,0
+E_positive_recovery_tail,0.008241138342579588,0.09078071569766119,2
+signed_recovery_diagnostic,0.008179522424231638,0.0904407122054644,9

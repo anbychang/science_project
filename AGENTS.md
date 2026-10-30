@@ -14,10 +14,16 @@ Phase 1 is the three-year working branch; Phase 1R is its 2014–2026 twelve-yea
 working branch. Keep their SQLite, reports, and figures in separate phase
 directories. Neither candidate decay-rate database is a calibrated release.
 
-Phase 3's three-year density-response analysis is complete. Its final record is
-`phases/phase3/reports/phase_3_final_report.md`; its per-event $R_k$
-calibration is final and must not be relabeled as provisional. Treat the Phase
-3 result as read-only; any extension needs a separate phase and output.
+Phase 3's three-year density-response analysis is a frozen historical
+baseline. Preserve P3.1--P3.6 methods, data, and results as read-only, but do
+not use its fixed $R_k$ and common $\tau=4.65$ h M1 curve as the current
+downstream density baseline. Phase 3 Trial4 is the corrected descriptive
+baseline: it reads local snapshots of the same Phase 2/3 inputs and jointly
+fits each event's $R_{\mathrm{fit},k}$ and $\tau_k$ with one positive common
+$G$. Downstream density work, including Phase 4, must read Trial4's D-model
+output. Trial4 remains data-in-sample and retrospective; its parameters are
+not physical measurements or forecast inputs. Do not rewrite frozen Phase 3
+to match Trial4; new work stays in a separate phase/output.
 
 The existing support code has two-body gravity, J2, RK4 integration, and
 NRLMSIS 2.0 density calculation. Atmospheric drag is not connected to the
