@@ -22,7 +22,7 @@ Trial4 從 Trial1 的 2,295 個錨點建立四個特徵：每場 event 時刻起
 
 ## 決定
 
-目前四個 Trial 的結論一致：沒有任何 tested GPR 特徵組合穩定改善固定 Trial4 D-model。Phase5 Final 仍是 [not created]。不要再在同一批 25 場上反覆替換特徵或 kernel；那會把 retrospective trials 變成對這批事件的選模循環。
+Trial1--Trial4 當時的結論一致：這些 GPR 特徵組合沒有穩定改善固定 Trial4 D-model。不要再在同一批 25 場上反覆替換特徵或 kernel；那會把回溯測試變成對這批事件的選模循環。後續狀態見[Phase 5 總入口](../../phase5/README.md)。
 
 ## 輸出與重算
 

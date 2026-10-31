@@ -1,6 +1,6 @@
-# Phase 5 跨場逐圈 GPR 資料血緣
+# Phase 5 歷史 Trial9 跨場逐圈 GPR 資料血緣
 
-狀態：[done]，只供描述性回溯分析。Phase 5 唯讀 Phase 4 已固定的 `phases/phase4/data/sqlite/swarm_a_phase3_h_tau_phase_v1.sqlite` 與 `phases/phase4/data/sqlite/swarm_a_trial4_joint_fit_tau15.sqlite`。衍生輸出是本機 `phases/phase5/data/sqlite/swarm_a_phase5_pooled_orbit_gpr_v1.sqlite`；原始表與 Phase 4 的擬合參數不回寫。先前的 CSV 保留在 `data/retained_csv_v1/` 供比對，不是現行資料來源。
+狀態：[done: historical]，只供有上一圈 L2 時的描述性回溯分析，不作無同場 L2 的 Phase 5 終版入口。此流程唯讀 Phase 4 已固定的 `phases/phase4/data/sqlite/swarm_a_phase3_h_tau_phase_v1.sqlite` 與 `phases/phase4/data/sqlite/swarm_a_trial4_joint_fit_tau15.sqlite`。衍生輸出是本機 `phases/phase5/data/sqlite/swarm_a_phase5_pooled_orbit_gpr_v1.sqlite`；原始表與 Phase 4 的擬合參數不回寫。先前的 CSV 保留在 `data/retained_csv_v1/` 供歷史比對。
 
 `time_us` 是 UTC 微秒，沿用 Phase 4 的分鐘 key，代表該分鐘的來源時刻；相位平均以該分鐘的 `u_rel_rad` 為中心。下面示例的 `1691078520000000` 是 2023-08-03T16:02:00Z；輸出仍用同一個 `{storm_id,time_us}`。模型檔另存 `data/models/`，不放進 SQLite；資料表可用 SQL 查詢。
 

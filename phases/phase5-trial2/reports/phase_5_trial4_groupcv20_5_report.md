@@ -28,7 +28,7 @@ Trial2 的失敗不是五個輸入在 held-out storm 全面離開訓練分布。
 
 高度是支配失敗的單一維度。它的 fitted length scale 固定碰到 0.010 SD，即 197--226 m；各折 held-out anchor 與最近訓練 anchor 的高度差中位數則是 0.58--1.96 km。加入高度後，五維 ARD 最近鄰距離中位數升到 3.37--9.37。對 RBF kernel，這表示相關性最多約 0.003，其他折更接近零。因此 GPR 只能回到零均值，折次中位絕對修正值為 $1.5\times10^{-20}$、$2.6\times10^{-4}$、$5.7\times10^{-6}$、$1.4\times10^{-16}$、$8.3\times10^{-20}$。
 
-這說明 Trial1 的高度擬合主要是資料內局部插值，不是可移轉的高度關係。它不是高度沒有影響的證據，也不能用來宣稱高度因果。若繼續 GPR，下一個方法必須把「不使用高度」與「對高度採取預先定義的較平滑尺度」當成候選模型，以 nested storm-group validation 選擇；不得用已曝光的 Trial2 held-out 標籤直接選 kernel 或 bounds 後再引用 Trial2 分數。
+這說明 Trial1 的高度擬合主要是資料內局部插值，不是可移轉的高度關係。它不是高度沒有影響的證據，也不能用來宣稱高度因果。[後續高度下限檢查](phase_5_altitude_bound_check.md)把標準化後的下限降低 10 倍，只略微改善 RMSE；再降到 100 倍幾乎不變。提高下限到 `0.1` 或 `0.3` 則五折都變差。這項診斷不作採用版選模。若繼續 GPR，新的候選模型必須用 nested storm-group validation 選擇；不得用已曝光的 Trial2 held-out 標籤直接選 kernel 或 bounds 後再引用 Trial2 分數。
 
 ## 輸出與重算
 

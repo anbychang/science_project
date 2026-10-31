@@ -1,6 +1,6 @@
 # Phase5 Trial1--Trial5：特徵貢獻整理
 
-狀態：[done]。目前沒有任何 Phase5 特徵組合能穩定改善固定 Trial4 D-model；Phase5 Final 維持 `[not created]`。單欄 GPR 消融現已完成，但它使用已被多次探索的同一批 25 場，只能作探索性 held-out 診斷，不能當確認性貢獻或物理效應。
+狀態：[done]。Trial1--Trial5 測過的特徵組合都未穩定改善固定 Trial4 D-model，因此這批組合不採用。單欄 GPR 消融使用已被多次探索的同一批 25 場，只能作探索性 held-out 診斷，不能當確認性貢獻或物理效應。Phase 5 後續不同資料條件的結果見[總入口](../../phase5/README.md)。
 
 ## 共同比較基準
 

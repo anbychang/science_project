@@ -15,10 +15,10 @@
 | [Phase 2R](phases/phase2r/reports/phase_2r_final_report.md) | [done] 十二年 | Phase 2 方法的獨立重現；49 場候選中 46 場有完整分鐘資料；檢查點已固定。 |
 | [Phase 3](phases/phase3/reports/phase_3_final_report.md) | [retained] 三年 | 唯讀歷史 M1 基線；固定 $R_k$／共同 $\tau$ 的設定不作後續密度分析基線。 |
 | [Phase 4](phases/phase4/reports/trial4_joint_fit_tau15_report.md) | [done: descriptive] | 現行修正基線；25 場自由 $R_k$／$\tau_k$ 的 joint fit，已核對來源、公式與保存輸出，仍未外測。 |
-| [Phase 5](phases/phase5/README.md) | [done: method selected] | 採用固定 Phase 4 加跨場逐圈 GPR 的殘差修正；有上一圈 L2 的條件性回溯結果，尚非端到端預報。 |
+| [Phase 5](phases/phase5/README.md) | [done: negative] | 目標場整場沒有 L2 時，已測 GPR 修正未勝過 M1；目前沒有可部署的無 L2 密度終版。Trial9 有上一圈 L2 的結果保留為歷史實驗。 |
 
 Phase5 Trial1--Trial5 的特徵組合比較與每個欄位目前可主張的範圍，見[特徵貢獻整理](phases/phase5-trial2/reports/phase_5_feature_contribution_summary.md)。
-最後選用的方法見[Phase 5 採用版報告](phases/phase5/reports/phase_5_report.md)；九個 Trial 的脈絡與圖見[實驗報告](phases/phase5/reports/phase_5_trial1_9_report.md)。
+無同場 L2 的終版決定見[Phase 5 最終報告](phases/phase5/reports/phase_5_report.md)；Trial1--Trial13 的脈絡與圖見[整合報告](phases/phase5/reports/phase_5_trial1_13_report.md)。
 所有歷史、現行與 working Trial 的狀態及報告入口，見 [Trial 索引](docs/trial_index.md)。
 
 Phase 1／1R 的舊 10 分鐘分支是歷史資料，不能與現行逐 10 秒候選混用。Phase 2／2R 的 peak QC 是描述性結果；Phase 4 是現行修正的資料內基線，不能當作外測預報，也不能把它的參數解釋成物理量。舊 Phase 3 M1 與 M0 比較使用不同校準機會，不能宣稱 M1 已勝出。現階段沒有完成 drag propagator 或 XYZ 預報。
@@ -34,7 +34,7 @@ phases/
   phase2r/      十二年重現與結案報告
   phase3/       三年密度響應的唯讀歷史基線
   phase4/       現行修正的自由 R_k／tau_k 描述性基線
-  phase5/       Trial1--Trial9 整合報告、跨場 GPR 重算程式與結果
+  phase5/       Trial1--Trial13 整合報告、無同場 L2 終版判定與歷史 GPR 輸出
 docs/           跨 Phase 的報告索引、資料血緣與寫作規則
 ```
 

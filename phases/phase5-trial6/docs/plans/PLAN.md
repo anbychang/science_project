@@ -50,4 +50,4 @@ docs/lineage/          trial6_within_storm_ridge.md
 tests/                 日側幾何、配對與遮住區的最小可執行檢查
 ```
 
-以上輸出已建立。Phase5 Final 保持 `[not created]`。Trial6 與 Trial1--Trial5 的跨場分數回答不同問題，不直接排名。
+以上輸出已建立。Trial6 與 Trial1--Trial5 的跨場分數回答不同問題，不直接排名；Phase 5 後續狀態見[總入口](../../../phase5/README.md)。

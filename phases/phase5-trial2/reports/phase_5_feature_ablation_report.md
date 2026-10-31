@@ -1,6 +1,6 @@
 # Phase5：單一特徵 GPR 消融
 
-狀態：[done]。這是對 Trial1 五特徵 GPR 的探索性單欄分析，不是新 Trial，也不改變 Phase5 Final `[not created]`。完整五欄 GPR 的 held-out RMSE 是 0.110281，仍略差於固定 Trial4 D-model 的 0.110050；沒有任何結果支持採用 GPR。
+狀態：[done]。這是對 Trial1 五特徵 GPR 的探索性單欄分析，不是新 Trial。完整五欄 GPR 的 held-out RMSE 是 0.110281，仍略差於固定 Trial4 D-model 的 0.110050；此組特徵沒有採用依據。Phase 5 後續不同資料條件的結果見[總入口](../../phase5/README.md)。
 
 ## 方法與判讀
 

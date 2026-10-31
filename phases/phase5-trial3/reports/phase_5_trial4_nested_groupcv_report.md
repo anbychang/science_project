@@ -20,7 +20,7 @@ Trial3 在五折的 RMSE 是 0.12895、0.08961、0.11385、0.12676、0.13603；�
 
 ## 決定
 
-Phase5 GPR 目前有兩個互補的負結果：五特徵 ARD-RBF 會被高度局部化而退回零修正；四特徵 nested GPR 則產生有害的跨 storm 修正。Phase5 Final 仍是 [not created]，不可把 Trial1、Trial2 或 Trial3 的結果升格為最終模型。
+Trial1--Trial3 當時得到兩個互補的負結果：五特徵 ARD-RBF 會被高度局部化而退回零修正；四特徵 nested GPR 則產生有害的跨 storm 修正。這三個 Trial 的結果都不能升格為採用方法；後續狀態見[Phase 5 總入口](../../phase5/README.md)。
 
 ## 輸出與重算
 

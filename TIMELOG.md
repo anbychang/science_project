@@ -782,3 +782,13 @@ SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
 **證據**：現行 SQLite 在相同 2,115 圈的對數 RMSE 分別為 0.11014、0.04211、0.03926；GPR 逐場勝過上一圈沿用為 17/25 場。兩份報告與索引已分開指向。
 
 **未解決**：Phase 4 事件參數使用整場 L2 擬合；採用版仍需要上一圈 L2，不能處理整場無 L2 的衛星。
+
+## 2026-11-01：Phase 5 終版改以整場無 L2 為條件
+
+**決定**：前述需上一圈 L2 的逐圈 GPR 改列 Trial9 歷史實驗，不再是 Phase 5 終版。終版只問目標磁暴整場沒有 Swarm-A L2 時，能否用已測 GPR 修正密度；目前沒有選出可採用模型。
+
+**結果**：Trial1--Trial13 的方法、分數與圖統整到 `phase_5_trial1_13_report.md`；`phase_5_report.md` 改記無同場 L2 的最後判定。相同 25 場、2,235 圈的對數密度 RMSE：M1 0.20663，Trial10--Trial12 依序為 0.21960、0.21922、0.21395，三版都未改善。Trial13 核對三版使用相同圈和折號；原 Trial9 SQLite、模型與個別報告保留供歷史核對。
+
+**證據**：[Phase 5 最終報告](phases/phase5/reports/phase_5_report.md)、[Trial1--Trial13 整合報告](phases/phase5/reports/phase_5_trial1_13_report.md)、[Trial13 同圈核對](phases/phase5-trial13/reports/trial13_m1_gpr_final_audit.md)。
+
+**未解決**：Phase 3 M1 與 Phase 4 D-model 的事件參數曾使用同場 L2；本次只評估 GPR 殘差層，沒有完成可部署的端到端無 L2 密度基線。

@@ -81,4 +81,4 @@ $t_0$ 區段中，內插在 19/25 場勝過不補值。強變化區中，內插�
 - [事前選擇規則逐段結果](../data/analysis/trial6_interpolation_rule_blocks.csv)、[逐點結果](../data/analysis/trial6_interpolation_rule_predictions.csv)、[三類區段摘要](../data/analysis/trial6_interpolation_rule_summary.csv)。
 - [逐場 RMSE 圖](../figures/trial6_event_rmse.png)、[資料血緣](../docs/lineage/trial6_within_storm_ridge.md)。
 
-決定：不採用 Trial6 Ridge，也不把兩條內插選擇規則升為已驗證的方法。若現在必須做保守的短缺口試算，可先以「兩端同方向」標記可試的區段，同時保留原 Trial4 與品質旗標供對照；此標記仍會補壞部分區段。Trial4 基線有資料內校準，Phase5 Final 暫不建立。
+決定：不採用 Trial6 Ridge，也不把兩條內插選擇規則升為已驗證的方法。若現在必須做保守的短缺口試算，可先以「兩端同方向」標記可試的區段，同時保留原 Trial4 與品質旗標供對照；此標記仍會補壞部分區段。Trial4 基線有資料內校準；Phase 5 後續狀態見[總入口](../../phase5/README.md)。

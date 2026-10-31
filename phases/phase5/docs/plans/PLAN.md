@@ -4,7 +4,7 @@
 
 Trial6 的獨立工作空間與[完整執行計畫](../../../phase5-trial6/docs/plans/PLAN.md)已建立，狀態：[done]。它以每圈時間與日側有效樣本比例，檢查同場事後殘差補值；另遮住 $t_0$ 前後三小時與非 $t_0$ 強烈 SYM-H 變化區。結果未顯示穩定 Ridge 優勢，詳見[Trial6 報告](../../../phase5-trial6/reports/trial6_within_storm_ridge_report.md)。
 
-Phase 5 現行採用版已選定，見[採用版報告](../../reports/phase_5_report.md)。本計畫保留 Trial1--Trial7 的歷史問題與結果；Trial1 是資料內描述，Trial2--Trial5 是 held-out 檢查，五者都不是現行方法。
+Phase 5 的無同場 L2 終版判定見[最終報告](../../reports/phase_5_report.md)：已測 GPR 沒有選出可採用修正。本計畫保留 Trial1--Trial7 的歷史問題與結果；Trial1 是資料內描述，Trial2--Trial5 是 held-out 檢查，五者都不是無 L2 終版方法。
 
 ## Phase5 Trial1：資料內描述 [done]
 
@@ -45,7 +45,7 @@ Trial5 只使用新增的 `{dSYM-H/dt, ap_step, F10.7}`。每個值以 Trial1 an
 
 ## Trial1--Trial5 特徵貢獻整理 [done]
 
-五個 trial 的共同 held-out 基準、特徵組合的 RMSE 差值與單一特徵不可識別的限制，已固定於[特徵貢獻整理](../../../phase5-trial2/reports/phase_5_feature_contribution_summary.md)。這批特徵組合沒有進入現行採用版。
+五個 trial 的共同 held-out 基準、特徵組合的 RMSE 差值與單一特徵不可識別的限制，已固定於[特徵貢獻整理](../../../phase5-trial2/reports/phase_5_feature_contribution_summary.md)。這批特徵組合沒有進入無 L2 終版。
 
 ## 單一特徵 GPR 消融 [done]
 

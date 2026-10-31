@@ -1,6 +1,6 @@
 # Phase 5 Trial9：跨磁暴共用的逐圈 GPR
 
-狀態：[working]。沿用 Trial2 的五折 20 場訓練／5 場完整測試名單。四輸入 GPR 在 2,115 個與 Trial8 相同的圈上，對數 RMSE 為 0.03926；直接沿用上一圈誤差為 0.04211。整場有 17/25 場改善；磁暴中心前後 24 小時只有 13/25 場改善。
+狀態：[done: historical]。沿用 Trial2 的五折 20 場訓練／5 場完整測試名單。四輸入 GPR 在 2,115 個與 Trial8 相同的圈上，對數 RMSE 為 0.03926；直接沿用上一圈誤差為 0.04211。整場有 17/25 場改善；磁暴中心前後 24 小時只有 13/25 場改善。這個方法需要目標場**上一圈 L2**，因此保留為歷史實驗，不是[無同場 L2 的 Phase 5 終版](../phase5/reports/phase_5_report.md)。
 
 - [方法、結果與限制](reports/trial9_pooled_orbit_gpr_report.md)
 - [25 場同位置 RMSE](figures/trial9_pooled_rmse.png)

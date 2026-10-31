@@ -1,6 +1,6 @@
-# Phase 5 實驗總報告：Trial1--Trial9
+# Phase 5 實驗總報告：Trial1--Trial13
 
-狀態：[done]。這份文件記錄 Trial1--Trial9 的研究嘗試與結果；[Phase 5 採用版報告](phase_5_report.md)單獨記錄最後選用的方法。Trial1--Trial5 測試 GPR 能不能修正 Phase 4 剩下的誤差；Trial6 測試有前後觀測時能否補中間六小時；Trial7 測試只看前一小時能否逐分鐘修正；Trial8--Trial9 改成一圈一點，檢查同場和跨場 GPR。
+狀態：[done]。這份文件依順序記錄 Trial1--Trial13 的問題、方法、結果與圖；[Phase 5 最終報告](phase_5_report.md)單獨記錄「目標場沒有 L2」時的決定。Trial1--Trial5 測試 Phase 4 的剩餘誤差；Trial6--Trial9 分別試短缺口、過去觀測與逐圈更新；Trial10--Trial12 改用不讀測試場 L2 的 M1 特徵；Trial13 用相同位置和指標核對後三版。
 
 名稱說明：原本的 Phase 3 Trial4 D-model 現在叫 Phase 4；原本的 Phase 4 試驗現在叫 Phase 5。已保存的資料欄位與圖名仍可能寫 `trial4` 或 `phase4`，這是搬遷前的識別碼，不代表還有一條待執行的舊流程。
 
@@ -12,10 +12,14 @@
 | Trial7 | 只看過去 L2，能逐分鐘更新嗎？ | 以一圈平均密度評分，25/25 場改善；逐分鐘評分是 20/25 場改善 |
 | Trial8 | 上一圈的誤差能用 GPR 推下一圈嗎？ | 單輸入與四輸入 GPR 都改善 D-model，但整體不如直接沿用上一圈誤差 |
 | Trial9 | 其他 20 場磁暴能教會 GPR 修正留下的 5 場嗎？ | 整場 17/25 場勝過直接沿用；磁暴中心附近 13/25 場勝過 |
+| Trial10 | 只看 M1 大小、最近升降與彎曲，能修正另一場嗎？ | 密度 RMSE：M1 0.20663 → GPR 0.21960；未改善 |
+| Trial11 | 只學誤差在同場的升降，加入事件時間有幫助嗎？ | 密度 RMSE：M1 0.20663 → GPR 0.21922；未改善 |
+| Trial12 | 改看整場 M1 峰值與累積高密度呢？ | 密度 RMSE：M1 0.20663 → GPR 0.21395；未改善 |
+| Trial13 | 同圈、同指標重新檢查 Trial10--Trial12，能採用嗎？ | 三版都輸給 M1；同圈 D-model 0.11000（已用同場 L2 擬合） |
 
 ## 先看懂這份報告在比較什麼
 
-先把 Phase 4 想成一條**已經算好的密度曲線**。Phase 5 以這條曲線為起點，觀察它和 Swarm-A L2 密度資料還差多少。Trial4 的公式包含每場磁暴自己的背景倍率 $R_k$、反應時間 $\tau_k$，以及各場共用的 SME 增益 $G$。這些數字已經用本次 25 場的 L2 資料調好。Phase 5 不再改它們。
+Trial1--Trial9 以 Phase 4 的**已算好密度曲線**為起點，觀察它和 Swarm-A L2 密度資料還差多少。Phase 4 的公式包含每場磁暴自己的背景倍率 $R_k$、反應時間 $\tau_k$，以及各場共用的 SME 增益 $G$；它們已用本次 25 場的 L2 資料調好。Trial10--Trial12 則修正凍結的 Phase 3 M1。後面會把 D-model、M1 和三版 GPR 放在**相同 2,235 圈**比較與 L2 的距離；但 D-model 已用這些事件的 L2 擬合，不能把它的分數當作同等條件的留場測試。
 
 報告裡常見的字，意思如下：
 
@@ -38,7 +42,7 @@ $$
 
 $e(t)>0$ 代表 L2 比 Trial4 高；$e(t)<0$ 代表 L2 比 Trial4 低。這只是兩份資料的差距，不能直接說其中一份一定是錯的。Phase 5 要問的是：**不改動 Trial4 公式時，還能不能把這段差距修得更小？**
 
-九個 Trial 用的資料條件不同。Trial1 在看過的資料上評分；Trial2--Trial5 把整場磁暴留給 GPR 測試；Trial6 暫時藏起同一場磁暴中間六小時的資料；Trial7 改用一分鐘一點的資料產生修正，再以往前一圈的密度平均作主要評分；Trial8 用同場過去資料逐圈估計；Trial9 用其他 20 場訓練 GPR、留出 5 場，但允許讀測試場上一圈的 L2。因此，**不能只按 RMSE 大小替九個 Trial 排名**，要先看它們各自在回答什麼問題。
+十三個 Trial 用的資料條件不同。Trial1 在看過的資料上評分；Trial2--Trial5 留出整場磁暴測 GPR；Trial6 暫時藏起同場六小時資料；Trial7 用過去一小時 L2 修下一分鐘；Trial8--Trial9 用上一圈 L2 推下一圈。Trial10--Trial12 的 GPR 推論不讀測試場 L2，Trial13 只統一核對它們。**不能只按 RMSE 大小替所有 Trial 排名**；要先看基線、取點和測試時究竟能讀哪些資料。
 
 ## Trial1：GPR 可以貼住已見資料嗎？
 
@@ -50,7 +54,7 @@ GPR 看完這 2,295 點後，我們又用**同一批點**給它評分。原本 T
 
 報告也算了 GPR 的 95% 區間：已見資料中有 98.39% 落在區間內。這個區間假設 Trial4 的參數已經固定，也是在同一批資料上檢查；不能直接解讀成對新磁暴有 95% 的可靠度。
 
-![Trial1 同資料擬合與評分的 RMSE](../figures/phase4_trial1_insample_rmse.png)
+<a href="../figures/phase4_trial1_insample_rmse.png"><img src="../figures/phase4_trial1_insample_rmse.png" alt="Trial1 同資料擬合與評分的 RMSE" width="900"></a>
 
 圖中的兩根柱子都是用同一批 2,295 點算的。藍色柱子很低，代表「看過再修」的效果很好。它與後面「整場磁暴先藏起來」的分數不是同一種考試。
 
@@ -64,11 +68,11 @@ Trial2 問的是：**GPR 沒看過某場磁暴的誤差，還能修好那一場�
 
 我們接著查「為什麼 GPR 幾乎沒有修正」。關鍵在高度。模型學到：高度相差大約 **197--226 m**，兩個點就已經不太相像；可是測試場的點，和最接近的訓練點相比，高度通常差 **0.58--1.96 km**。這個差距遠超過模型願意相信的範圍。所以遇到新磁暴時，GPR 多半回到「修正量接近零」。Trial2 的分數緊貼原本的 Trial4，主要反映了它**幾乎沒有動手修**。
 
-![Trial2 高度使留出磁暴遠離訓練錨點](../figures/phase4_trial2_altitude_ard_distance.png)
+<a href="../figures/phase4_trial2_altitude_ard_distance.png"><img src="../figures/phase4_trial2_altitude_ard_distance.png" alt="Trial2 高度使留出磁暴遠離訓練錨點" width="900"></a>
 
 圖中每一欄代表一次測試。綠點暫時不把高度算進「相似程度」，棕色方塊把高度算進去；棕色方塊在五次測試中都遠高於綠點。縱軸為了顯示大小差異，用了對數刻度。兩組點來自**同一個已訓練的五特徵模型**；綠點只是重新量距離，不是重訓另一個模型。
 
-Trial2 只測了「已固定 Trial4 之後，GPR 能否修正另一場的剩餘差距」。Trial4 自己的參數早已用全部 25 場 L2 調過，所以不能說整套方法已經通過未知磁暴測試。Trial2 也沒有證明高度對密度不重要。它發現的是：**這個 GPR 太在意高度，到了新磁暴幾乎不敢修。** 下一步自然要試：把高度拿掉會怎樣？
+Trial2 只測了「已固定 Trial4 之後，GPR 能否修正另一場的剩餘差距」。Trial4 自己的參數早已用全部 25 場 L2 調過，所以不能說整套方法已經通過未知磁暴測試。Trial2 也沒有證明高度對密度不重要。它發現的是：**這個 GPR 太在意高度，到了新磁暴幾乎不敢修。** 後來[調整高度 ARD 下限的檢查](../../phase5-trial2/reports/phase_5_altitude_bound_check.md)發現，把 `0.01` 降到 `0.001`，五折合計 RMSE 只從 0.11028 略降到 0.11021；再降 10 倍幾乎不變。提高到 `0.1` 或 `0.3` 反而變差。只調高度下限沒有解決問題。下一步自然要試：把高度拿掉會怎樣？
 
 ## Trial3：拿掉高度，模型會更能轉移嗎？
 
@@ -78,7 +82,7 @@ Trial2 的 GPR 太在意高度。Trial3 就把高度拿掉，只留下 `{H_tau_k
 
 拿掉高度後，GPR 確實比較願意修正。但它常常修錯：固定 Trial4 的對數 RMSE 是 **0.11005**，四特徵 GPR 升到 **0.12014**；MAE 也從 **0.07955** 升到 **0.08777**。25 場裡只有 **6 場**改善。GPR 的 95% 區間實際蓋到 87.76% 的點，也比 Trial2 的 95.42% 低。這些數字合起來說明：**模型開始動手，不代表它知道該往哪裡修。**
 
-![Trial3 各場留出磁暴的 RMSE 變化](../figures/phase4_trial3_event_rmse_change.png)
+<a href="../figures/phase4_trial3_event_rmse_change.png"><img src="../figures/phase4_trial3_event_rmse_change.png" alt="Trial3 各場留出磁暴的 RMSE 變化" width="900"></a>
 
 每條橫棒代表一場磁暴。棒子在零左邊、顏色是綠色，代表加上 GPR 後誤差變小；在右邊、顏色是棕色，代表誤差變大。**19/25 場變差**，所以不能把整體變差只歸咎於一場特別難的磁暴。
 
@@ -92,7 +96,7 @@ GPR 這次只看四個數字。`relative_time_hours` 是離磁暴事件時刻過
 
 測試方式沿用 Trial3：每次讓 GPR 學 20 場，藏起完整 5 場；選 RBF 或 Matérn 時，也只能用那 20 場。五次中，RBF 被選兩次，Matérn 被選三次。全部測試點合起來，固定 Trial4 的 RMSE 是 **0.11005**，這次 GPR 是 **0.11323**；MAE 從 **0.07955** 變成 **0.08192**。整體沒有改善。五次正式訓練也各出現一次收斂警告，不能把小幅起伏解讀得太肯定。
 
-![Trial4 五個留出折的 RMSE 變化](../figures/phase4_trial4_fold_rmse_change.png)
+<a href="../figures/phase4_trial4_fold_rmse_change.png"><img src="../figures/phase4_trial4_fold_rmse_change.png" alt="Trial4 五個留出折的 RMSE 變化" width="900"></a>
 
 每根柱子代表一次「20 場學習、5 場測試」。柱子往下，代表 GPR 比原曲線好；往上，代表更差。第二、四次變差，第三次幾乎沒變。只看整體 0.11323，會看不到這種不一致。
 
@@ -104,7 +108,7 @@ Trial5 再換一個問題：**如果 Trial4 已經用過 SME，其他磁活動�
 
 測試方式仍相同：每次學 20 場、藏起 5 場；選模型方式時只用那 20 場。結果比之前幾次還差。固定 Trial4 的 RMSE 是 **0.11005**，加上這三項資訊的 GPR 後變成 **0.13203**；MAE 從 **0.07955** 升到 **0.09750**。25 場裡只有 **2 場**變好。五次測試的 RMSE 落在 0.09309 到 0.16188，每次正式訓練也都有收斂警告。
 
-![Trial5 各場留出磁暴的 RMSE 變化](../figures/phase4_trial5_event_rmse_change.png)
+<a href="../figures/phase4_trial5_event_rmse_change.png"><img src="../figures/phase4_trial5_event_rmse_change.png" alt="Trial5 各場留出磁暴的 RMSE 變化" width="900"></a>
 
 圖的讀法和 Trial3 一樣：綠色、往左是改善；棕色、往右是變差。這次 **23/25 場變差**。因此不是少數幾場特別糟，拉高了原本普遍進步的平均分數。
 
@@ -120,7 +124,7 @@ Trial5 的意思是：**用目前這三種輸入和這套 GPR，無法穩定修�
 
 就 Trial1--Trial5 測過的特徵組合而言，沒有一組可作為跨磁暴修正的採用版。如果之後想再確認某項輸入是否有用，應先決定要測什麼，再找**這一輪完全沒碰過的新磁暴**來試。不能把這 25 場重新分一次組，就當成全新的獨立證據。
 
-![Trial2--Trial5 的跨磁暴殘差 RMSE](../figures/phase4_gpr_heldout_rmse.png)
+<a href="../figures/phase4_gpr_heldout_rmse.png"><img src="../figures/phase4_gpr_heldout_rmse.png" alt="Trial2--Trial5 的跨磁暴殘差 RMSE" width="900"></a>
 
 這張圖把 Trial2--Trial5 放在同一種考試中比較：每一根柱子都是「整場磁暴先藏起來」的分數，灰線是原本 Trial4 的分數。四根柱子都沒有低於灰線。Trial1 的 0.02029 是看過資料後的分數，所以不放進這張圖。
 
@@ -134,9 +138,9 @@ Trial5 的意思是：**用目前這三種輸入和這套 GPR，無法穩定修�
 
 我們也挑了兩種比較難的地方另測：每場磁暴的事件時刻 $t_0$ 前後三小時，以及離開 $t_0$、但 SYM-H 變化很強的六小時。前者的 RMSE 從 **0.14052 降到 0.06612**；後者從 **0.12914 降到 0.09889**。這兩組各有自己的選區方式，**不是前面 275 段的同一批資料**，不能把三個分數直接混在一起。
 
-![同一批 275 個六小時缺口的方法比較](../figures/phase4_trial6_gap_rmse.png)
+<a href="../figures/phase4_trial6_gap_rmse.png"><img src="../figures/phase4_trial6_gap_rmse.png" alt="同一批 275 個六小時缺口的方法比較" width="900"></a>
 
-![單場六小時缺口：端點與內插](../../phase5-trial6/figures/trial6_one_storm_interpolation.png)
+<a href="../../phase5-trial6/figures/trial6_one_storm_interpolation.png"><img src="../../phase5-trial6/figures/trial6_one_storm_interpolation.png" alt="單場六小時缺口：端點與內插" width="900"></a>
 
 接著看能不能在補之前，先知道哪段比較可能成功。若缺口兩端的 L2 都比 Trial4 高，88 段裡有 76 段補得更好；兩端都比較低，103 段裡有 87 段改善；一端高、一端低，84 段裡只有 57 段改善。於是我們試了「只補兩端同方向的缺口」。它補 191 段，補壞的段數從 55 降到 28；可是整體 RMSE 從全部補的 0.04737 升到 0.05755，因為也跳過一些本來補得好的段。
 
@@ -158,7 +162,7 @@ Trial6 假裝中間沒有觀測。Trial7 改問：**如果每分鐘都有觀測�
 
 25 場合計有 217,912 個一分鐘位置，其中 **212,861 個位置**的三條曲線都能取到完整一圈平均。在這些**相同位置**上，Trial4 的一圈平均密度對數 RMSE 是 **0.11002**，修正後是 **0.03447**，**25/25 場改善**。在事件時刻 $t_0$ 前後一天，71,222 個位置的 RMSE 是 **0.13633 → 0.04448**，24/25 場改善。相鄰的一圈視窗大量重疊，這些位置不能當作獨立測試。原先直接用一分鐘點評分是 **0.18056 → 0.15374**，20/25 場改善；它回答的是較短時間尺度的問題。[S20241010T2314 的一圈圖](../../phase5-trial7/figures/orbit_mean_25storm/s20241010t2314_orbit_mean.png)顯示局部高峰仍可能偏高，即使整場一圈平均分數改善。
 
-![25 場一圈平均密度的逐場 RMSE](../../phase5-trial7/figures/trial7_25storm_orbit_mean_rmse.png)
+<a href="../../phase5-trial7/figures/trial7_25storm_orbit_mean_rmse.png"><img src="../../phase5-trial7/figures/trial7_25storm_orbit_mean_rmse.png" alt="25 場一圈平均密度的逐場 RMSE" width="900"></a>
 
 這個做法沒有在修正當分鐘時直接看當分鐘的答案，但仍有兩個限制。第一，Trial4 的每場參數早已用該場完整 L2 調過。第二，當下之前必須連續有 60 分鐘可信 L2。因此整場沒有 L2 的衛星不能用，連續缺六小時的中間也不能用。60 分鐘只是這次固定選的測試長度，尚未證明它是物理上最好的長度。一圈平均也會壓低短時尖峰；0.03447 不能代表原始一分鐘密度的誤差。
 
@@ -170,7 +174,7 @@ Trial7 每分鐘更新一次。Trial8 回到**每圈只取一點**，問得更�
 
 同一批 **2,115 個可評分圈**上的對數 RMSE：Trial4 是 **0.11014**，直接沿用上一圈是 **0.04211**，單輸入 GPR 是 **0.04429**，指定四輸入 GPR 是 **0.04581**。兩版 GPR 都改善 Trial4，但整體都不如直接沿用。四輸入版在 2/25 場勝過簡單沿用；另外 23 場沒有。上一圈誤差本身已經提供很強的訊號，增加這些欄位仍未得到穩定額外改善。
 
-![25 場逐圈四方法的同位置 RMSE](../../phase5-trial8/figures/trial8_four_feature_rmse.png)
+<a href="../../phase5-trial8/figures/trial8_four_feature_rmse.png"><img src="../../phase5-trial8/figures/trial8_four_feature_rmse.png" alt="25 場逐圈四方法的同位置 RMSE" width="900"></a>
 
 [Trial8 完整報告與逐場圖](../../phase5-trial8/reports/trial8_next_orbit_gpr_report.md)列出模型細節。這是同一場磁暴、需要先有連續 L2 的修正；Trial4 基線的參數原本也使用完整事件 L2 調過。因此它不能當成獨立的即時預報，更不能直接套到整場沒有 L2 的衛星。Trial8 的一圈錨點與 Trial7 的重疊一圈平均窗口不同，兩者 RMSE 不可直接比較。
 
@@ -184,28 +188,109 @@ Trial9 的 GPR 修正層不再加新的物理公式。它從其他磁暴的資�
 
 只看磁暴中心 $t_0$ 前後 24 小時的相同 **754 圈**，直接沿用上一圈為 **0.05545**，跨場 GPR 為 **0.05266**；逐場只有 **13/25 場**改善。磁暴最重要的時段仍可能修壞，不能只看整場平均就訂成自動規則。
 
-![Trial9 的 25 場完整時段比較](../../phase5-trial9/figures/trial9_pooled_rmse.png)
+<a href="../../phase5-trial9/figures/trial9_pooled_rmse.png"><img src="../../phase5-trial9/figures/trial9_pooled_rmse.png" alt="Trial9 的 25 場完整時段比較" width="900"></a>
 
-![Trial9 的磁暴中心前後 24 小時比較](../../phase5-trial9/figures/trial9_t0_48h_rmse.png)
+<a href="../../phase5-trial9/figures/trial9_t0_48h_rmse.png"><img src="../../phase5-trial9/figures/trial9_t0_48h_rmse.png" alt="Trial9 的磁暴中心前後 24 小時比較" width="900"></a>
 
 [Trial9 完整報告與逐場圖](../../phase5-trial9/reports/trial9_pooled_orbit_gpr_report.md)記錄四個輸入、五折名單和限制。它與 Trial2--Trial5 的跨場失敗不矛盾：Trial9 多了**測試場上一圈的 L2**，回答的是有持續觀測時的下一圈修正。Trial4 的事件參數仍由完整 L2 調過，因此這不是整套模型的獨立預報驗證。
 
 這輪只用 CPU，沒有用 GPU。五折訓練模型與另行訓練的 25 場模型已保存在本機；直接查看圖與分數、或載入模型推論都不用重新訓練。[模型清單](../../phase5-trial9/data/models/manifest.json)記錄版本與核參數，二進位模型檔因體積較大不納入 Git。
 
+## Trial10：只看 M1 的三圈變化，能修下一場嗎？
+
+**結果：M1 0.20663 → GPR 0.21960；未改善，不採用。** 共用 2,235 圈。D-model 同圈為 0.11000，但已用同場 L2 擬合。
+
+Trial9 需要上一圈 L2。Trial10 改用凍結 Phase 3 M1。令 $m_n=\ln(\rho_{\mathrm{M1},n})$，每個中心圈的 GPR 輸入是：
+
+| 輸入欄位 | 定義 | 意思 |
+| --- | --- | --- |
+| `log_m1` | $m_n$ | 當圈 M1 密度大小 |
+| `past_log_change` | $m_n-m_{n-1}$ | 前一圈到當圈的升降 |
+| `centered_log_curvature` | $m_{n+1}-2m_n+m_{n-1}$ | 升降速度的變化 |
+
+下一圈只讀 **M1**。訓練答案是 $\ln(\rho_{\mathrm{L2},n}/\rho_{\mathrm{M1},n})$；測試場 L2 不進 GPR 輸入。本 Trial 沒有修正 Phase 4 D-model。
+
+2,295 個錨點中，前中後圈連續的中心點有 **2,235 個**。每折 20 場訓練、5 場整場測試；歷史 L2 產生訓練答案，測試 L2 只用於評分。標準化只用訓練場。
+
+改善：**11/25 場、2/5 折**。有 8 場平均修正方向判反，且全未改善；方向須用 L2 事後核對，不能作測試場的選擇規則。
+
+<a href="../../phase5-trial10/figures/m1_shape_gpr_25storm_overview.png"><img src="../../phase5-trial10/figures/m1_shape_gpr_25storm_overview.png" alt="Trial10 的 25 場 L2、M1 與 GPR 留場曲線" width="900"></a>
+
+[Trial10 完整報告](../../phase5-trial10/reports/trial10_m1_shape_gpr_report.md)列五折分數與逐場例子。
+
+## Trial11：只學誤差曲線的升降會更好嗎？
+
+**結果：M1 0.20663 → GPR 0.21922；未改善，不採用。** 共用 2,235 圈。D-model 同圈為 0.11000，但已用同場 L2 擬合。
+
+Trial11 讓 GPR 只學場內誤差升降。令 $m_{k,n}=\ln(\rho_{\mathrm{M1},k,n})$，$t_{0,k}$ 為已知事件時刻；中位數取該場有效中心圈：
+
+| 輸入欄位 | 定義 | 意思 |
+| --- | --- | --- |
+| `days_from_t0` | $(t_{k,n}-t_{0,k})/1\,\mathrm{day}$ | 事件前後及距離天數 |
+| `log_m1` | $m_{k,n}$ | 當圈 M1 密度大小 |
+| `relative_log_m1` | $m_{k,n}-\operatorname{median}_j(m_{k,j})$ | 相對該場一般密度的高低 |
+| `centered_log_slope` | $(m_{k,n+1}-m_{k,n-1})/2$ | 前後圈之間的升降 |
+
+訓練答案先扣每場平均；測試時只扣**預測修正值**的平均，不讀測試場 L2。沿用 20/5 留場、四維 ARD Matérn kernel，標準化只用訓練場。
+
+改善：**7/25 場、0/5 折**。訓練分數下降，留場沒有重現。
+
+<a href="../../phase5-trial11/figures/temporal_shape_gpr_25storm_overview.png"><img src="../../phase5-trial11/figures/temporal_shape_gpr_25storm_overview.png" alt="Trial11 的 25 場 L2、M1 與 GPR 留場曲線" width="900"></a>
+
+[Trial11 完整報告](../../phase5-trial11/reports/trial11_temporal_shape_gpr_report.md)列五折分數與 ARD 判讀限制。
+
+## Trial12：換成整場峰值與累積高密度呢？
+
+**結果：M1 0.20663 → GPR 0.21395；未改善，不採用。** 共用 2,235 圈。D-model 同圈為 0.11000，但已用同場 L2 擬合。
+
+Trial12 沿用 Trial11 的訓練目標、kernel 與分組，只換四個輸入。令 $m_{k,n}=\ln(\rho_{\mathrm{M1},k,n})$；$m_k^{\max}$ 是該場有效中心圈的最大值，$t_k^{\max}$ 是首次達到最大值的時刻，$\tilde m_k$ 是中位數，$q_{k,n}=\max(m_{k,n}-\tilde m_k,0)$：
+
+| 輸入欄位 | 定義 | 意思 |
+| --- | --- | --- |
+| `log_m1` | $m_{k,n}$ | 當圈 M1 密度大小 |
+| `log_below_peak` | $m_{k,n}-m_k^{\max}$ | 低於整場 M1 峰值多少 |
+| `days_from_peak` | $(t_{k,n}-t_k^{\max})/1\,\mathrm{day}$ | 峰值前後及距離天數 |
+| `cumulative_excess` | 連續兩圈累加 $(q_{k,n-1}+q_{k,n})(t_{k,n}-t_{k,n-1})/(2\,\mathrm{day})$ | 高於中位數的對數 M1 差值按時間累積；單位是天 |
+
+缺圈不跨越累加；峰值、中位數與累積量都由磁暴結束後的整場 M1 計算，不讀測試場 L2。
+
+改善：**9/25 場、1/5 折**。比 Trial11 好，仍輸給 M1。
+
+<a href="../../phase5-trial12/figures/peak_context_gpr_25storm_overview.png"><img src="../../phase5-trial12/figures/peak_context_gpr_25storm_overview.png" alt="Trial12 的 25 場 L2、M1 與 GPR 留場曲線" width="900"></a>
+
+[Trial12 完整報告](../../phase5-trial12/reports/trial12_peak_context_gpr_report.md)保留逐場資料。
+
+## Trial13：在同一批圈核對三版分數
+
+Trial13 核對 Trial10–12 已保存的 2,235 個留場預測：位置、折號、M1、L2 相同；**沒有訓練新模型**。下表只用對數密度 RMSE。每折 20 場訓練、5 場測試；訓練分數與分組見[最終報告](phase_5_report.md)。D-model 已用同場 L2 擬合，僅供參考。
+
+| 折 | 圈數 | D-model | M1 | Trial10 | Trial11 | Trial12 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 447 | 0.10335 | 0.19323 | 0.18778 | 0.21121 | 0.19867 |
+| 2 | 450 | 0.07440 | 0.10705 | 0.12419 | 0.13673 | 0.13019 |
+| 3 | 450 | 0.11755 | 0.22895 | 0.24123 | 0.23573 | 0.24464 |
+| 4 | 441 | 0.10849 | 0.20977 | 0.26597 | 0.21791 | 0.21234 |
+| 5 | 447 | 0.13684 | 0.26156 | 0.24889 | 0.27217 | 0.26003 |
+| 25 場合計 | 2,235 | **0.11000** | 0.20663 | 0.21960 | 0.21922 | 0.21395 |
+
+三版 GPR 的合計 RMSE 都高於 M1。D-model 未做 20/5 留場測試；Trial10–12 也未測它的殘差修正。
+
+[Trial13 個別報告](../../phase5-trial13/reports/trial13_m1_gpr_final_audit.md)保存同圈核對細節。
+
 ## 對一份資料，現在可以怎麼處理
 
-對這 25 場資料，先保留已經算好的 Phase 4 曲線。有可用 L2 時，才估計它和 Trial4 的差距，產生一條「修正後的候選曲線」；Trial4 原本的 $R_k,\tau_k,G$ 不再調整。計算方式是 $\rho_{\mathrm{候選}}(t)=\rho_{\mathrm{T4}}(t)\exp[\hat e(t)]$，其中 $\hat e(t)$ 是估計出的差距。下表整理**資料要具備什麼條件，才能做哪一種嘗試**。候選曲線目前都不能自動取代原曲線。
+對這 25 場歷史資料，Phase 4 曲線仍可作描述性對照。有可用 L2 的試驗，才可能估計它與 Phase 4 的差距，產生 $\rho_{\mathrm{候選}}(t)=\rho_{\mathrm{T4}}(t)\exp[\hat e(t)]$；$\hat e(t)$ 是估計出的差距。整場沒有 L2 時，Trial10--Trial13 改看歷史 M1 能否獨自支持 GPR 修正，結果未通過。下表按**實際可用資料**列出判斷；任何候選曲線都不能自動取代原曲線。
 
 | 資料狀況 | 本次可做的動作 | 目前的判斷 |
 | --- | --- | --- |
-| 整場沒有可信 L2 | 不能使用這批 Phase 5 修正 | Trial6--Trial9 都需要同場 L2；若 Trial4 的該場參數也要靠 L2 擬合，連原曲線都不能直接移用 |
+| 整場沒有可信 L2 | 不套用已測的 GPR 修正；先建立不靠該場 L2 的密度基線 | Trial6--Trial9 需要同場 L2；Trial10--Trial12 的 GPR 在留場測試未勝過 M1。現有 Phase 4 和歷史 M1 的事件參數都曾用該場 L2，不能直接冒充無 L2 基線 |
 | 中間連續缺六小時，前後各有可信 L2 | 可試 Trial6：連接兩端的差距，得到中間的候選補值 | 平均有改善，但 275 段中有 55 段補壞；還不能自動決定每段都要補 |
 | 待修正分鐘之前，連續 60 分鐘都有可信 L2 | 可試 Trial7：以前 60 分鐘的平均差距修正當分鐘 | 一圈平均密度 25 場改善；逐分鐘密度 20 場改善；修正時不能讀當分鐘的 L2 |
 | 過去一小時的 L2 中斷或不足 | 先不做 Trial7，等重新累積滿 60 分鐘 | 不能跳過缺口，拿更早的誤差來補 |
 | 前一圈已有可信 L2，且連續有足夠歷史圈 | 可試 Trial8：用上一圈的差距估計下一圈 | 直接沿用上一圈在 25 場都勝過本版 GPR；缺圈後需重新累積 |
 | 前一圈有可信 L2，且已有其他磁暴供 GPR 訓練 | 可試 Trial9：用其他 20 場學到的變化估計下一圈 | 整場 17/25 場勝過直接沿用；磁暴中心前後 24 小時只有 13/25 場，尚不能自動套用 |
 
-這張表整理的是**本次資料已測過的情況**，不是採用版的完整操作規則。特別是 Trial6：我們看到了端點方向與成功率的關係，還不能保證「只要長這樣就一定補得好」。若某顆衛星整場都沒有可用 L2，本次實驗也還沒給出可以直接套用的修正量。
+這張表整理的是**本次資料已測過的情況**，不是已驗證的通用操作規則。特別是 Trial6：我們看到了端點方向與成功率的關係，還不能保證「只要長這樣就一定補得好」。若某顆衛星整場都沒有可用 L2，本次實驗尚未給出可以直接套用的修正量。
 
 ## 目前應怎麼寫研究結論
 
@@ -216,8 +301,9 @@ Phase 5 目前最大的收穫，是知道**不同資料條件下，哪些修正�
 3. 如果剛過去一小時持續有 L2，拿那一小時的平均誤差修正下一分鐘，對一圈平均密度的評分在 25 場都改善；原始逐分鐘評分仍有 5 場變差。整場沒有 L2 時不能用。
 4. 如果改成一圈一點，上一圈誤差直接沿用已明顯改善基線；單輸入與指定四輸入 GPR 的整體分數都未勝過它。
 5. 把其他磁暴的相鄰圈合併訓練後，留出整場測試的 GPR 整體勝過直接沿用，但磁暴中心附近只有 13/25 場改善。這是一個有條件的進展，不是通用修正規則。
+6. 在 GPR 推論不直接讀測試場 L2 的條件下，Trial10--Trial12 的對數密度 RMSE 都高於 M1；同圈 D-model 更低，但它已用同場 L2 擬合。這三版沒有測過 D-model 殘差修正，整場沒有 L2 時也不採用這批 M1 修正。
 
-這 25 場的後續分析，仍以 Phase 4 作原本的比較曲線。Trial6--Trial9 只能在各自需要的 L2 條件下產生修正結果；Trial9 雖留出完整磁暴訓練標籤，仍使用測試場上一圈 L2。最後選用的流程與限制另見[採用版報告](phase_5_report.md)。
+Trial6--Trial9 只能在各自需要的 L2 條件下產生修正結果；Trial9 雖留出完整磁暴訓練標籤，仍使用測試場上一圈 L2，保留為歷史實驗。**Phase 5 終版以整場沒有 L2 為目標條件**；目前不選用 GPR 修正，決定與限制見[最終報告](phase_5_report.md)。
 
 ## 可追溯的原始結果
 
@@ -226,5 +312,7 @@ Phase 5 目前最大的收穫，是知道**不同資料條件下，哪些修正�
 - [Trial6 報告](../../phase5-trial6/reports/trial6_within_storm_ridge_report.md)、[Trial7 的 25 場報告與逐場圖](../../phase5-trial7/reports/trial7_25storm_past_mean_report.md)
 - [Trial8 逐圈 GPR 報告與逐場圖](../../phase5-trial8/reports/trial8_next_orbit_gpr_report.md)、[逐場與合計分數](../../phase5-trial8/data/analysis/trial8_next_orbit_metrics.csv)
 - [Trial9 跨場逐圈 GPR 報告與逐場圖](../../phase5-trial9/reports/trial9_pooled_orbit_gpr_report.md)、[逐場分數](../../phase5-trial9/data/analysis/trial9_pooled_event_metrics.csv)、[逐折分數](../../phase5-trial9/data/analysis/trial9_pooled_fold_metrics.csv)
+- [Trial10 M1 三特徵報告](../../phase5-trial10/reports/trial10_m1_shape_gpr_report.md)、[Trial11 時間與形狀報告](../../phase5-trial11/reports/trial11_temporal_shape_gpr_report.md)、[Trial12 峰值與累積量報告](../../phase5-trial12/reports/trial12_peak_context_gpr_report.md)、[Trial13 同圈核對報告](../../phase5-trial13/reports/trial13_m1_gpr_final_audit.md)
+- [D-model 同圈分數重算入口](../code/prep_phase5_d_model_score.py)：核對同一 `(storm_id,time_us)` 的 2,235 圈與 L2；五折和總分保存在本機 `data/sqlite/swarm_a_phase5_d_model_same_orbits_v1.sqlite`
 - [Trial6 逐段與規則摘要](../../phase5-trial6/data/analysis/trial6_interpolation_rule_summary.csv)、[Trial7 一圈平均逐場指標](../../phase5-trial7/data/analysis/trial7_25storm_orbit_mean_summary.csv)、[Trial7 原始逐分鐘指標](../../phase5-trial7/data/analysis/trial7_25storm_past_mean_summary.csv)
 - [報告專用比較圖重算入口](../../phase5-trial2/code/prep_phase5_report_figures.py)：讀取已保存的指標 CSV；不重新擬合任何 Trial。

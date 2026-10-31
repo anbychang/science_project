@@ -1,6 +1,6 @@
 # 資料血緣索引
 
-Phase 1／1R 是未校準的候選工作庫；Phase 2／2R 已結案，Phase 3 是唯讀歷史 M1 基線，詳細入口見下方「文件」。目前密度研究路徑是 `Phase 2 -> Phase 3（歷史輸入）-> Phase 4（修正基線）-> Phase 5（逐圈殘差修正）`。Phase 4 是資料內描述；Phase 5 的留場 GPR 只檢查固定基線之上的殘差，仍需上一圈 L2。各步以所屬 Phase 的血緣文件與報告為準。
+Phase 1／1R 是未校準的候選工作庫；Phase 2／2R 已結案，Phase 3 是唯讀歷史 M1 基線，詳細入口見下方「文件」。目前密度研究路徑是 `Phase 2 -> Phase 3（歷史輸入）-> Phase 4（描述性基線）-> Phase 5（無同場 L2 修正判定）`。Phase 4 是資料內描述；Phase 5 歷史 Trial9 的 GPR 仍需上一圈 L2，無同場 L2 的 Trial10--Trial13 沒有選出採用模型。各步以所屬 Phase 的血緣文件與報告為準。
 
 ## Phase 1／1R 工作資料庫
 
@@ -79,7 +79,7 @@ retained legacy，不是上述 v2 主線的輸入。
 - [Phase5 Trial3 資料血緣](../../phases/phase5-trial3/docs/lineage/phase_5_trial4_nested_groupcv.md)：移除高度後的四特徵 nested kernel selection 與 outer held-out 預測。
 - [Phase5 Trial4 資料血緣](../../phases/phase5-trial4/docs/lineage/phase_5_time_tau_season.md)：時間、固定 Trial4 tau、季節與 outer held-out 預測。
 - [Phase5 Trial5 資料血緣](../../phases/phase5-trial5/docs/lineage/phase_5_trial5_driver.md)：`dSYM-H/dt`、`ap_step`、`F10.7` 與 outer held-out 預測。
-- [Phase5 現行 GPR 資料血緣](../../phases/phase5/docs/lineage/phase5_pooled_orbit_gpr.md)：Phase 4 逐圈錨點、跨場逐圈 GPR 與 SQLite 輸出。
+- [Phase5 歷史 Trial9 GPR 資料血緣](../../phases/phase5/docs/lineage/phase5_pooled_orbit_gpr.md)：有上一圈 L2 時的 Phase 4 逐圈錨點、跨場 GPR 與 SQLite 輸出。
 - [Trial 索引](../trial_index.md)：所有歷史、現行與 working Trial 的狀態與報告入口。
 
 Phase 2 原始下載檔保留 CSV／ZIP；正式衍生結果只讀取 `phases/phase2/data/sqlite/` 的版本化 SQLite。

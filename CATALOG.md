@@ -4,6 +4,7 @@
 
 ```text
 [done: candidate] 候選資料產品已完成；物理校準尚未完成
+[done: negative] 指定資料條件下的候選方法已核對，沒有選出可採用版本
 [working] 仍在修訂
 [final]   已結案；資料與報告只讀
 [retained] 已凍結的歷史基線；不作現行下游輸入
@@ -28,7 +29,7 @@
 | Phase 2R（十二年） | [final] | `phases/phase2r/data/sqlite/`（本機檢查點鏈）：P2R.0 至 P2R.6；最終檔為 `swarm_a_phase2r_p2r_6_final_v1.sqlite`。 | [最終報告](phases/phase2r/reports/phase_2r_final_report.md)、[資料血緣](phases/phase2r/docs/lineage/phase_2r_12year_replication.md) |
 | Phase 3（三年） | [retained] | `phases/phase3/data/sqlite/`（本機） 與 [分析 CSV](phases/phase3/data/analysis/)；M1 分鐘結果在 `swarm_a_phase3_prediction_tau465_exploratory.sqlite`。它是唯讀歷史比較與 Phase 4 保存快照的來源，不作現行下游固定參數。 | [最終報告](phases/phase3/reports/phase_3_final_report.md)、[資料血緣](phases/phase3/docs/lineage/phase_3_25_storm_prediction.md) |
 | Phase 4 | [done: descriptive] | `phases/phase4/data/sqlite/swarm_a_trial4_joint_fit_tau15.sqlite`（本機）含 25 場、214,907 列資料內 joint fit；保存的 Phase 3 輸入快照、參數與分析摘要都在 Phase 4 SQLite。這是現行修正基線，不是外測或物理 release。 | [joint-fit 報告](phases/phase4/reports/trial4_joint_fit_tau15_report.md)、[資料血緣](phases/phase4/docs/lineage/trial4_joint_fit_tau15.md) |
-| Phase 5 | [done: method selected] | 從 Phase 4 直接建立 2,265 組相鄰圈；正式預測與指標在本機 `phases/phase5/data/sqlite/swarm_a_phase5_pooled_orbit_gpr_v1.sqlite`，六個模型在 `phases/phase5/data/models/`。 | [採用版報告](phases/phase5/reports/phase_5_report.md)、[Trial1--Trial9 實驗報告](phases/phase5/reports/phase_5_trial1_9_report.md)、[重算入口](phases/phase5/README.md) |
+| Phase 5 | [done: negative] | 無同場 L2 時，Trial10--Trial12 的 GPR 留場結果未勝過 M1；Trial13 的統一核對保存在本機 `phases/phase5-trial13/data/sqlite/`。`phases/phase5/data/sqlite/swarm_a_phase5_pooled_orbit_gpr_v1.sqlite` 與六個模型是需上一圈 L2 的歷史 Trial9 延伸版，不是無 L2 終版。 | [最終報告](phases/phase5/reports/phase_5_report.md)、[Trial1--Trial13 整合報告](phases/phase5/reports/phase_5_trial1_13_report.md)、[總入口](phases/phase5/README.md) |
 
 Phase 1／1R 的候選資料尚未校準為正式衰減率。舊 10 分鐘分支只供歷史比較，不作現行輸入。Phase 2、2R、3 的檢查點不回寫；下游密度分析讀 Phase 4 D-model，不讀 Phase 3 固定 M1。
 
