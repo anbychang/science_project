@@ -18,7 +18,7 @@ import numpy as np
 from calc_trial5_recovery import RecoveryEvent, RecoveryFit, fit_recovery_grid, recovery_shape
 
 
-SOURCE = Path("phases/phase3-trial4/data/sqlite/swarm_a_trial4_joint_fit_tau15.sqlite")
+SOURCE = Path("phases/phase4/data/sqlite/swarm_a_trial4_joint_fit_tau15.sqlite")
 OUTPUT = Path("phases/phase3-trial5/data/sqlite/swarm_a_trial5_recovery_v1.sqlite")
 MODEL_REPORT = Path("phases/phase3-trial5/data/analysis/trial5_recovery_models.csv")
 GRID_REPORT = Path("phases/phase3-trial5/data/analysis/trial5_recovery_grid_01h.csv")

@@ -1,6 +1,6 @@
 # 資料血緣索引
 
-Phase 1／1R 是未校準的候選工作庫；Phase 2／2R 已結案，Phase 3 是唯讀歷史 M1 基線，詳細入口見下方「文件」。目前密度研究路徑是 `Phase 2 -> Phase 3（歷史輸入）-> Phase 3 Trial4（修正基線）-> Phase4 Trial1--Trial5`；Trial4 與 Trial1 是資料內描述，Trial2--Trial5 是固定 Trial4 基線下的 20/5 held-out GPR 檢查。五者都不回寫 Phase 3，也沒有進入 Phase4 Final。各步以所屬 Phase 的血緣文件與報告為準。
+Phase 1／1R 是未校準的候選工作庫；Phase 2／2R 已結案，Phase 3 是唯讀歷史 M1 基線，詳細入口見下方「文件」。目前密度研究路徑是 `Phase 2 -> Phase 3（歷史輸入）-> Phase 4（修正基線）-> Phase 5（逐圈殘差修正）`。Phase 4 是資料內描述；Phase 5 的留場 GPR 只檢查固定基線之上的殘差，仍需上一圈 L2。各步以所屬 Phase 的血緣文件與報告為準。
 
 ## Phase 1／1R 工作資料庫
 
@@ -71,14 +71,15 @@ retained legacy，不是上述 v2 主線的輸入。
 - [Phase 2R 12 年計畫](../../phases/phase2r/docs/plans/PLAN.md)：P2R.0–P2R.6 的固定方法與驗收結果。
 - [Phase 2R 12 年資料血緣](../../phases/phase2r/docs/lineage/phase_2r_12year_replication.md)：每一步的 Action、Input、Output 與可查回範例。
 - [Phase 3 三年 25 場資料血緣](../../phases/phase3/docs/lineage/phase_3_25_storm_prediction.md)：唯讀 M1 歷史基線的 $R_{k,\mathrm{RQ}}$、SME 濾波、MSIS 配對、共同延遲與逐場回溯密度曲線。
-- [Phase 3 Trial4 joint-fit 資料血緣](../../phases/phase3-trial4/docs/lineage/trial4_joint_fit_tau15.md)：保存的 Phase 3 快照、Phase 2 輸入、資料內 joint fit 與現行修正基線輸出。
-- [Phase 3 Trial4 joint-fit 報告](../../phases/phase3-trial4/reports/trial4_joint_fit_tau15_report.md)：自由 $R_k$／$\tau_k$ 的結果、可重現性核對與描述性限制。
-- [Phase4 Trial1 資料血緣](../../phases/phase4-trial1/docs/lineage/phase_4_trial4_altitude_gpr.md)：Trial4 baseline、paired DNSAPOD 高度與五特徵資料內 GPR。
-- [Phase4 Trial2 資料血緣](../../phases/phase4-trial2/docs/lineage/phase_4_trial4_groupcv20_5.md)：Trial1 錨點、storm-group split 與每場一次 held-out 預測。
-- [Phase4 Trial2 結果報告](../../phases/phase4-trial2/reports/phase_4_trial4_groupcv20_5_report.md)：held-out 指標、折次結果與限制。
-- [Phase4 Trial3 資料血緣](../../phases/phase4-trial3/docs/lineage/phase_4_trial4_nested_groupcv.md)：移除高度後的四特徵 nested kernel selection 與 outer held-out 預測。
-- [Phase4 Trial4 資料血緣](../../phases/phase4-trial4/docs/lineage/phase_4_time_tau_season.md)：時間、固定 Trial4 tau、季節與 outer held-out 預測。
-- [Phase4 Trial5 資料血緣](../../phases/phase4-trial5/docs/lineage/phase_4_trial5_driver.md)：`dSYM-H/dt`、`ap_step`、`F10.7` 與 outer held-out 預測。
+- [Phase 4 joint-fit 資料血緣](../../phases/phase4/docs/lineage/trial4_joint_fit_tau15.md)：保存的 Phase 3 快照、Phase 2 輸入、資料內 joint fit 與現行修正基線輸出。
+- [Phase 4 joint-fit 報告](../../phases/phase4/reports/trial4_joint_fit_tau15_report.md)：自由 $R_k$／$\tau_k$ 的結果、可重現性核對與描述性限制。
+- [Phase5 Trial1 資料血緣](../../phases/phase5-trial1/docs/lineage/phase_5_trial4_altitude_gpr.md)：Trial4 baseline、paired DNSAPOD 高度與五特徵資料內 GPR。
+- [Phase5 Trial2 資料血緣](../../phases/phase5-trial2/docs/lineage/phase_5_trial4_groupcv20_5.md)：Trial1 錨點、storm-group split 與每場一次 held-out 預測。
+- [Phase5 Trial2 結果報告](../../phases/phase5-trial2/reports/phase_5_trial4_groupcv20_5_report.md)：held-out 指標、折次結果與限制。
+- [Phase5 Trial3 資料血緣](../../phases/phase5-trial3/docs/lineage/phase_5_trial4_nested_groupcv.md)：移除高度後的四特徵 nested kernel selection 與 outer held-out 預測。
+- [Phase5 Trial4 資料血緣](../../phases/phase5-trial4/docs/lineage/phase_5_time_tau_season.md)：時間、固定 Trial4 tau、季節與 outer held-out 預測。
+- [Phase5 Trial5 資料血緣](../../phases/phase5-trial5/docs/lineage/phase_5_trial5_driver.md)：`dSYM-H/dt`、`ap_step`、`F10.7` 與 outer held-out 預測。
+- [Phase5 現行 GPR 資料血緣](../../phases/phase5/docs/lineage/phase5_pooled_orbit_gpr.md)：Phase 4 逐圈錨點、跨場逐圈 GPR 與 SQLite 輸出。
 - [Trial 索引](../trial_index.md)：所有歷史、現行與 working Trial 的狀態與報告入口。
 
 Phase 2 原始下載檔保留 CSV／ZIP；正式衍生結果只讀取 `phases/phase2/data/sqlite/` 的版本化 SQLite。

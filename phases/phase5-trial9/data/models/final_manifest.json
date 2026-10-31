@@ -1,0 +1,17 @@
+{
+  "algorithm_version": "phase4_trial9_groupcv20_5_orbit_gpr_v1",
+  "role": "future use only; not a held-out score for the 25 training storms",
+  "train_storm_count": 25,
+  "train_pair_count": 2265,
+  "feature_names": [
+    "log_trial4_current_kg_m3",
+    "log_trial4_previous_kg_m3",
+    "log_l2_previous_kg_m3",
+    "previous_log_residual"
+  ],
+  "kernel": "3.05**2 * RBF(length_scale=[0.312, 0.339, 2.61, 6.35]) + WhiteKernel(noise_level=0.61)",
+  "scikit_learn_version": "1.6.1",
+  "joblib_version": "1.5.1",
+  "file": "trial9_all_25.joblib",
+  "size_bytes": 20247763
+}

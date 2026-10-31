@@ -1,0 +1,64 @@
+{
+  "algorithm_version": "phase4_trial9_groupcv20_5_orbit_gpr_v1",
+  "scikit_learn_version": "1.6.1",
+  "joblib_version": "1.5.1",
+  "feature_names": [
+    "log_trial4_current_kg_m3",
+    "log_trial4_previous_kg_m3",
+    "log_l2_previous_kg_m3",
+    "previous_log_residual"
+  ],
+  "source_predictions": "phases\\phase5-trial9\\data\\analysis\\trial9_pooled_predictions.csv",
+  "folds": [
+    {
+      "fold_index": 1,
+      "file": "trial9_fold_1.joblib",
+      "train_storm_count": 20,
+      "train_pair_count": 1812,
+      "test_storm_count": 5,
+      "test_pair_count": 453,
+      "kernel": "3.15**2 * RBF(length_scale=[0.314, 0.472, 1.33, 10]) + WhiteKernel(noise_level=0.597)",
+      "size_bytes": 12961660
+    },
+    {
+      "fold_index": 2,
+      "file": "trial9_fold_2.joblib",
+      "train_storm_count": 20,
+      "train_pair_count": 1810,
+      "test_storm_count": 5,
+      "test_pair_count": 455,
+      "kernel": "2.84**2 * RBF(length_scale=[0.29, 0.326, 1.6, 10]) + WhiteKernel(noise_level=0.582)",
+      "size_bytes": 12966095
+    },
+    {
+      "fold_index": 3,
+      "file": "trial9_fold_3.joblib",
+      "train_storm_count": 20,
+      "train_pair_count": 1810,
+      "test_storm_count": 5,
+      "test_pair_count": 455,
+      "kernel": "2.01**2 * RBF(length_scale=[0.241, 0.277, 10, 5.99]) + WhiteKernel(noise_level=0.683)",
+      "size_bytes": 12988885
+    },
+    {
+      "fold_index": 4,
+      "file": "trial9_fold_4.joblib",
+      "train_storm_count": 20,
+      "train_pair_count": 1816,
+      "test_storm_count": 5,
+      "test_pair_count": 449,
+      "kernel": "3.43**2 * RBF(length_scale=[0.372, 0.378, 10, 6.25]) + WhiteKernel(noise_level=0.602)",
+      "size_bytes": 13006219
+    },
+    {
+      "fold_index": 5,
+      "file": "trial9_fold_5.joblib",
+      "train_storm_count": 20,
+      "train_pair_count": 1812,
+      "test_storm_count": 5,
+      "test_pair_count": 453,
+      "kernel": "2.87**2 * RBF(length_scale=[0.268, 0.3, 10, 5.61]) + WhiteKernel(noise_level=0.558)",
+      "size_bytes": 13009388
+    }
+  ]
+}

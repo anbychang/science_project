@@ -17,13 +17,13 @@ directories. Neither candidate decay-rate database is a calibrated release.
 Phase 3's three-year density-response analysis is a frozen historical
 baseline. Preserve P3.1--P3.6 methods, data, and results as read-only, but do
 not use its fixed $R_k$ and common $\tau=4.65$ h M1 curve as the current
-downstream density baseline. Phase 3 Trial4 is the corrected descriptive
-baseline: it reads local snapshots of the same Phase 2/3 inputs and jointly
+downstream density baseline. Phase 4 is the corrected descriptive baseline:
+it reads local snapshots of the same Phase 2/3 inputs and jointly
 fits each event's $R_{\mathrm{fit},k}$ and $\tau_k$ with one positive common
-$G$. Downstream density work, including Phase 4, must read Trial4's D-model
-output. Trial4 remains data-in-sample and retrospective; its parameters are
+$G$. Downstream density work, including Phase 5, must read Phase 4's D-model
+output. Phase 4 remains data-in-sample and retrospective; its parameters are
 not physical measurements or forecast inputs. Do not rewrite frozen Phase 3
-to match Trial4; new work stays in a separate phase/output.
+to match Phase 4; new work stays in a separate phase/output.
 
 The existing support code has two-body gravity, J2, RK4 integration, and
 NRLMSIS 2.0 density calculation. Atmospheric drag is not connected to the
@@ -108,3 +108,8 @@ library requires another unit, and keep that conversion at the library call.
 Treat raw SQLite tables as immutable source records. A calculation reads raw
 tables and writes a separate derived table keyed by the original `time_us`;
 it must not update or delete raw observations.
+
+New or changed derived outputs must use SQLite tables. Do not create CSV output
+or use CSV between calculation steps. Frozen historical CSV may remain only as
+read-only evidence until its phase is explicitly migrated; it is not a current
+pipeline input.

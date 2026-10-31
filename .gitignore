@@ -6,5 +6,5 @@ __pycache__/
 /phases/phase0/data/raw/space_weather/*
 !/phases/phase0/data/raw/space_weather/SW-All.csv
 /phases/*/data/sqlite/
-/phases/phase4-trial1/data/retained/
+/phases/phase5-trial1/data/retained/
 tmp/

@@ -51,7 +51,7 @@ Trial5 只讀下列既有輸出：
 - Trial4 `trial4_25storm_overview`：$R_{\mathrm{RQ}}$、$R_{\mathrm{fit}}$、$\tau_k$ 與逐場誤差。
 - Phase 2／Phase 3 的唯讀 SME、SYM-H 與事件時間資訊。
 
-Trial5 只能建立新的 `phase3-trial5/data/sqlite/` 與 `data/analysis/` 輸出，不得更新 Trial4 或凍結 Phase 3 的資料表。
+Trial5 只能建立新的 `phase3-trial5/data/sqlite/` 與 `data/analysis/` 輸出，不得更新 Phase 4 或凍結 Phase 3 的資料表。
 
 ## 已交付輸出
 

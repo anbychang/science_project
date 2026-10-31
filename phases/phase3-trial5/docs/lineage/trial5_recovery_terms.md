@@ -2,7 +2,7 @@
 
 ## 狀態與資料邊界
 
-狀態：[working]。Trial5 讀取唯讀 Trial4 SQLite `phases/phase3-trial4/data/sqlite/swarm_a_trial4_joint_fit_tau15.sqlite`，將結果寫入 `phases/phase3-trial5/data/sqlite/swarm_a_trial5_recovery_v1.sqlite`。Trial4 與凍結 Phase 3 都是唯讀輸入。Trial5 以 SYM-H 最低點 $t_0$ 作恢復項的數學錨點；這不是經驗證的物理恢復開始時刻。
+狀態：[working]。Trial5 讀取唯讀 Phase 4 SQLite `phases/phase4/data/sqlite/swarm_a_trial4_joint_fit_tau15.sqlite`，將結果寫入 `phases/phase3-trial5/data/sqlite/swarm_a_trial5_recovery_v1.sqlite`。Phase 4 與凍結 Phase 3 都是唯讀輸入。Trial5 以 SYM-H 最低點 $t_0$ 作恢復項的數學錨點；這不是經驗證的物理恢復開始時刻。
 
 ```text
 Trial4 D-model minute residuals

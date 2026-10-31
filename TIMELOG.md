@@ -752,3 +752,33 @@ SQLite integrity 為 `ok`、foreign-key violation 為 `0`。manifest 的
 **證據**：25 個檔名日期與 `storm_minute_peak_qc_v4` 的 25 場事件相符；圖檔經逐張 SHA-256 比對一致。P2.6 圖目錄只含這 25 張 PNG。
 
 **未解決**：圖和全域 peak 仍只作描述性 QC；跨 pulse 配對與因果延遲尚未建立。
+
+## 2026-10-31：密度基線與殘差實驗重新編號
+
+**決定**：原 Phase 3 Trial4 D-model 改稱 Phase 4；原 Phase 4 Trial1--Trial9、共用程式與直接重算入口整套改稱 Phase 5。Phase 5 直接讀 Phase 4 的兩份凍結 SQLite，不依序執行九個歷史 Trial。
+
+**結果**：報告、程式目錄、主要程式檔名與文件入口已改為 Phase 5。直接重算程式、資料與測試併入 `phases/phase5/`；原 `phase5_shared/` 的共用程式、計畫和測試也已放入同一目錄。Phase 5 現有 `code/`、`data/`、`docs/`、`figures/`、`reports/`、`tests/` 六個資料夾，沒有第二套方法。既有 SQLite 表名、分析資料檔名及模型 `algorithm_version` 保留原識別碼，沒有重算或改寫其數值。
+
+**證據**：搬遷前後 20 個 SQLite／GPR 模型檔的 SHA-256 均一致；併入 Phase 5 後六個模型及七張整合圖的 SHA-256 也一致。Phase 5 相關測試 36 項通過，43 個程式模組可匯入，已存的 25 場模型可載入並產生有限數值。
+
+**未解決**：Phase 5 的跨場 GPR 仍是以已擬合的 Phase 4 基線及測試場上一圈 L2 為條件的回溯檢查，不是端到端預報或最終方法。
+
+## 2026-10-31：Phase 5 現行 GPR 結果改用 SQLite
+
+**決定**：現行 Phase 5 逐圈預測、逐場分數、五折分組及合計指標以一份衍生 SQLite 為正式資料來源。Trial1--Trial9 的舊 CSV 保留為歷史紀錄；GPR 計算仍在 Python，訓練模型仍保存為 joblib。
+
+**結果**：`phases/phase5/data/sqlite/swarm_a_phase5_pooled_orbit_gpr_v1.sqlite` 收錄 2,295 筆錨點、2,265 筆留場預測、25 筆逐場分數與五折分組。六個模型放在 `phases/phase5/data/models/`；直接入口不再產生現行 CSV。
+
+**證據**：新 SQLite 的 2,265 筆 GPR 預測與搬遷前 CSV 逐筆相同；六個 joblib 檔案搬遷前後 SHA-256 相同。SQLite `integrity_check` 與 `foreign_key_check` 通過，衍生表已記錄演算法版本。
+
+**未解決**：Phase 4 D-model 參數使用整場 L2 擬合；此處的留場 GPR 分數不能當作端到端預報分數。
+
+## 2026-10-31：Phase 5 報告拆成實驗與採用版
+
+**決定**：Trial1--Trial9 的方法、負結果與研究脈絡保留在獨立實驗報告；`phase_5_report.md` 只記錄目前選用的跨場逐圈 GPR 版本。選定方法不等於完成端到端預報驗證。
+
+**結果**：新增採用版報告，記錄 Phase 4 固定基線、上一圈 L2 的輸入條件、逐圈修正式、五折結果、SQLite 與模型位置。原實驗總報告移為 `phase_5_trial1_9_report.md`。採用版逐場圖由現行 SQLite 重畫，只比較 Phase 4、直接沿用上一圈誤差與 Phase 5 GPR。
+
+**證據**：現行 SQLite 在相同 2,115 圈的對數 RMSE 分別為 0.11014、0.04211、0.03926；GPR 逐場勝過上一圈沿用為 17/25 場。兩份報告與索引已分開指向。
+
+**未解決**：Phase 4 事件參數使用整場 L2 擬合；採用版仍需要上一圈 L2，不能處理整場無 L2 的衛星。
