@@ -1,6 +1,6 @@
 # Phase 4 v2：共同 tau 密度基線
 
-狀態：[done: descriptive]。固定 Phase 4 v1 的 25 場事件、對數密度目標與等事件權重損失。每個共同 $\tau$ 候選都重新擬合 25 個 $R_k$ 與一個正的 $G$；v2 以細掃最佳 4.75 h 重新建成 214,907 筆逐分鐘密度。v1 的自由 $\tau_k$ D-model 保留原檔。
+狀態：[done: descriptive]。V2 直接讀取凍結的 Phase 2／3 SQLite，使用相同 25 場事件、對數密度目標與等事件權重損失。每個共同 $\tau$ 候選都重新擬合 25 個 $R_k$ 與一個正的 $G$；以細掃最佳 4.75 h 建成 214,907 筆逐分鐘密度。V2 不讀取 V1 的程式、快照或參數，V1 的自由 $\tau_k$ D-model 保留原檔。
 
 | 模型 | $\tau$ 設定 | 等事件權重對數 RMSE |
 | --- | --- | ---: |
@@ -33,6 +33,6 @@
 | S20260321T0139 | 0.963090 | S20260402T0841 | 1.030987 |
 | S20260418T0754 | 0.762441 |  |  |
 
-表格數值取自本機 `swarm_a_phase4_v2_shared_tau.sqlite` 的 `phase4_v2_events.r_fit`，只顯示六位小數；計算仍使用資料庫完整精度。範圍為 0.626500–1.449175。
+表格數值取自本機 `swarm_a_phase4_v2_shared_tau.sqlite` 的 `phase4_v2_tau_fixed_r_v1.r_k_tau_fixed`，只顯示六位小數；計算仍使用資料庫完整精度。固定共同 $\tau$ 只在 metadata 記一次。範圍為 0.626500–1.449175。
 
-重算入口：[粗掃](../code/prep_shared_tau_grid.py)、[細掃](../code/prep_shared_tau_fine.py)、[逐分鐘 v2](../code/prep_phase4_v2_density.py)。本機三庫依序為 `shared_tau_grid_v1.sqlite`、`shared_tau_fine_v1.sqlite`、`swarm_a_phase4_v2_shared_tau.sqlite`。粗、細格點分別 151、31 筆；v2 有 25 場、214,907 筆分鐘列，事件等權對數 RMSE 0.113058769603，與細掃逐位一致，`PRAGMA integrity_check=ok`。各衍生表有 `algorithm_version`；SQLite 依專案規則不提交 Git。
+重算入口：[粗掃](../code/prep_shared_tau_grid.py)、[細掃](../code/prep_shared_tau_fine.py)、[逐分鐘 v2](../code/prep_phase4_v2_density.py)、[固定 tau 的 R 表](../code/prep_tau_fixed_r.py)。本機三庫依序為 `shared_tau_grid_v1.sqlite`、`shared_tau_fine_v1.sqlite`、`swarm_a_phase4_v2_shared_tau.sqlite`。依上述順序執行；已有輸出會拒絕覆寫。粗、細格點分別 151、31 筆；V2 有 25 場、214,907 筆分鐘列，事件等權對數 RMSE 0.113058769603，與細掃逐位一致，`PRAGMA integrity_check=ok`。各衍生表有 `algorithm_version`；SQLite 依專案規則不提交 Git。

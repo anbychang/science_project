@@ -1,6 +1,6 @@
 # Phase 4 v2 共同 tau 資料血緣
 
-狀態：[done]。v2 只讀 Phase 4 v1 目錄保存的 Phase 2/3 快照，另寫本目錄的三個衍生 SQLite：`data/sqlite/shared_tau_grid_v1.sqlite`、`data/sqlite/shared_tau_fine_v1.sqlite`、`data/sqlite/swarm_a_phase4_v2_shared_tau.sqlite`。v1 checkpoint 不回寫。25 場、214,907 個 UTC 分鐘錨點沿用來源 `{storm_id, time_us}`；密度與 SME 響應仍是中心 $u\pm\pi$ 相位平均。
+狀態：[done]。V2 直接讀凍結的 `phases/phase2/data/sqlite/swarm_a_phase2_sme_p2_6_final.sqlite` 與 `phases/phase3/data/sqlite/swarm_a_phase3_prediction_tau465_exploratory.sqlite`，另寫本目錄的三個衍生 SQLite：`data/sqlite/shared_tau_grid_v1.sqlite`、`data/sqlite/shared_tau_fine_v1.sqlite`、`data/sqlite/swarm_a_phase4_v2_shared_tau.sqlite`。V1 與 V2 程式、快照、參數及輸出互不依賴。25 場、214,907 個 UTC 分鐘錨點沿用來源 `{storm_id, time_us}`；密度與 SME 響應仍是中心 $u\pm\pi$ 相位平均。
 
 #### [P4.v2.1] 共同 tau 粗掃 [done]
 
@@ -9,10 +9,11 @@ prep_shared_tau_grid.py -> fit_shared_tau_grid()
 
 0–15 h、每 0.1 h；每格重新擬合各場 0<R_k<2 和共同 G>0。
 損失先算各場對數密度 MSE，再對 25 場等權平均。
+V2 自有 load_phase4_v2_inputs.py 與 calc_phase4_v2_fit.py 直接處理上游資料。
 ```
 
 ```text
-phase3_prediction_minute (唯讀快照；欄位節錄)
+phase3_prediction_minute (Phase 3 唯讀；欄位節錄)
 [
   {
     storm_id: S20230805T0546,
@@ -106,7 +107,7 @@ rho_v2 = rho_MSIS,q,phase * R_k * exp(G * H_tau,phase)。
 ```
 
 ```text
-phase3_prediction_minute (唯讀快照；欄位節錄)
+phase3_prediction_minute (Phase 3 唯讀；欄位節錄)
 [
   {
     storm_id: S20230805T0546,
@@ -138,4 +139,39 @@ phase4_v2_minute (derived；欄位節錄)
 ]
 ```
 
-輸出沿用來源 `{storm_id, time_us}`；`time_us` 仍是同一 UTC 分鐘錨點。`phase4_v2_events` 保存每場 $R_k$、筆數、RMSE；metadata 保存選模與回溯界線。214,907 筆分鐘列、25 場，`PRAGMA integrity_check=ok`；逐分鐘重算的事件等權 RMSE 0.113058769603 與細掃一致。Phase 5／6 既有結果仍使用 v1，未由 v2 重算。
+輸出沿用來源 `{storm_id, time_us}`；`time_us` 仍是同一 UTC 分鐘錨點。`phase4_v2_events` 保存每場 $R_k$、筆數、RMSE；`tau_hours` 均為 V2 固定值 4.75 h，不是 V1 的逐場 $\tau_k$。metadata 保存選模與回溯界線。214,907 筆分鐘列、25 場，`PRAGMA integrity_check=ok`；逐分鐘重算的事件等權 RMSE 0.113058769603 與細掃一致。Phase 5／6 既有結果仍使用 V1，未由 V2 重算。
+
+#### [P4.v2.4] 固定 tau 的每場 R 表 [done]
+
+```text
+prep_tau_fixed_r.py -> save_tau_fixed_r()
+
+從 V2 events 與 minute 驗證 25 場參數一致，寫入獨立的 R 表。
+固定共同 tau=4.75 h 只在 metadata 記一次；不複製 V1 的 tau_k。
+```
+
+```text
+phase4_v2_events (derived；欄位節錄)
+[
+  {
+    storm_id: S20230805T0546,
+    r_fit: 9.343e-1,
+    tau_hours: 4.750e+0 (h)
+  },
+  ...
+]
+```
+
+```text
+phase4_v2_tau_fixed_r_v1 (derived；欄位節錄)
+[
+  {
+    storm_id: S20230805T0546,
+    r_k_tau_fixed: 9.343e-1,
+    algorithm_version: phase4_v2_tau_fixed_r_475_v1
+  },
+  ...
+]
+```
+
+輸出以 `storm_id` 對應同一場事件；`phase4_v2_metadata.tau_fixed_hours=4.75`。每個 $R_k$ 是同場 L2 回溯擬合值，不是可預報的物理參數。
