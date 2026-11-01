@@ -1,9 +1,8 @@
-# Phase 7 V2：三場外部事件處理計畫
+# Phase 7 三事件批次處理計畫
 
 ## 決定
 
-狀態：[done]。新增 `S20221107T1720` 後，三場事件寫入 `phases/phase7-v2/`。
-`phases/phase7/` 的兩事件輸出保留不動。所有新結果使用 SQLite。
+狀態：[done]。新增 `S20221107T1720` 後，三場事件輸出位於 `phases/phase7/runs/three_storms/`。五場共同計分在 `phases/phase7/reports/`。所有新結果使用 SQLite。
 
 ```text
 P7.0 raw source audit
@@ -39,7 +38,7 @@ P7.0 raw source audit
 兩事件 `Phase 7`，不會覆寫 V2。
 
 ```powershell
-$env:PHASE7_RUN_ROOT='phases/phase7-v2'
+$env:PHASE7_RUN_ROOT='phases/phase7/runs/three_storms'
 $env:PHASE7_RUN_LABEL='late_2022_early_2023_three_storms'
 $env:PHASE7_STORM_IDS='S20221107T1720,S20230227T1212,S20230324T0521'
 python -m phases.phase7.code.down_phase7_dnsapod

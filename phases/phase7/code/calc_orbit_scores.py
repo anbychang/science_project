@@ -10,7 +10,7 @@ from phases.phase1.code.prep_10_phase_orbit_mean import phase_orbit_rows
 from phases.phase7.code.load_phase7_two_storms import PHASE1R, read_only
 
 
-ROOT = Path(os.environ.get("PHASE7_SCORE_ROOT", "phases/phase7-v3")) / "data/sqlite"
+ROOT = Path(os.environ.get("PHASE7_SCORE_ROOT", "phases/phase7/runs/earlier_storms")) / "data/sqlite"
 SOURCE = ROOT / "swarm_a_phase7_decay_v1.sqlite"
 OUTPUT = ROOT / "swarm_a_orbit_scores_v1.sqlite"
 MINUTE_US = 60_000_000

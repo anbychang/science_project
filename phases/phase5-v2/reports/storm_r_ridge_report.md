@@ -4,9 +4,9 @@
 
 方法名稱：**交叉驗證引導的演化式包裝法特徵選擇 + Ridge 迴歸**（*cross-validation-guided evolutionary wrapper feature selection with Ridge regression*）。「包裝法」用 Ridge 的五組 20/5 RMSE 評價因素組合；「A* 風格」指優先擴展分數較好的組合，再合併、隨機替換。Ridge 是最後預測 $\Delta R_k$ 的機器學習模型。
 
-本階段交付項目已全部完成：Phase 4 V2 $R_k$ 目標快照、23 因素資料、A* 風格搜尋、固定三因素 Ridge、五組逐場分數、全 25 場研究模型、L2／Ridge／擬合 $\tau_k$ 與 $R_k$ 的逐分鐘密度與 25 格圖、SQLite 核對、資料血緣與本報告。本報告結案時尚無新事件外測；後續 Phase 7 V2 已依固定流程完成三場外測，結果不支持作正式下游輸入。
+本階段交付項目已全部完成：Phase 4 V2 $R_k$ 目標快照、23 因素資料、A* 風格搜尋、固定三因素 Ridge、五組逐場分數、全 25 場研究模型、L2／Ridge／擬合 $\tau_k$ 與 $R_k$ 的逐分鐘密度與 25 格圖、SQLite 核對、資料血緣與本報告。本報告結案時尚無新事件外測；後續 Phase 7 已依固定流程完成五場逐圈計分，結果不支持作正式下游輸入。
 
-後續狀態：[Phase 7 V2](../../phase7-v2/reports/phase_7_late_2022_early_2023_three_storms_report.md)已用固定模型處理三場未參與訓練的事件。Ridge density 與下降量都是一勝兩負，未支持它優於 M0；這不回寫本報告的 25 場探索分數。
+後續狀態：[Phase 7](../../phase7/reports/five_storm_orbit_scores.md)已用固定模型處理五場未參與訓練的事件。逐圈 MAE 與 RMSE 差距極小，未支持 Ridge 優於 M0；這不回寫本報告的 25 場探索分數。
 
 ## 問題與目標
 
@@ -115,4 +115,4 @@ Ridge 曲線在這 25 場的逐場 log-density RMSE 均高於同場擬合 $\tau_
 
 重算入口是 `code/prep_phase4_v2_r_targets.py`、`code/prep_storm_r_ridge.py`、`code/prep_storm_r_ridge_density.py` 與 `code/prep_storm_r_ridge_density_figure.py`；既有輸出不覆寫。資料血緣見[Phase 5 V2 Ridge](../docs/lineage/storm_r_ridge.md)。Ridge 結果庫 `data/sqlite/storm_r_ridge_v21.sqlite` 有 25 場目標、575 筆因素、137 組候選、5 筆折分數、25 場留出預測、3 筆最終係數。密度比較庫 `data/sqlite/storm_r_ridge_density_v1.sqlite` 有 214,907 筆分鐘值及 25 筆逐場分數。25 個 $R_{\mathrm{fit},k}$ 與 Phase 4 V2 來源逐筆完全一致；20 個校準段在切分時保持完整，五組各 5 場算分，兩庫 SQLite `integrity_check=ok`。
 
-決定：Phase 5 V2 的 Ridge 保留為**探索性候選**；先前 GPR 試驗保留在[歷史報告](storm_r_gpr_report.md)，不進目前主線。Phase 7 固定三個因素、既有標準化、係數與截距，沒有用新事件答案重新挑因素；三場 Ridge density 與下降量都是一勝兩負，未支持它優於 M0，因此不升級為正式下游輸入。若要主張即時預報，仍須改寫依首次強 SYM-H 低點選校準段的流程，並增加外部事件數。
+決定：Phase 5 V2 的 Ridge 保留為**探索性候選**；先前 GPR 試驗保留在[歷史報告](storm_r_gpr_report.md)，不進目前主線。Phase 7 固定三個因素、既有標準化、係數與截距，沒有用新事件答案重新挑因素；五場逐圈 MAE 與 RMSE 差距極小，未支持它優於 M0，因此不升級為正式下游輸入。若要主張即時預報，仍須改寫依首次強 SYM-H 低點選校準段的流程，並增加外部事件數。

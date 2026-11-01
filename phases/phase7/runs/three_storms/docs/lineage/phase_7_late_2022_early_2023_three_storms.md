@@ -1,8 +1,8 @@
-# Phase 7 V2：三場外部事件資料血緣
+# Phase 7 三事件批次資料血緣
 
-狀態：[done]。輸出位於 `phases/phase7-v2/data/sqlite/`；Phase 2R、Phase 1R、
+狀態：[done]。輸出位於 `phases/phase7/runs/three_storms/data/sqlite/`；Phase 2R、Phase 1R、
 Phase 4 V2、Phase 5 V2 與 Phase 6 一律唯讀。事件鍵是 `{storm_id, time_us}`，時間
-均為 UTC。新輸出不改寫 `phases/phase7/`。
+均為 UTC。五場共同計分另存於 `phases/phase7/data/sqlite/`。
 
 #### [P7.0] ESA DNSAPOD -> verified raw manifest [done]
 

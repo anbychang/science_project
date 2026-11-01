@@ -1,6 +1,6 @@
-# Phase 7 V2：2022 年末與 2023 年初三場外部事件
+# Phase 7 三事件批次：2022 年末與 2023 年初
 
-目前五場共同計分見[逐圈計分報告](../../phase7-v3/reports/five_storm_orbit_scores.md)。下方六日終點分數是歷史尺度，不再作主要模型排名。
+目前五場共同計分見[逐圈計分報告](../../../reports/five_storm_orbit_scores.md)。下方六日終點分數是歷史尺度，不再作主要模型排名。
 
 狀態：[done: exploratory external-event validation]。三場均以 frozen Phase 0–6 方法重算；
 沒有重訓 Ridge、重選參數或重擬合 `B_eff`。結果不支持 Ridge 取代 M0。

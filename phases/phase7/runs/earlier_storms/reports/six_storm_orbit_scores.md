@@ -14,4 +14,4 @@
 
 Ridge 的整體 MAE 低約 0.003 m，但 RMSE 高約 0.004 m；差異極小，沒有足夠證據判定優劣。相鄰圈間變化受到 POD 圈平均波動影響，不能把每圈視為獨立磁暴樣本。原本六日終點誤差留在舊報告，只作不同尺度的歷史對照。
 
-逐圈與每場 SQLite 分別在 `../../phase7-v2/data/sqlite/swarm_a_orbit_scores_v1.sqlite` 與 `../data/sqlite/swarm_a_orbit_scores_v1.sqlite`。兩庫 `PRAGMA integrity_check=ok`；各有 273 與 271 筆逐圈列。
+逐圈與每場 SQLite 分別在 `../../three_storms/data/sqlite/swarm_a_orbit_scores_v1.sqlite` 與 `../data/sqlite/swarm_a_orbit_scores_v1.sqlite`。兩庫 `PRAGMA integrity_check=ok`；各有 273 與 271 筆逐圈列。

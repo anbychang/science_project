@@ -1,6 +1,6 @@
 # 往前三場磁暴結果
 
-目前五場共同計分見[逐圈計分報告](five_storm_orbit_scores.md)；2018 年事件已從目前計分排除。下方六日終點比較保留作歷史尺度。
+目前五場共同計分見[逐圈計分報告](../../../reports/five_storm_orbit_scores.md)；2018 年事件已從目前計分排除。下方六日終點比較保留作歷史尺度。
 
 狀態：[done: exploratory]。使用固定 Phase 4 V2 `tau/G`、Phase 5 V2 Ridge 與 Phase 6 `B_eff`；三場均未參與 25 場訓練。26 個 DNSAPOD 日檔已核對，兩個衍生 SQLite `integrity_check=ok`，共有 25,593 個配對分鐘。
 
@@ -12,4 +12,4 @@
 
 2021-11-04 的 Phase 2R 配對完整度是 99.08%；其餘兩場是 100%。缺口保留，積分不跨缺口。三場的 Ridge R 都高於同場回溯 `R_fit`。下降量一場 Ridge 較近、兩場 M0 較近。六日下降含背景，不能全歸因於磁暴。
 
-重算時設定 `PHASE7_RUN_ROOT=phases/phase7-v3`、`PHASE7_RUN_LABEL=earlier_three_storms`、`PHASE7_STORM_IDS=S20180826T0711,S20211104T1244,S20220313T2337`，依序執行 `down_phase7_dnsapod`、`prep_phase7_density`、`calc_phase7_decay`、`prep_phase7_figure.draw_individual_figures()`。
+重算時設定 `PHASE7_RUN_ROOT=phases/phase7/runs/earlier_storms`、`PHASE7_RUN_LABEL=earlier_three_storms`、`PHASE7_STORM_IDS=S20180826T0711,S20211104T1244,S20220313T2337`，依序執行 `down_phase7_dnsapod`、`prep_phase7_density`、`calc_phase7_decay`、`prep_phase7_figure.draw_individual_figures()`。

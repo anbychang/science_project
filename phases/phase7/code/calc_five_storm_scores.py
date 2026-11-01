@@ -6,10 +6,10 @@ from pathlib import Path
 
 
 SOURCES = (
-    Path("phases/phase7-v2/data/sqlite/swarm_a_orbit_scores_v1.sqlite"),
-    Path("phases/phase7-v3/data/sqlite/swarm_a_orbit_scores_v1.sqlite"),
+    Path("phases/phase7/runs/three_storms/data/sqlite/swarm_a_orbit_scores_v1.sqlite"),
+    Path("phases/phase7/runs/earlier_storms/data/sqlite/swarm_a_orbit_scores_v1.sqlite"),
 )
-OUTPUT = Path("phases/phase7-v3/data/sqlite/swarm_a_five_storm_orbit_scores_v1.sqlite")
+OUTPUT = Path("phases/phase7/data/sqlite/swarm_a_five_storm_orbit_scores_v1.sqlite")
 EXCLUDED_STORM_ID = "S20180826T0711"
 VERSION = "phase7_five_storm_orbit_score_selection_v1"
 
