@@ -9,6 +9,11 @@ import cdflib
 import numpy as np
 
 
+def valid_density_value(value: float, fill_value: float) -> bool:
+    """Input: density value and CDF fill value. Output: whether density is physical data."""
+    return math.isfinite(value) and value > 0.0 and value != fill_value
+
+
 def load_dnsapod(zip_path: Path) -> dict:
     """Input: one DNSAPOD ZIP. Output: {raw_count, flag_counts, samples: [{time_us, ...}]}.
 
@@ -30,12 +35,20 @@ def load_dnsapod(zip_path: Path) -> dict:
                     "latitude": density_cdf.varget("latitude"),
                     "longitude": density_cdf.varget("longitude"),
                     "validity_flag": density_cdf.varget("validity_flag"),
+                    "density_fill": float(density_cdf.varattsget("density")["FILLVAL"]),
+                    "orbitmean_fill": float(
+                        density_cdf.varattsget("density_orbitmean")["FILLVAL"],
+                    ),
                 }
             finally:
                 # cdflib has no public close method; release the Windows file handle.
                 density_cdf._f.close()
                 del density_cdf
-    counts = {name: len(values) for name, values in source.items()}
+    counts = {
+        name: len(values)
+        for name, values in source.items()
+        if name not in {"density_fill", "orbitmean_fill"}
+    }
     if len(set(counts.values())) != 1:
         raise ValueError(f"DNSAPOD CDF columns have different lengths: {zip_path}")
     flags = {}
@@ -50,8 +63,8 @@ def load_dnsapod(zip_path: Path) -> dict:
         altitude = float(source["altitude"][index])
         latitude = float(source["latitude"][index])
         longitude = float(source["longitude"][index])
-        valid_density = math.isfinite(density) and density > 0
-        valid_orbitmean = math.isfinite(orbitmean) and orbitmean > 0
+        valid_density = valid_density_value(density, source["density_fill"])
+        valid_orbitmean = valid_density_value(orbitmean, source["orbitmean_fill"])
         if not (valid_density or valid_orbitmean):
             continue
         if not (math.isfinite(altitude) and altitude > 0 and math.isfinite(latitude)

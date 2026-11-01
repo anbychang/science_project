@@ -16,6 +16,7 @@
 | [Phase 3](phases/phase3/reports/phase_3_final_report.md) | [retained] 三年 | 唯讀歷史 M1 基線；固定 $R_k$／共同 $\tau$ 的設定不作後續密度分析基線。 |
 | [Phase 4](phases/phase4/reports/trial4_joint_fit_tau15_report.md) | [done: descriptive] | 現行修正基線；25 場自由 $R_k$／$\tau_k$ 的 joint fit，已核對來源、公式與保存輸出，仍未外測。 |
 | [Phase 5](phases/phase5/README.md) | [done: negative] | 目標場整場沒有 L2 時，已測 GPR 修正未勝過 M1；目前沒有可部署的無 L2 密度終版。Trial9 有上一圈 L2 的結果保留為歷史實驗。 |
+| [Phase 6](phases/phase6/README.md) | [done] | P6.1 用三年 L2/POD 擬合固定 `B_eff=0.0092292068 m²/kg`；P6.2 將 Phase 4 D-model density 轉成 25 場磁暴各自的半長軸下降。 |
 
 Phase5 Trial1--Trial5 的特徵組合比較與每個欄位目前可主張的範圍，見[特徵貢獻整理](phases/phase5-trial2/reports/phase_5_feature_contribution_summary.md)。
 無同場 L2 的終版決定見[Phase 5 最終報告](phases/phase5/reports/phase_5_report.md)；Trial1--Trial13 的脈絡與圖見[整合報告](phases/phase5/reports/phase_5_trial1_13_report.md)。
@@ -35,6 +36,7 @@ phases/
   phase3/       三年密度響應的唯讀歷史基線
   phase4/       現行修正的自由 R_k／tau_k 描述性基線
   phase5/       Trial1--Trial13 整合報告、無同場 L2 終版判定與歷史 GPR 輸出
+  phase6/       P6.1/P6.2 density-to-decay closure
 docs/           跨 Phase 的報告索引、資料血緣與寫作規則
 ```
 
