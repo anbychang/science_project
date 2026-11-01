@@ -1,6 +1,6 @@
 # Swarm-A 磁暴與軌道衰減研究
 
-研究目標是釐清地磁暴與 Swarm-A 軌道衰減的關係。目前密度研究主線是 `Phase 2 -> Phase 3（歷史輸入）-> Phase 4（修正基線）-> Phase 5`：固定三年磁暴分鐘資料與事件後，Phase 4 以自由 $R_k$／$\tau_k$ 取代舊 M1 固定參數，再描述其殘差與高度。衰減率候選仍未校準。
+研究目標是釐清地磁暴與 Swarm-A 軌道衰減的關係。目前密度研究主線是 `Phase 2 -> Phase 3（歷史輸入）-> Phase 4 v2（共同 tau 描述性基線）`。Phase 4 v1 的自由 $R_k$／$\tau_k$ D-model 保留作歷史比較；Phase 5、Phase 6 既有結果仍依 v1 算出，尚未改用 v2。衰減率候選仍未校準。
 
 先看 [OUTPUT.md](OUTPUT.md) 閱讀 GitHub 上的成果；[CATALOG.md](CATALOG.md) 列出本機資料庫、程式與文件位置。[GLOSSARY.md](GLOSSARY.md) 定義術語，[ISSUE.md](ISSUE.md) 記錄暫緩問題。
 
@@ -14,7 +14,8 @@
 | [Phase 2](phases/phase2/reports/phase_2_final_report.md) | [done] 三年 | 25 場磁暴、一分鐘事件資料與 P2.6 描述性 peak QC；檢查點已固定。 |
 | [Phase 2R](phases/phase2r/reports/phase_2r_final_report.md) | [done] 十二年 | Phase 2 方法的獨立重現；49 場候選中 46 場有完整分鐘資料；檢查點已固定。 |
 | [Phase 3](phases/phase3/reports/phase_3_final_report.md) | [retained] 三年 | 唯讀歷史 M1 基線；固定 $R_k$／共同 $\tau$ 的設定不作後續密度分析基線。 |
-| [Phase 4](phases/phase4/reports/trial4_joint_fit_tau15_report.md) | [done: descriptive] | 現行修正基線；25 場自由 $R_k$／$\tau_k$ 的 joint fit，已核對來源、公式與保存輸出，仍未外測。 |
+| [Phase 4 v1](phases/phase4/reports/trial4_joint_fit_tau15_report.md) | [retained: descriptive] | 25 場自由 $R_k$／$\tau_k$ 的 D-model；供歷史比較和既有 Phase 5／6 重算。 |
+| [Phase 4 v2](phases/phase4-v2/reports/shared_tau_grid_report.md) | [done: descriptive] | 現行共同 $\tau=4.75$ h；各場 $R_k$、共同 $G$ 重擬合，RMSE 0.113059；仍未外測。 |
 | [Phase 5](phases/phase5/README.md) | [done: negative] | 目標場整場沒有 L2 時，已測 GPR 修正未勝過 M1；目前沒有可部署的無 L2 密度終版。Trial9 有上一圈 L2 的結果保留為歷史實驗。 |
 | [Phase 6](phases/phase6/README.md) | [done] | P6.1 用三年 L2/POD 擬合固定 `B_eff=0.0092292068 m²/kg`；P6.2 將 Phase 4 D-model density 轉成 25 場磁暴各自的半長軸下降。 |
 
@@ -22,7 +23,7 @@ Phase5 Trial1--Trial5 的特徵組合比較與每個欄位目前可主張的範�
 無同場 L2 的終版決定見[Phase 5 最終報告](phases/phase5/reports/phase_5_report.md)；Trial1--Trial13 的脈絡與圖見[整合報告](phases/phase5/reports/phase_5_trial1_13_report.md)。
 所有歷史、現行與 working Trial 的狀態及報告入口，見 [Trial 索引](docs/trial_index.md)。
 
-Phase 1／1R 的舊 10 分鐘分支是歷史資料，不能與現行逐 10 秒候選混用。Phase 2／2R 的 peak QC 是描述性結果；Phase 4 是現行修正的資料內基線，不能當作外測預報，也不能把它的參數解釋成物理量。舊 Phase 3 M1 與 M0 比較使用不同校準機會，不能宣稱 M1 已勝出。現階段沒有完成 drag propagator 或 XYZ 預報。
+Phase 1／1R 的舊 10 分鐘分支是歷史資料，不能與現行逐 10 秒候選混用。Phase 2／2R 的 peak QC 是描述性結果；Phase 4 v2 仍是資料內基線，不能當作外測預報，也不能把它的參數解釋成物理量。舊 Phase 3 M1 與 M0 比較使用不同校準機會，不能宣稱 M1 已勝出。現階段沒有完成 drag propagator 或 XYZ 預報。
 
 ## 專案位置
 
@@ -34,7 +35,8 @@ phases/
   phase2/       三年磁暴分鐘資料與結案報告
   phase2r/      十二年重現與結案報告
   phase3/       三年密度響應的唯讀歷史基線
-  phase4/       現行修正的自由 R_k／tau_k 描述性基線
+  phase4/       v1 自由 R_k／tau_k 的歷史描述性基線
+  phase4-v2/    現行共同 tau 的描述性基線
   phase5/       Trial1--Trial13 整合報告、無同場 L2 終版判定與歷史 GPR 輸出
   phase6/       P6.1/P6.2 density-to-decay closure
 docs/           跨 Phase 的報告索引、資料血緣與寫作規則

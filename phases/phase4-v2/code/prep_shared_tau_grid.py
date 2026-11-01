@@ -13,7 +13,7 @@ from calc_trial4_joint_fit import FitState, model_score, tau_grid_hours, update_
 from prep_trial4_joint_fit import load_density_rows, load_initial_gain, prepare_events
 
 
-OUTPUT = Path("phases/phase4-trial1/data/sqlite/shared_tau_grid_v1.sqlite")
+OUTPUT = Path("phases/phase4-v2/data/sqlite/shared_tau_grid_v1.sqlite")
 
 
 def fit_shared_tau_grid() -> list[tuple[float, float, float]]:

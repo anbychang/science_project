@@ -17,7 +17,7 @@ from prep_h_tau_phase import SOURCE, load_event, load_sme
 from prep_trial4_joint_fit import SME_REFERENCE_NT, load_density_rows, load_initial_gain, prepare_events
 
 
-OUTPUT = Path("phases/phase4-trial1/data/sqlite/shared_tau_fine_v1.sqlite")
+OUTPUT = Path("phases/phase4-v2/data/sqlite/shared_tau_fine_v1.sqlite")
 FINE_TAU_HOURS = np.arange(460, 491) / 100
 
 
