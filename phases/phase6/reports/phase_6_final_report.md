@@ -4,16 +4,25 @@
 
 狀態：[done]。Phase 6 已用一個固定 `B_eff`，把兩種 density 轉換成半長軸下降，並與 POD 觀測比較。
 
-在相同事件、相同時間、相同 `B_eff` 與相同積分方法下，Phase 5 V2 Ridge 的整體誤差低於 Phase 3 M0：
+正式比較以每一場磁暴為一票。先用該場所有有效 orbit 算兩個模型的 orbit MAE，再由 MAE 較低者贏得該場：
 
-| Model | Mean error (m) | MAE (m) | RMSE (m) | 較接近 POD |
-| --- | ---: | ---: | ---: | ---: |
-| Phase 3 M0 | -24.72 | 72.22 | 89.35 | 9/25 場 |
-| Phase 5 V2 Ridge | +18.30 | 53.08 | 74.04 | 16/25 場 |
+| Model | 磁暴勝場 | 25 場等權平均 orbit MAE |
+| --- | ---: | ---: |
+| Phase 3 M0 | 10 | 5.460 m/orbit |
+| Phase 5 V2 Ridge | 15 | 5.425 m/orbit |
 
-相對於 M0，Ridge 的 MAE 降低 `26.50%`，RMSE 降低 `17.14%`。這支持「Phase 5 V2 的密度修正，整體上能改善半長軸下降的回推結果」。
+沒有完全平手。Ridge 以 `15:10` 領先，但兩個模型的等權平均 MAE 只差 `0.035 m/orbit`。2025-06-01 與 2026-04-02 的差距小於 `0.01 m/orbit`，因此結果只能支持 Ridge 在這 25 場略佔優勢，不能稱為明顯勝出。
 
-這不是每場都改善。Ridge 在 9 場仍比 M0 差，最大失敗是 2024-08-12：Ridge 絕對誤差 `226.14 m`，M0 為 `68.77 m`。
+2,262 個有效 orbit 是每場計分的底層資料。把全部 orbit 混在一起的 pooled 指標保留為輔助結果：
+
+| Model | Mean error (m/orbit) | MAE (m/orbit) | Median AE (m/orbit) | RMSE (m/orbit) | 較接近 POD |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Phase 3 M0 | -0.367 | 5.460 | 3.687 | 7.461 | 1,093 圈 |
+| Phase 5 V2 Ridge | +0.103 | 5.425 | 3.737 | 7.412 | 1,169 圈 |
+
+Ridge 的 pooled orbit MAE 只比 M0 低 `0.035 m/orbit`，相對改善 `0.64%`；逐圈勝率為 `51.68%`。兩個模型的單圈能力幾乎相同。
+
+六天 endpoint 仍保留作累積量檢查。它顯示 Ridge 的事件 MAE 從 `72.22 m` 降到 `53.08 m`，但這是長時間累積結果，不再作正式主分數。
 
 ## 研究問題
 
@@ -37,7 +46,10 @@ P6.3  Phase 5 V2 Ridge density + fixed B_eff
         -> 25 場 Ridge 預測下降
 
 P6.4  POD + M0 + Ridge
-        -> 每場總下降、逐分鐘曲線與統一誤差比較
+        -> 每圈局部下降作底層誤差
+        -> 每場磁暴用 orbit MAE 決勝；25 場等權
+        -> 每場 endpoint 作輔助累積比較
+        -> 逐分鐘 density 與累積下降圖
 ```
 
 公平比較的核心是：P6.2 與 P6.3 不重新擬合 `B_eff`，也不各自更換窗口或 POD 資料。兩條路徑只有輸入 density 不同。
@@ -198,7 +210,7 @@ MAE 與 RMSE 都以 25 場事件的總下降誤差計算，不是以 214,907 個
 
 POD 圖直接讀完整 Phase 1 orbit mean，不受 P6.4 density pairing 缺口限制。只有 POD 自己缺少完整軌道或 `chunk_id` 改變時才斷黑線；M0、Ridge 仍在 density 缺口處斷線。
 
-每場總下降與誤差仍由原始 POD covered endpoint 計算。逐圈平均只改善圖的可讀性，不參與 `B_eff` 擬合或誤差重算。
+逐圈平均同時是磁暴計分的 POD 來源。圖上的曲線相對事件前一圈顯示；每場 MAE 使用相鄰兩圈的局部差，不把前面各圈重複累積進後面的分數。`B_eff` 不重新擬合。
 
 ### 3. Density 與預測下降
 
@@ -206,7 +218,81 @@ POD 圖直接讀完整 Phase 1 orbit mean，不受 P6.4 density pairing 缺口�
 
 同一時間的 Ridge density 若高於 M0，Ridge 累積下降曲線就會比 M0 更陡；若低於 M0，則會更平。Phase 6 沒有再修改 density，只有把兩條既有 density 透過相同公式轉成下降量。
 
-## 整體結果
+### 4. 每圈計算、每場磁暴決勝
+
+對相鄰兩個完整 POD orbit，觀測下降定義為：
+
+\[
+\Delta a_{POD,j}=\bar a_j-\bar a_{j-1}.
+\]
+
+兩個 orbit endpoint 都四捨五入到最近 UTC minute，模型下降使用同一 block 內 cumulative prediction 的差：
+
+\[
+\Delta a_{model,j}
+=\Delta a_{model}(t_j)-\Delta a_{model}(t_{j-1}),
+\]
+
+\[
+e_j=\Delta a_{model,j}-\Delta a_{POD,j}.
+\]
+
+只有 POD orbit 連續、`chunk_id` 相同、兩個 model endpoint 存在且位於同一 density block 時才計分。跨 POD 缺口、chunk 或 density 缺口的 orbit 不計分，也不插值。
+
+逐圈 POD 下降有 545 圈為正、1,717 圈為負，因此單圈 observed change 可能接近零。每場 orbit MAE 不使用 MAPE，避免分母接近零時產生無意義的極大百分比。
+
+每場磁暴的計分方法是：
+
+\[
+\operatorname{MAE}_{model,k}=\frac{1}{N_k}\sum_{j=1}^{N_k}|e_{model,k,j}|.
+\]
+
+其中 `k` 是磁暴，`N_k` 是該場有效 orbit 數。M0 與 Ridge 誰的 `MAE` 較低，誰就贏得該場。最後只數 25 場各自的 winner；每場磁暴權重相同，不讓 91 圈的事件比 85 圈的事件多一票。
+
+正式磁暴結果：Ridge 15 勝、M0 10 勝、0 平手。25 場等權平均 orbit MAE 為 Ridge `5.425 m/orbit`、M0 `5.460 m/orbit`。
+
+以下 pooled orbit 指標不等權於磁暴，只作底層誤差分布的輔助檢查：
+
+| 指標 | M0 | Phase 5 V2 Ridge | Ridge 相對結果 |
+| --- | ---: | ---: | ---: |
+| Scored orbits | 2,262 | 2,262 | 相同 |
+| Mean error | -0.367 m | +0.103 m | Ridge bias 較接近零 |
+| MAE | 5.460 m | 5.425 m | Ridge 低 0.035 m；0.64% |
+| Median absolute error | 3.687 m | 3.737 m | M0 低 0.049 m |
+| RMSE | 7.461 m | 7.412 m | Ridge 低 0.049 m |
+| 較接近 POD | 1,093 圈 | 1,169 圈 | Ridge 51.68% |
+
+| 磁暴 | 計分圈數 | M0 MAE (m) | Ridge MAE (m) | Winner | 勝出差距 (m) |
+| --- | ---: | ---: | ---: | --- | ---: |
+| 2023-08-05 | 91 | 5.441 | 5.428 | Ridge | 0.013 |
+| 2023-10-21 | 91 | 5.240 | 5.157 | Ridge | 0.083 |
+| 2023-11-05 | 91 | 5.612 | 5.553 | Ridge | 0.059 |
+| 2023-12-01 | 91 | 5.355 | 5.375 | M0 | 0.020 |
+| 2024-03-03 | 91 | 5.061 | 5.079 | M0 | 0.018 |
+| 2024-03-24 | 91 | 5.110 | 5.121 | M0 | 0.012 |
+| 2024-04-19 | 91 | 5.456 | 5.485 | M0 | 0.030 |
+| 2024-05-11 | 91 | 5.862 | 5.547 | Ridge | 0.315 |
+| 2024-06-28 | 89 | 5.204 | 5.327 | M0 | 0.122 |
+| 2024-08-04 | 91 | 5.295 | 5.174 | Ridge | 0.121 |
+| 2024-08-12 | 91 | 5.243 | 5.694 | M0 | 0.452 |
+| 2024-09-17 | 88 | 5.430 | 5.327 | Ridge | 0.102 |
+| 2024-10-10 | 91 | 6.014 | 5.425 | Ridge | 0.589 |
+| 2024-11-09 | 91 | 5.300 | 5.341 | M0 | 0.041 |
+| 2025-01-01 | 91 | 5.438 | 5.530 | M0 | 0.093 |
+| 2025-04-16 | 91 | 5.560 | 5.590 | M0 | 0.029 |
+| 2025-05-17 | 91 | 5.367 | 5.356 | Ridge | 0.011 |
+| 2025-06-01 | 85 | 5.661 | 5.657 | Ridge | 0.005 |
+| 2025-06-13 | 89 | 5.425 | 5.440 | M0 | 0.015 |
+| 2025-09-30 | 91 | 5.677 | 5.600 | Ridge | 0.077 |
+| 2025-11-12 | 91 | 5.424 | 5.272 | Ridge | 0.152 |
+| 2026-01-20 | 91 | 5.751 | 5.625 | Ridge | 0.126 |
+| 2026-03-21 | 91 | 5.551 | 5.527 | Ridge | 0.024 |
+| 2026-04-02 | 91 | 5.492 | 5.491 | Ridge | 0.001 |
+| 2026-04-18 | 91 | 5.536 | 5.509 | Ridge | 0.027 |
+
+Ridge 的 event-level orbit MAE 在 15 場較低，M0 在 10 場較低。2025-06-01 與 2026-04-02 的勝出差距小於 `0.01 m`，實質上接近平手。磁暴主分數的主要訊息是 Ridge 勝場較多，但優勢很小。
+
+## 輔助結果：六天 endpoint
 
 | 指標 | M0 | Phase 5 V2 Ridge | Ridge 相對變化 |
 | --- | ---: | ---: | ---: |
@@ -235,14 +321,16 @@ M0 的 mean error 為負，代表整體略偏向多估下降；Ridge 的 mean er
 | 2024-08-12 | 68.77 | 226.14 |
 | 2025-01-01 | 14.65 | 125.00 |
 
-因此正確結論不是「Ridge 已經取代 M0」，而是「Ridge 在這 25 場回溯事件的整體誤差較小，但事件穩定性仍不足」。
+endpoint 的正確結論是「Ridge 的六天累積量整體較接近 POD，但個別事件不穩定」。它不能取代以每場 orbit MAE 決勝的正式分數。
 
 ## 可以主張與不能主張
 
 ### 可以主張
 
 - 固定 `B_eff` 能把 L2、M0 與 Ridge density 轉成與 POD 六天窗口下降相同量級的半長軸變化。
-- 在這 25 場事件上，Phase 5 V2 Ridge 的事件總下降 MAE 與 RMSE 都低於 M0。
+- 25 場磁暴等權計分時，Ridge 贏 15 場，M0 贏 10 場；Ridge 略佔優勢。
+- 在這 25 場事件上，Phase 5 V2 Ridge 的六天 endpoint MAE 與 RMSE 都低於 M0。
+- 在 2,262 個有效 orbit 上，Ridge 的 MAE 與 RMSE 只略低於 M0，兩者單圈能力接近。
 - 半長軸下降可以作為 density model 的 downstream closure quantity。
 - 個別事件結果顯示，density 修正有時能大幅改善下降量，也可能明顯惡化。
 
@@ -250,6 +338,7 @@ M0 的 mean error 為負，代表整體略偏向多估下降；Ridge 的 mean er
 
 - 不能把整個六天窗口下降都歸因於磁暴。
 - 不能聲稱 Ridge 在每一場磁暴都優於 M0。
+- 不能用 endpoint 的 26.50% MAE 改善，宣稱 Ridge 的單圈能力也改善 26.50%。
 - 不能把這次回溯比較稱為獨立 forecast validation。
 - 不能把 `B_eff` 當成獨立校準出的衛星物理 ballistic coefficient。
 - 不能把目前積分結果稱為不依賴 POD 的自由軌道 propagation。
@@ -268,10 +357,11 @@ M0 的 mean error 為負，代表整體略偏向多估下降；Ridge 的 mean er
 
 - P6.1：1,575,708 個完整分鐘、1,575,671 個積分點、37 個 blocks。
 - P6.2/P6.3/P6.4：25 場、214,907 個分鐘、31 個 blocks。
+- 正式磁暴分數：25 場等權，Ridge 15 勝、M0 10 勝；底層共有 2,262 圈，每場 85 至 91 圈。
 - P6.2 與 P6.3 以 `{storm_id, time_us}` 精確連接，沒有模糊時間配對。
 - 缺值不插值，缺口不積分，圖也不跨缺口連線。
 - P6.4 SQLite `PRAGMA integrity_check` 結果為 `ok`。
-- Phase 0 與 Phase 6 相關測試共 15 項，全部通過。
+- Phase 6 測試共 51 項，全部通過。
 
 ## 正式輸出
 
@@ -282,6 +372,7 @@ M0 的 mean error 為負，代表整體略偏向多估下降；Ridge 的 mean er
 | `swarm_a_phase6_2_m0_error_v1.sqlite` | M0 逐分鐘與逐事件下降誤差 |
 | `swarm_a_phase6_3_ridge_decay_v1.sqlite` | Ridge 逐分鐘與逐事件下降誤差 |
 | `swarm_a_phase6_4_decay_comparison_v1.sqlite` | POD、M0、Ridge 統整結果 |
+| `swarm_a_phase6_4_orbit_scores_v1.sqlite` | 25 場磁暴主分數與 2,262 圈底層局部下降誤差 |
 
 資料契約：
 

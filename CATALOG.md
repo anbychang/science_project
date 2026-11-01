@@ -32,7 +32,7 @@
 | Phase 4 v2 | [done: descriptive] | `phases/phase4-v2/data/sqlite/swarm_a_phase4_v2_shared_tau.sqlite`（本機）含共同 $\tau=4.75$ h、25 場、214,907 筆；目前的描述性密度基線。 | [v2 報告](phases/phase4-v2/reports/shared_tau_grid_report.md)、[資料血緣](phases/phase4-v2/docs/lineage/phase4_v2_shared_tau.md) |
 | Phase 5 | [done: negative] | 無同場 L2 時，Trial10--Trial12 的 GPR 留場結果未勝過 M1；Trial13 的統一核對保存在本機 `phases/phase5-trial13/data/sqlite/`。`phases/phase5/data/sqlite/swarm_a_phase5_pooled_orbit_gpr_v1.sqlite` 與六個模型是需上一圈 L2 的歷史 Trial9 延伸版，不是無 L2 終版。 | [最終報告](phases/phase5/reports/phase_5_report.md)、[Trial1--Trial13 整合報告](phases/phase5/reports/phase_5_trial1_13_report.md)、[總入口](phases/phase5/README.md) |
 | Phase 5 V2 | [done: exploratory] | `storm_r_ridge_density_v1.sqlite` 含 25 場、214,907 筆留出 Ridge $R_k$ 密度；同批事件參與特徵選擇，尚無獨立外測。 | [Ridge 報告](phases/phase5-v2/reports/storm_r_ridge_report.md)、[資料血緣](phases/phase5-v2/docs/lineage/storm_r_ridge.md)、[工作空間](phases/phase5-v2/README.md) |
-| Phase 6 | [done: descriptive] | P6.1 固定 `B_eff`；P6.2 M0、P6.3 Ridge 下降；P6.4 完成 POD 總量、時間曲線與 density 統整。 | [最終報告](phases/phase6/reports/phase_6_final_report.md)、[工作空間](phases/phase6/README.md)、[P6.4 lineage](phases/phase6/docs/lineage/phase6_4_decay_comparison.md) |
+| Phase 6 | [done: descriptive] | P6.1 固定 `B_eff`；P6.2 M0、P6.3 Ridge；P6.4 以每場 orbit MAE 對 25 場磁暴等權計分，2,262 圈與六天 endpoint 作輔助。 | [最終報告](phases/phase6/reports/phase_6_final_report.md)、[工作空間](phases/phase6/README.md)、[P6.4 lineage](phases/phase6/docs/lineage/phase6_4_decay_comparison.md) |
 
 Phase 1／1R 的候選資料尚未校準為正式衰減率。舊 10 分鐘分支只供歷史比較，不作現行輸入。Phase 2、2R、3 的檢查點不回寫；新的修正密度分析讀 Phase 4 v2。Phase 6 已在固定 `B_eff` 下完成 M0、Ridge 與 POD 的描述性比較，但不是獨立軌道預報驗證。
 

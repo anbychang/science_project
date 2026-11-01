@@ -1,6 +1,6 @@
 # P6.4 POD、M0、Ridge 下降重整資料血緣
 
-狀態：[done]。P6.4 讀 P6.2、P6.3 衍生 SQLite，輸出 `swarm_a_phase6_4_decay_comparison_v1.sqlite`。下降圖另讀 Phase 1 完整軌道平均；不修改上游資料，也不重新計算 density 或 `B_eff`。
+狀態：[done]。P6.4 讀 P6.2、P6.3 與 Phase 1 衍生 SQLite，輸出 minute/event comparison、25 場磁暴等權分數、逐圈底層誤差與兩張圖；不修改上游資料，也不重新計算 density 或 `B_eff`。
 
 | 角色 | 路徑 |
 | --- | --- |
@@ -8,6 +8,7 @@
 | P6.3 Ridge | `phases/phase6/data/sqlite/swarm_a_phase6_3_ridge_decay_v1.sqlite` |
 | Phase 1 orbit mean | `phases/phase1/data/sqlite/swarm_a_analysis_2023_2026_p1_5_iter5000.sqlite` |
 | P6.4 output | `phases/phase6/data/sqlite/swarm_a_phase6_4_decay_comparison_v1.sqlite` |
+| P6.4 orbit score | `phases/phase6/data/sqlite/swarm_a_phase6_4_orbit_scores_v1.sqlite` |
 | Decline figure | `phases/phase6/figures/phase6_4_decay_time_25_storms.png` |
 | Density figure | `phases/phase6/figures/phase6_4_density_time_25_storms.png` |
 
@@ -127,6 +128,12 @@ phase6_4_decay_comparison_minute_v1 (derived；欄位節錄)
 swarm_a_phase_orbit_mean_v2 (derived；欄位節錄)
 [
   {
+    time_us: 1691043232000000 (us),
+    orbit_start_time_us: 1691037582000000 (us),
+    phase_weighted_mean_semi_major_axis_m: 6.858e6 (m),
+    chunk_id: 11
+  },
+  {
     time_us: 1691048892000000 (us),
     orbit_start_time_us: 1691043242000000 (us),
     phase_weighted_mean_semi_major_axis_m: 6.858e6 (m),
@@ -146,3 +153,115 @@ phase6_4_density_time_25_storms.png (PNG；M0/Ridge density；25 panels)
 ```
 
 下降圖的 POD 是 complete-orbit trend，不是 event endpoint estimator。density 圖與兩條模型下降線仍使用原始 minute values。
+
+#### [P6.4.3] complete POD orbits + minute predictions -> storm score [done]
+
+```text
+calc_phase6_4_orbit_scores.py -> run()
+
+相鄰 complete POD orbits -> Delta-a-POD = mean-a[j] - mean-a[j-1]。
+兩個 orbit endpoints 各對應到最近 UTC minute；同一 density block 的 cumulative model predictions 相減，得到該圈 model Delta-a。
+POD orbit 必須連續且 chunk_id 相同；model endpoints 必須存在且 block 相同。缺口不插值，跨缺口 orbit 不計分。
+每場分別計算 M0 與 Ridge 的 orbit MAE，MAE 較低者贏得該場；25 場磁暴各一票。
+正式分數是 Ridge 15 勝、M0 10 勝、0 平手。2,262 個 local orbit errors 與 endpoint comparison 都是輔助證據。
+```
+
+```text
+swarm_a_phase_orbit_mean_v2 + phase6_4_decay_comparison_minute_v1 (derived；欄位節錄)
+[
+  {
+    time_us: 1691048892000000 (us),
+    orbit_start_time_us: 1691043242000000 (us),
+    phase_weighted_mean_semi_major_axis_m: 6.858e6 (m),
+    chunk_id: 11
+  },
+  {
+    storm_id: S20230805T0546,
+    time_us: 1691043240000000 (us),
+    block_index: 1,
+    predicted_m0_block_delta_a_m: -4.889e-1 (m),
+    predicted_ridge_block_delta_a_m: -4.236e-1 (m)
+  },
+  {
+    storm_id: S20230805T0546,
+    time_us: 1691048880000000 (us),
+    block_index: 1,
+    predicted_m0_block_delta_a_m: -2.391e0 (m),
+    predicted_ridge_block_delta_a_m: -2.067e0 (m)
+  },
+  ...,
+]
+```
+
+```text
+phase6_4_orbit_score_v1 (derived；欄位節錄)
+[
+  {
+    storm_id: S20230805T0546,
+    orbit_end_time_us: 1691048892000000 (us),
+    previous_orbit_end_time_us: 1691043232000000 (us),
+    model_start_time_us: 1691043240000000 (us),
+    model_stop_time_us: 1691048880000000 (us),
+    observed_orbit_delta_a_m: 3.274e0 (m),
+    predicted_m0_orbit_delta_a_m: -1.903e0 (m),
+    m0_error_m: -5.177e0 (m),
+    predicted_ridge_orbit_delta_a_m: -1.643e0 (m),
+    ridge_error_m: -4.918e0 (m),
+    closer_model: P5V2_RIDGE,
+    algorithm_version: phase6_4_storm_primary_score_v2
+  },
+  ...,
+]
+
+phase6_4_orbit_summary_v1 (derived)
+[
+  {
+    model_id: M0,
+    event_count: 25,
+    scored_orbit_count: 2262,
+    mean_absolute_error_m: 5.460e0 (m),
+    root_mean_square_error_m: 7.461e0 (m),
+    closer_orbit_count: 1093,
+    algorithm_version: phase6_4_storm_primary_score_v2
+  },
+  {
+    model_id: P5V2_RIDGE,
+    event_count: 25,
+    scored_orbit_count: 2262,
+    mean_absolute_error_m: 5.425e0 (m),
+    root_mean_square_error_m: 7.412e0 (m),
+    closer_orbit_count: 1169,
+    algorithm_version: phase6_4_storm_primary_score_v2
+  }
+]
+
+phase6_4_orbit_event_summary_v1 (derived；欄位節錄)
+[
+  {
+    storm_id: S20230805T0546,
+    scored_orbit_count: 91,
+    m0_mean_absolute_error_m: 5.441e0 (m),
+    ridge_mean_absolute_error_m: 5.428e0 (m),
+    winner_model: P5V2_RIDGE,
+    mae_margin_m: 1.347e-2 (m),
+    algorithm_version: phase6_4_storm_primary_score_v2
+  },
+  ...,
+]
+
+phase6_4_storm_summary_v1 (derived)
+[
+  {
+    summary_id: PRIMARY,
+    storm_count: 25,
+    m0_win_count: 10,
+    ridge_win_count: 15,
+    tied_storm_count: 0,
+    m0_macro_mean_orbit_mae_m: 5.460e0 (m),
+    ridge_macro_mean_orbit_mae_m: 5.425e0 (m),
+    algorithm_version: phase6_4_storm_primary_score_v2
+  }
+]
+```
+
+`orbit_end_time_us` 是 Phase 1 complete orbit 的 UTC 結束時刻。`model_start_time_us` 與 `model_stop_time_us` 是對應的最近 UTC minute centers。

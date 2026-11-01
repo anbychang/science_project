@@ -19,7 +19,9 @@ P6.3
 
 P6.4
 P6.2 M0 + P6.3 Ridge
-  -> POD 總量、時間曲線、density 與下降統一比較
+  -> 2,262 圈局部下降作底層誤差
+  -> 25 場磁暴用 orbit MAE 等權決勝
+  -> POD 總量、時間曲線、density 與 endpoint 輔助比較
 ```
 
 完整方法、25 場逐場結果、時間圖與限制全部收錄於[Phase 6 最終報告](reports/phase_6_final_report.md)。
@@ -31,9 +33,12 @@ P6.2 M0 + P6.3 Ridge
 - P6.2 直接讀 Phase 3 `phase3_prediction_minute.rho_msis_full_phase_kg_m3`，不讀 Phase 4 D-model。
 - P6.3 直接讀 Phase 5 V2 `density_comparison.rho_ridge_phase_kg_m3`。
 - 每場磁暴各自歸零，25 場不接成連續軌道。
-- M0 endpoint error：MAE `72.22 m`、RMSE `89.35 m`、MAPE `16.77%`。
-- Ridge endpoint error：MAE `53.08 m`、RMSE `74.04 m`、MAPE `11.82%`。
-- P6.4：Ridge 在16場較接近 POD，M0 在9場較接近；這是探索性描述，不是獨立 forecast skill。
+- 正式磁暴分數為 Ridge 15 勝、M0 10 勝、0 平手；每場磁暴等權。
+- 25 場等權平均 orbit MAE：M0 `5.460 m/orbit`，Ridge `5.425 m/orbit`。
+- 底層共有 2,262 圈；pooled 結果為 Ridge 較準 1,169 圈、M0 較準 1,093 圈，只作輔助。
+- 六天 endpoint 是輔助結果：M0 MAE `72.22 m`，Ridge MAE `53.08 m`。
+- endpoint 顯示 Ridge 累積量較好，不代表單圈能力有相同比例的改善。
+- 所有結果都是探索性描述，不是獨立 forecast skill。
 
 ## 正式資料
 
@@ -42,6 +47,7 @@ P6.2 M0 + P6.3 Ridge
 - `data/sqlite/swarm_a_phase6_2_m0_error_v1.sqlite`
 - `data/sqlite/swarm_a_phase6_3_ridge_decay_v1.sqlite`
 - `data/sqlite/swarm_a_phase6_4_decay_comparison_v1.sqlite`
+- `data/sqlite/swarm_a_phase6_4_orbit_scores_v1.sqlite`
 
 資料契約：
 
@@ -57,7 +63,7 @@ code/     P6.1 至 P6.4 計算入口
 data/     P6.1 至 P6.4 SQLite 衍生輸出
 docs/     plan、lineage 與 retained research
 figures/  P6.4 時間曲線與 retained figures
-reports/  Phase 6 最終報告與 retained reports
+reports/  Phase 6 單一最終報告
 tests/    P6.1 至 P6.4 可重跑檢查
 ```
 

@@ -7,6 +7,7 @@ P6.4 不重新積分、不重新擬合模型。它精確連接 P6.2 與 P6.3，�
 1. 每場磁暴的 POD 總下降量。
 2. POD 隨時間的累積下降曲線。
 3. M0 與 Phase 5 V2 Ridge 的 density、累積預測下降及 POD 誤差。
+4. 每一個完整 orbit 的局部下降誤差，並以每場 orbit MAE 決定 25 場磁暴的 winner。
 
 ```text
 P6.2 M0 minute/event result
@@ -38,7 +39,19 @@ P6.2、P6.3 在每個 continuous block 內各自從零積分。P6.4 為了畫出
 - POD minute semi-major axis。
 - block 與缺口規則。
 
-P6.4 報告 MAE、RMSE、MAPE、mean signed error，以及逐場哪個模型的絕對誤差較小。不因整體平均較好就宣稱每場都改善。
+六天 endpoint 保留 MAE、RMSE、MAPE 與 mean signed error，但只作累積量輔助結果。
+
+底層誤差使用相鄰完整 orbit 的局部變化：
+
+\[
+\Delta a_{POD,j}=\bar a_j-\bar a_{j-1},
+\qquad
+e_j=\Delta a_{model,j}-\Delta a_{POD,j}.
+\]
+
+模型在兩個 orbit endpoint 各對應到最近 UTC minute；兩點必須在同一 density block。POD orbit 必須連續且 `chunk_id` 相同。任何一側有缺口就不計該圈，不插值。
+
+每場先報告 orbit mean error、MAE、median absolute error、RMSE 與 closer-orbit count。M0 與 Ridge 由該場 orbit MAE 較低者勝出；25 場等權計票。全部 orbit pooled 指標只作輔助。局部 POD 變化可接近零，因此不使用逐圈 MAPE。
 
 ## 圖的 POD 顯示
 
@@ -46,7 +59,7 @@ POD 逐分鐘半長軸含明顯軌道週期振盪。下降圖沿用 Phase 1 `swa
 
 POD 圖不繼承 density pairing 的 block。只有 POD orbit 本身不連續或 `chunk_id` 改變才斷黑線；M0 與 Ridge 仍依 P6.4 block 處理 density 缺口。
 
-逐圈線只改善閱讀，不改寫 P6.4 SQLite。事件總下降、`B_eff` 與 error metrics 仍使用原始 covered minute endpoint。
+逐圈線同時提供磁暴 score 的 POD orbit means。圖使用相對事件起點的曲線；每場 score 使用相鄰兩圈的局部差計算 orbit MAE，不重複累積前面各圈的誤差。`B_eff` 不重新擬合。
 
 ## 主張界線
 
