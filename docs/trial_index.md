@@ -24,6 +24,7 @@
 | 位置 | 狀態 | 問題與結果 | 報告 |
 | --- | --- | --- | --- |
 | `phase4/` | [done: descriptive] | 每場自由 $R_k,\tau_k$ 與共同正 $G$；D-model RMSE 0.109953，是現行下游基線 | [joint-fit 報告](../phases/phase4/reports/trial4_joint_fit_tau15_report.md)、[資料血緣](../phases/phase4/docs/lineage/trial4_joint_fit_tau15.md) |
+| `phase4-trial1/` | [done: descriptive] | 共同 $\tau$ 粗、細格點；4.75 h 的資料內 RMSE 0.113059，仍高於 D-model | [共同 tau 報告](../phases/phase4-trial1/reports/shared_tau_grid_report.md) |
 
 ## Phase5 殘差模型試驗
 
