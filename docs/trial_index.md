@@ -7,6 +7,7 @@
 - `[historical]`：保留研究過程，不是現行下游基線。
 - `[done: descriptive]`：完成資料內描述，不能視為外測或預報。
 - `[done: negative]`：完成 held-out 檢查，沒有通過採用條件。
+- `[done: exploratory]`：完成可重現的搜尋與輸出，分數尚不足以作採用判定。
 - `[working]`：有初步結果，尚未成為下游輸入或結論。
 - `[not created]`：已保留位置或計畫，沒有研究輸出。
 
@@ -23,8 +24,14 @@
 
 | 位置 | 狀態 | 問題與結果 | 報告 |
 | --- | --- | --- | --- |
-| `phase4/` | [retained: descriptive] | v1 每場自由 $R_k,\tau_k$ 的 D-model，RMSE 0.109953；既有 Phase 5／6 仍讀 v1 | [joint-fit 報告](../phases/phase4/reports/trial4_joint_fit_tau15_report.md)、[資料血緣](../phases/phase4/docs/lineage/trial4_joint_fit_tau15.md) |
+| `phase4/` | [retained: descriptive] | v1 每場自由 $R_k,\tau_k$ 的 D-model，RMSE 0.109953；既有 Phase 5 仍讀 v1 | [joint-fit 報告](../phases/phase4/reports/trial4_joint_fit_tau15_report.md)、[資料血緣](../phases/phase4/docs/lineage/trial4_joint_fit_tau15.md) |
 | `phase4-v2/` | [done: descriptive] | 現行共同 $\tau=4.75$ h；25 場、214,907 筆逐分鐘輸出，RMSE 0.113059 | [v2 報告](../phases/phase4-v2/reports/shared_tau_grid_report.md)、[資料血緣](../phases/phase4-v2/docs/lineage/phase4_v2_shared_tau.md) |
+
+## Phase 5 V2
+
+| 位置 | 狀態 | 問題與結果 | 報告 |
+| --- | --- | --- | --- |
+| `phase5-v2/` | [done: exploratory] | Phase 4 V2 `r_fit` 為目標；23 因素 A* 風格搜尋選固定三因素 Ridge，五次 20/5 訓練／搜尋 $R_k$ RMSE 平均 0.100904／0.115458；25 場 5×5 圖只畫 L2、Ridge、同場擬合 $\tau_k$／$R_k$。算分事件參與選模，無獨立外測 | [Ridge 報告](../phases/phase5-v2/reports/storm_r_ridge_report.md)、[密度圖](../phases/phase5-v2/figures/ridge_density_25_storms_5x5_v3.png)、[資料血緣](../phases/phase5-v2/docs/lineage/storm_r_ridge.md) |
 
 ## Phase5 殘差模型試驗
 

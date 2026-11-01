@@ -1,8 +1,8 @@
 # Phase 6 2022 背景斜率資料血緣
 
-狀態：[working]。本步使用既有 Phase 1R mean-element source，不重新下載已存在的 366 個 2022 POD 日檔。輸出在本機 `phases/phase6/data/sqlite/swarm_a_phase6_2022_baseline_v1.sqlite`，不修改 Phase 1R。
+狀態：[retained]。本步使用既有 Phase 1R mean-element source，不重新下載已存在的 366 個 2022 POD 日檔。輸出在本機 `phases/phase6/data/sqlite/swarm_a_phase6_2022_baseline_v1.sqlite`，不修改 Phase 1R。
 
-#### [P6.4] 2022 mean elements -> 同 chunk 逐圈平均與 90 天背景斜率 [done]
+#### [Legacy] 2022 mean elements -> 同 chunk 逐圈平均與 90 天背景斜率 [retained]
 
 ```text
 calc_phase6_2022_baseline.py -> run()

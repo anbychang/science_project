@@ -1,6 +1,6 @@
 # Swarm-A 磁暴與軌道衰減研究
 
-研究目標是釐清地磁暴與 Swarm-A 軌道衰減的關係。目前密度研究主線是 `Phase 2 -> Phase 3（歷史輸入）-> Phase 4 v2（共同 tau 描述性基線）`。Phase 4 v1 的自由 $R_k$／$\tau_k$ D-model 保留作歷史比較；Phase 5、Phase 6 既有結果仍依 v1 算出，尚未改用 v2。衰減率候選仍未校準。
+研究目標是釐清地磁暴與 Swarm-A 軌道衰減的關係。目前密度研究主線是 `Phase 2 -> Phase 3（歷史輸入）-> Phase 4 v2（共同 tau 描述性基線）`。Phase 4 v1 的自由 $R_k$／$\tau_k$ D-model 保留作歷史比較；舊 Phase 5 結果仍依 v1 算出，Phase 5 V2 則使用 Phase 4 V2。Phase 6 已完成 M0、Phase 5 V2 Ridge 與 POD 半長軸下降的描述性統整。衰減率候選仍未校準。
 
 先看 [OUTPUT.md](OUTPUT.md) 閱讀 GitHub 上的成果；[CATALOG.md](CATALOG.md) 列出本機資料庫、程式與文件位置。[GLOSSARY.md](GLOSSARY.md) 定義術語，[ISSUE.md](ISSUE.md) 記錄暫緩問題。
 
@@ -14,10 +14,11 @@
 | [Phase 2](phases/phase2/reports/phase_2_final_report.md) | [done] 三年 | 25 場磁暴、一分鐘事件資料與 P2.6 描述性 peak QC；檢查點已固定。 |
 | [Phase 2R](phases/phase2r/reports/phase_2r_final_report.md) | [done] 十二年 | Phase 2 方法的獨立重現；49 場候選中 46 場有完整分鐘資料；檢查點已固定。 |
 | [Phase 3](phases/phase3/reports/phase_3_final_report.md) | [retained] 三年 | 唯讀歷史 M1 基線；固定 $R_k$／共同 $\tau$ 的設定不作後續密度分析基線。 |
-| [Phase 4 v1](phases/phase4/reports/trial4_joint_fit_tau15_report.md) | [retained: descriptive] | 25 場自由 $R_k$／$\tau_k$ 的 D-model；供歷史比較和既有 Phase 5／6 重算。 |
+| [Phase 4 v1](phases/phase4/reports/trial4_joint_fit_tau15_report.md) | [retained: descriptive] | 25 場自由 $R_k$／$\tau_k$ 的 D-model；供歷史比較和既有 Phase 5 重算。 |
 | [Phase 4 v2](phases/phase4-v2/reports/shared_tau_grid_report.md) | [done: descriptive] | 現行共同 $\tau=4.75$ h；各場 $R_k$、共同 $G$ 重擬合，RMSE 0.113059；仍未外測。 |
 | [Phase 5](phases/phase5/README.md) | [done: negative] | 目標場整場沒有 L2 時，已測 GPR 修正未勝過 M1；目前沒有可部署的無 L2 密度終版。Trial9 有上一圈 L2 的結果保留為歷史實驗。 |
-| [Phase 6](phases/phase6/README.md) | [done] | P6.1 用三年 L2/POD 擬合固定 `B_eff=0.0092292068 m²/kg`；P6.2 將 Phase 4 D-model density 轉成 25 場磁暴各自的半長軸下降。 |
+| [Phase 5 V2](phases/phase5-v2/README.md) | [done: exploratory] | 固定三因素 Ridge 估計事件 $R_k$；25 場參與特徵選擇，尚無新事件獨立外測。 |
+| [Phase 6](phases/phase6/README.md) | [done: descriptive] | P6.1 固定 `B_eff`；P6.2 M0、P6.3 Ridge 下降；P6.4 完成 POD 總量、時間曲線與 density 統整。 |
 
 Phase5 Trial1--Trial5 的特徵組合比較與每個欄位目前可主張的範圍，見[特徵貢獻整理](phases/phase5-trial2/reports/phase_5_feature_contribution_summary.md)。
 無同場 L2 的終版決定見[Phase 5 最終報告](phases/phase5/reports/phase_5_report.md)；Trial1--Trial13 的脈絡與圖見[整合報告](phases/phase5/reports/phase_5_trial1_13_report.md)。

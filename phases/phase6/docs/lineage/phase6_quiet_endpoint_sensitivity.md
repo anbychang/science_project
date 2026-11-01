@@ -1,8 +1,8 @@
 # Phase 6 平靜期端點敏感度資料血緣
 
-狀態：[working]。此步量測候選半長軸下降量對端點擬合圈數的敏感度。它不增加 POD systematic、maneuver 或 physical drag 的不確定度；6 圈 OLS sigma 只能作為殘差造成的下限。輸出是本機 `phases/phase6/data/sqlite/swarm_a_phase6_quiet_endpoint_sensitivity_v1.sqlite`。
+狀態：[retained]。此步量測候選半長軸下降量對端點擬合圈數的敏感度。它不增加 POD systematic、maneuver 或 physical drag 的不確定度；6 圈 OLS sigma 只能作為殘差造成的下限。輸出是本機 `phases/phase6/data/sqlite/swarm_a_phase6_quiet_endpoint_sensitivity_v1.sqlite`。
 
-#### [P6.2] 平靜期 orbit-density pairs -> 端點擬合敏感度 [done]
+#### [Legacy] 平靜期 orbit-density pairs -> 端點擬合敏感度 [retained]
 
 ```text
 calc_phase6_quiet_endpoint_sensitivity.py -> run()

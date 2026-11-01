@@ -1,8 +1,8 @@
 # Phase 6 磁暴前三個月背景斜率資料血緣
 
-狀態：[working]。本步比較每場磁暴前 90 天的全部逐圈半長軸斜率，以及同期間只使用已通過平靜日規則的斜率。它回答背景斜率是否可視為固定；不把長期趨勢解釋成純 drag。輸出是本機 `phases/phase6/data/sqlite/swarm_a_phase6_prestorm_baseline_v1.sqlite`。
+狀態：[retained]。本步比較每場磁暴前 90 天的全部逐圈半長軸斜率，以及同期間只使用已通過平靜日規則的斜率。它回答背景斜率是否可視為固定；不把長期趨勢解釋成純 drag。輸出是本機 `phases/phase6/data/sqlite/swarm_a_phase6_prestorm_baseline_v1.sqlite`。
 
-#### [P6.3] Phase 1 逐圈半長軸 + 平靜日 -> 每場磁暴前背景斜率 [done]
+#### [Legacy] Phase 1 逐圈半長軸 + 平靜日 -> 每場磁暴前背景斜率 [retained]
 
 ```text
 calc_phase6_prestorm_baseline.py -> run()

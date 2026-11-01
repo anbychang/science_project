@@ -9,6 +9,7 @@ GitHub 可直接閱讀的成果捷徑見 [OUTPUT.md](../OUTPUT.md)；本機 SQLi
 - [Phase 2 三年密度驗證](../phases/phase2/reports/phase_2_final_report.md)：P2.6 檢查點與描述性 peak QC。
 - [Phase 2R 十二年重現](../phases/phase2r/reports/phase_2r_final_report.md)：P2R.6 檢查點與 46 場逐場圖。
 - [Phase 3 密度響應](../phases/phase3/reports/phase_3_final_report.md)：凍結的 25 場 M1 歷史基線；不作後續密度分析的固定參數。
+- [Phase 6 density-to-decay](../phases/phase6/reports/phase_6_final_report.md)：固定 `B_eff` 下的 M0、Phase 5 V2 Ridge 與 POD 半長軸下降統整。
 
 ## 工作報告
 

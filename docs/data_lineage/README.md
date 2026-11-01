@@ -2,6 +2,8 @@
 
 Phase 1／1R 是未校準的候選工作庫；Phase 2／2R 已結案，Phase 3 是唯讀歷史 M1 基線，詳細入口見下方「文件」。目前密度研究路徑是 `Phase 2 -> Phase 3（歷史輸入）-> Phase 4（描述性基線）-> Phase 5（無同場 L2 修正判定）`。Phase 4 是資料內描述；Phase 5 歷史 Trial9 的 GPR 仍需上一圈 L2，無同場 L2 的 Trial10--Trial13 沒有選出採用模型。各步以所屬 Phase 的血緣文件與報告為準。
 
+Phase 5 V2 另走 `Phase 4 V2 r_fit -> 23 因素搜尋 -> Ridge 事件 R`。此路徑已產出探索性模型，但同批事件參與特徵選擇。Phase 6 P6.3 只把它當探索性 density-to-decay 輸入，不代表已採用為正式預測來源。
+
 ## Phase 1／1R 工作資料庫
 
 目前保留兩份完成 P1.5.1 的 checkpoint：
@@ -73,6 +75,11 @@ retained legacy，不是上述 v2 主線的輸入。
 - [Phase 3 三年 25 場資料血緣](../../phases/phase3/docs/lineage/phase_3_25_storm_prediction.md)：唯讀 M1 歷史基線的 $R_{k,\mathrm{RQ}}$、SME 濾波、MSIS 配對、共同延遲與逐場回溯密度曲線。
 - [Phase 4 joint-fit 資料血緣](../../phases/phase4/docs/lineage/trial4_joint_fit_tau15.md)：保存的 Phase 3 快照、Phase 2 輸入、資料內 joint fit 與現行修正基線輸出。
 - [Phase 4 joint-fit 報告](../../phases/phase4/reports/trial4_joint_fit_tau15_report.md)：自由 $R_k$／$\tau_k$ 的結果、可重現性核對與描述性限制。
+- [Phase 5 V2 Ridge 資料血緣](../../phases/phase5-v2/docs/lineage/storm_r_ridge.md)：Phase 4 V2 事件 $R_k$、Phase 3 校準段、23 個因素與固定三因素 Ridge 輸出。
+- [Phase 5 V2 Ridge 報告](../../phases/phase5-v2/reports/storm_r_ridge_report.md)：A* 風格搜尋、20/5 分數及尚無獨立外測的限制。
+- [Phase 6 P6.2 M0 資料血緣](../../phases/phase6/docs/lineage/phase6_2_m0_error.md)：固定 `B_eff` 下的 M0 半長軸下降與 POD 誤差。
+- [Phase 6 P6.3 Ridge 資料血緣](../../phases/phase6/docs/lineage/phase6_3_ridge_decay.md)：Phase 5 V2 Ridge density 推回半長軸下降與 POD 誤差。
+- [Phase 6 P6.4 統整資料血緣](../../phases/phase6/docs/lineage/phase6_4_decay_comparison.md)：POD 總下降、時間曲線、M0/Ridge density 與下降的統一資料表。
 - [Phase5 Trial1 資料血緣](../../phases/phase5-trial1/docs/lineage/phase_5_trial4_altitude_gpr.md)：Trial4 baseline、paired DNSAPOD 高度與五特徵資料內 GPR。
 - [Phase5 Trial2 資料血緣](../../phases/phase5-trial2/docs/lineage/phase_5_trial4_groupcv20_5.md)：Trial1 錨點、storm-group split 與每場一次 held-out 預測。
 - [Phase5 Trial2 結果報告](../../phases/phase5-trial2/reports/phase_5_trial4_groupcv20_5_report.md)：held-out 指標、折次結果與限制。
