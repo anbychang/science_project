@@ -1,6 +1,8 @@
 # Phase 5 V2：估計 Phase 4 V2 事件 R
 
-狀態：[done: exploratory]。主線是**交叉驗證引導的演化式包裝法特徵選擇 + Ridge 迴歸**，以 A* 風格優先擴展較佳因素組合，估計 Phase 4 V2 `phase4_v2_events.r_fit`。固定因素為 `{r_phase3, prequiet_sme_mean_nt, quiet_f107a_last81_sfu}`；五次 20 場訓練／5 場算分的 $R_k$ RMSE 平均為 0.100904／0.115458。25 場密度圖只畫 L2、Ridge、同場擬合 $\tau_k$ 與 $R_k$ 三條線；Ridge 密度的等事件權重 log RMSE 為 0.179233。算分事件參與挑因素，尚無新事件的獨立外測，模型不作正式下游 $R_k$。
+狀態：[done: exploratory]。主線是**交叉驗證引導的演化式包裝法特徵選擇 + Ridge 迴歸**，以 A* 風格優先擴展較佳因素組合，估計 Phase 4 V2 `phase4_v2_events.r_fit`。固定因素為 `{r_phase3, prequiet_sme_mean_nt, quiet_f107a_last81_sfu}`；五次 20 場訓練／5 場算分的 $R_k$ RMSE 平均為 0.100904／0.115458。25 場密度圖只畫 L2、Ridge、同場擬合 $\tau_k$ 與 $R_k$ 三條線；Ridge 密度的等事件權重 log RMSE 為 0.179233。算分事件參與挑因素，25 場分數不是獨立外測，模型不作正式下游 $R_k$。
+
+後續 [Phase 7 三場新事件外測](../phase7-v2/reports/phase_7_late_2022_early_2023_three_storms_report.md)已完成。Ridge density 與下降量都是一勝兩負，未支持它優於 M0；這不改寫原本 25 場探索分數。
 
 ## 現行資料路徑
 

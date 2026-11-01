@@ -1,0 +1,222 @@
+{
+  "source": "https://swarm-diss.eo.esa.int/",
+  "collection": "SW_OPER_DNSAPOD_2_",
+  "selection": "Phase 7 configured event windows and Phase 3-compatible pre/post quiet runs",
+  "phase2r_database": "phases/phase2r/data/sqlite/swarm_a_phase2r_p2r_6_final_v1.sqlite",
+  "phase2r_database_sha256": "d201583de003713a28f9fd1276d33ac45ea247af5e0634d7c3f608115b43c42e",
+  "phase1r_database": "phases/phase1r/data/sqlite/swarm_a_analysis_2014_2026_phase_candidate_working_v2.sqlite",
+  "phase1r_database_sha256": "deef5a1640aec9e30778966cbe5bf137226c5b203e399e9f89eadf2c48043f80",
+  "gfz_ap": "phases/phase0/data/raw/geomagnetic/gfz_ap_2014-07-01_2026-06-30.json",
+  "gfz_ap_sha256": "3f19657310f0fcd1ab2a8746b39a914b0d7451efadfb21e895ae933d80ed2977",
+  "verified_at_utc": "2026-11-01T15:03:24.414862+00:00",
+  "files": [
+    {
+      "name": "SW_OPER_DNSAPOD_2__20180806T000000_20180806T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20180806T000000_20180806T235930_0301.ZIP",
+      "source_mtime_utc": "2024-12-23T16:49:07+00:00",
+      "local_mtime_utc": "2026-11-01T15:02:21.242201+00:00",
+      "size_bytes": 140516,
+      "sha256": "5b9ab899aac74a4176c5cbef742ea1f574dde589130d98d681aa8578c69dd083"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20180824T000000_20180824T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20180824T000000_20180824T235930_0301.ZIP",
+      "source_mtime_utc": "2024-12-23T16:49:33+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:35.953956+00:00",
+      "size_bytes": 140381,
+      "sha256": "b79e831060e62715706f2fdb0be7c1e95f242eb6d84d5f4ceec80244b6c1df07"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20180825T000000_20180825T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20180825T000000_20180825T235930_0301.ZIP",
+      "source_mtime_utc": "2024-12-23T16:49:34+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:38.033500+00:00",
+      "size_bytes": 140637,
+      "sha256": "3f748d688cfca8860ab98ed0c9439ec22ab72507f6dfe5b9fe72424e47ea7d9e"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20180826T000000_20180826T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20180826T000000_20180826T235930_0301.ZIP",
+      "source_mtime_utc": "2024-12-23T16:49:35+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:40.116713+00:00",
+      "size_bytes": 140892,
+      "sha256": "6dba916dd21abae04f5cc4363949d8931d3481302459faf5aa00285c5770a1c8"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20180827T000000_20180827T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20180827T000000_20180827T235930_0301.ZIP",
+      "source_mtime_utc": "2024-12-23T16:49:37+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:42.243011+00:00",
+      "size_bytes": 140572,
+      "sha256": "b4200f073bf44ac0ffd003a6bea34e6a72a4739888fe722ce4ba6efc78e3e7f8"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20180828T000000_20180828T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20180828T000000_20180828T235930_0301.ZIP",
+      "source_mtime_utc": "2024-12-23T16:49:38+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:44.334265+00:00",
+      "size_bytes": 140477,
+      "sha256": "62b32bdf37070d95c914bf6d372385b61fa0d3de8d75573ce9a6e6ea2bd95a25"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20180829T000000_20180829T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20180829T000000_20180829T235930_0301.ZIP",
+      "source_mtime_utc": "2024-12-23T16:52:27+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:46.503799+00:00",
+      "size_bytes": 140489,
+      "sha256": "e3f06cf50d3a58aba1a3ab35aa92bcb89ec35f5d7bcf80583f6527887d3f5929"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20180830T000000_20180830T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20180830T000000_20180830T235930_0301.ZIP",
+      "source_mtime_utc": "2024-12-23T16:52:28+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:48.766875+00:00",
+      "size_bytes": 140435,
+      "sha256": "f074c9b5d69f2f19ff53567d98ac548bbb89b5336581eb848799fe8deb3690fa"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20180901T000000_20180901T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20180901T000000_20180901T235930_0301.ZIP",
+      "source_mtime_utc": "2024-12-23T16:54:28+00:00",
+      "local_mtime_utc": "2026-11-01T15:02:23.467553+00:00",
+      "size_bytes": 140382,
+      "sha256": "835523656091949205ad0091e6ba5b4e78858f70f28fab340af193442af7304a"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20211029T000000_20211029T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20211029T000000_20211029T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-25T22:23:04+00:00",
+      "local_mtime_utc": "2026-11-01T15:02:26.253310+00:00",
+      "size_bytes": 139527,
+      "sha256": "30e856a23c5305715483feb0db3293aff8522356c24db007cc1d66759076852b"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20211102T000000_20211102T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20211102T000000_20211102T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-25T22:23:09+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:50.840884+00:00",
+      "size_bytes": 140068,
+      "sha256": "52fa27b15e6df7ba78ddeffc757703f99d0c50177f0915d93d1840ef0c696e35"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20211103T000000_20211103T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20211103T000000_20211103T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-25T22:23:11+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:52.887737+00:00",
+      "size_bytes": 140052,
+      "sha256": "eca51f80654d6704a713902d099af5d7350effdf474019371814ed77e7d22e3b"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20211104T000000_20211104T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20211104T000000_20211104T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-25T22:23:12+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:54.973229+00:00",
+      "size_bytes": 138037,
+      "sha256": "1f6e3fbf7f5ceb03617c124595c6ded5e3de30130d126dfcf3fde45aef2d1006"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20211105T000000_20211105T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20211105T000000_20211105T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-25T22:23:13+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:57.033793+00:00",
+      "size_bytes": 139991,
+      "sha256": "3c0e85836031d5a2e448a90a78905594ef6cea24718e15f64693a20ff440c67f"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20211106T000000_20211106T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20211106T000000_20211106T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-25T22:23:14+00:00",
+      "local_mtime_utc": "2026-10-25T09:39:59.133020+00:00",
+      "size_bytes": 139495,
+      "sha256": "9341b69015de420b1f2173607483487d8419d1a8959ce2e32198e74bd5e70304"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20211107T000000_20211107T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20211107T000000_20211107T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-26T08:13:09+00:00",
+      "local_mtime_utc": "2026-10-25T09:40:01.232051+00:00",
+      "size_bytes": 139570,
+      "sha256": "65b3ab865727df3f302c317de0d1e81adea8f7d35249744c35f3aa4ba458073e"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20211108T000000_20211108T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20211108T000000_20211108T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-26T08:13:11+00:00",
+      "local_mtime_utc": "2026-10-25T09:40:03.403291+00:00",
+      "size_bytes": 139681,
+      "sha256": "0d8ec67c4eeb317608d31318e5252c45967d75cfd636dcb19138741045266fe0"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20220303T000000_20220303T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20220303T000000_20220303T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-23T20:43:10+00:00",
+      "local_mtime_utc": "2026-11-01T15:02:28.517680+00:00",
+      "size_bytes": 139770,
+      "sha256": "4ef6eaa03762874c70f35fcd8c6dc9635492021e5073f08fd378b4359fba6c5d"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20220311T000000_20220311T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20220311T000000_20220311T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-23T20:49:08+00:00",
+      "local_mtime_utc": "2026-10-25T09:40:05.507271+00:00",
+      "size_bytes": 139923,
+      "sha256": "a86b7d4bac3f4222f93584342e58839a5c79110da44a19a62d21b2f160a200cf"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20220312T000000_20220312T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20220312T000000_20220312T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-23T20:49:09+00:00",
+      "local_mtime_utc": "2026-10-25T09:40:07.580683+00:00",
+      "size_bytes": 139794,
+      "sha256": "1e536c3bbe85668c313bb4f89d41e0496075214a885df03cf8329d260de27e69"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20220313T000000_20220313T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20220313T000000_20220313T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-23T20:49:10+00:00",
+      "local_mtime_utc": "2026-10-25T09:40:09.953875+00:00",
+      "size_bytes": 140049,
+      "sha256": "cd2fbcb3b689e36d05bff3c1478f115a07d7caa5e4da04d097ee52d132d8fff2"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20220314T000000_20220314T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20220314T000000_20220314T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-23T20:49:12+00:00",
+      "local_mtime_utc": "2026-10-25T09:40:12.027034+00:00",
+      "size_bytes": 139932,
+      "sha256": "4acf7f99f579a17d5a01e95a37e452a5ac481a5867437124cb58d17698cf5b94"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20220315T000000_20220315T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20220315T000000_20220315T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-23T20:49:13+00:00",
+      "local_mtime_utc": "2026-10-25T09:40:14.110335+00:00",
+      "size_bytes": 139256,
+      "sha256": "59441d5936999c56e58f09cd9044ddd3368137920130e097dd361d6c2e715e4f"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20220316T000000_20220316T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20220316T000000_20220316T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-23T20:49:14+00:00",
+      "local_mtime_utc": "2026-10-25T09:40:16.235596+00:00",
+      "size_bytes": 139283,
+      "sha256": "5b6ad7c07d0eee0d30359f5170567dfc3230a0742fa771af7d51412a6ed526e9"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20220317T000000_20220317T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20220317T000000_20220317T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-23T20:53:03+00:00",
+      "local_mtime_utc": "2026-10-25T09:40:18.312707+00:00",
+      "size_bytes": 139295,
+      "sha256": "7ff5a1184876d726d25f1867e320f373711b7965f9384652b12c266dd960d913"
+    },
+    {
+      "name": "SW_OPER_DNSAPOD_2__20220318T000000_20220318T235930_0301.ZIP",
+      "source_path": "swarm/Level2daily/Entire_mission_data/DNS/POD/Sat_A/SW_OPER_DNSAPOD_2__20220318T000000_20220318T235930_0301.ZIP",
+      "source_mtime_utc": "2024-09-23T20:53:04+00:00",
+      "local_mtime_utc": "2026-11-01T15:02:30.414803+00:00",
+      "size_bytes": 139891,
+      "sha256": "e2597d2709678c528727482575929adf9a9e525ab8247a631808bdfb7643568e"
+    }
+  ]
+}
