@@ -28,25 +28,31 @@ Phase 0–5 保存的 M0 / Ridge density
 
 ## 逐圈計分方法
 
-設第 $j$ 個完整 POD orbit 的平均半長軸為 $\bar a_j$，其終點對齊最近 UTC minute 的函數為 $m(t_j)$。相鄰兩圈的觀測變化、模型變化及誤差為：
+設第 $j$ 個完整 POD orbit 的平均半長軸為 $\bar a_j$，終點 UTC 時刻為 $t_j$。$m(t)$ 把終點對齊最近的 UTC minute；恰在半分鐘時選較晚分鐘：
 
-$$
-\Delta a_{\mathrm{POD},j}=\bar a_j-\bar a_{j-1},
-$$
+```math
+m(t)=60\,\mathrm{s}\left\lfloor\frac{t+30\,\mathrm{s}}{60\,\mathrm{s}}\right\rfloor.
+```
 
-$$
-\Delta a_{\mathrm{model},j}=\Delta a_{\mathrm{model}}(m(t_j))-\Delta a_{\mathrm{model}}(m(t_{j-1})),
-$$
+這裡 $t$ 用從 UTC epoch 起算的秒數。設 $A_{\mathrm{model}}(t)$ 為相同 density block 內、從 block 起點累積的模型半長軸變化。相鄰兩圈的觀測變化、模型變化及誤差為：
 
-$$
+```math
+\Delta a_{\mathrm{POD},j}=\bar a_j-\bar a_{j-1}.
+```
+
+```math
+\Delta a_{\mathrm{model},j}=A_{\mathrm{model}}(m(t_j))-A_{\mathrm{model}}(m(t_{j-1})).
+```
+
+```math
 e_{\mathrm{model},j}=\Delta a_{\mathrm{model},j}-\Delta a_{\mathrm{POD},j}.
-$$
+```
 
 每場磁暴 $k$ 的有效圈間區間數為 $N_{\mathrm{orbit},k}$，正式分數為：
 
-$$
+```math
 \operatorname{MAE}_{\mathrm{model},k}=\frac{1}{N_{\mathrm{orbit},k}}\sum_{j=1}^{N_{\mathrm{orbit},k}}|e_{\mathrm{model},k,j}|.
-$$
+```
 
 該場 MAE 較低的模型贏一票。$N_{\mathrm{orbit},k}$ 是圈數，不是 Phase 4 的有效相位分鐘數 $N_k$。單圈變化可能接近零，因此不用 MAPE。
 
