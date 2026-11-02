@@ -2,9 +2,9 @@
 
 ## 決定與狀態
 
-狀態：[done: read-only specification]。本文件固定數學、資料切分與驗收規則；新的 SQLite derived output 仍是 [not created]。文中的 Phase 5 pooled GPR 檔是**需要上一圈 L2 的歷史 Trial9 輸出**，只可作回溯接法研究，不是[Phase 5 無同場 L2 終版](../../../phase5/reports/phase_5_report.md)的密度產品。
+狀態：[historical: not adopted]。這是早期 quiet-window 校準／驗證方案，沒有按本文切分產生正式 SQLite；目前 Phase 6 已改用 [P6.1 三年逐分鐘 L2/POD 擬合](../../reports/phase_6_final_report.md)，其輸出為 `swarm_a_phase6_1_beff_v1.sqlite`，不能把本文的 2024／2026 切分當成該輸出的驗證設計。文中的 Phase 5 pooled GPR 檔是**需要上一圈 L2 的歷史 Trial9 輸出**，只可作回溯接法研究，不是[Phase 5 無同場 L2 終版](../../../phase5/reports/phase_5_report.md)的密度產品。
 
-主方法沿用現有 Phase 6 quiet closure 的兩日窗 estimator：前 6 圈與後 6 圈各作端點 OLS，得到觀測半長軸損失；同一窗逐圈累加
+本歷史方案沿用 Phase 6 quiet closure 的兩日窗 estimator：前 6 圈與後 6 圈各作端點 OLS，得到觀測半長軸損失；同一窗逐圈累加
 `rho*sqrt(mu*a)*delta_t`，再以 zero-intercept regression 估計單一 `beta_eff`。2024 的三個窗只作 calibration；2026 的兩個窗只作一次性 validation。
 
 `beta_eff` 只能稱為特定資料產品、window mapping 與 estimator 下的有效比例。它不是 Swarm-A 的物理 ballistic coefficient，也不是已驗證的 `C_D*A/m`。
@@ -84,7 +84,7 @@ Daily OLS 只回答 `beta_eff` 是否隨日明顯漂移，不取代上述兩日�
 x_{ik}=\rho_{ik}\sqrt{\mu a_{ik}}.
 \]
 
-主方法為了重現既有 quiet closure，使用左端 rule：
+本歷史方案為了重現既有 quiet closure，使用左端 rule：
 
 \[
 K_i=\sum_{k=0}^{m_i-2}x_{ik}\Delta t_{ik},

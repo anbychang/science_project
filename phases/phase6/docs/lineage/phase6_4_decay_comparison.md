@@ -6,6 +6,7 @@
 | --- | --- |
 | P6.2 M0 | `phases/phase6/data/sqlite/swarm_a_phase6_2_m0_error_v1.sqlite` |
 | P6.3 Ridge | `phases/phase6/data/sqlite/swarm_a_phase6_3_ridge_decay_v1.sqlite` |
+| P5 V2 L2 reference | `phases/phase5-v2/data/sqlite/storm_r_ridge_density_v1.sqlite` |
 | Phase 1 orbit mean | `phases/phase1/data/sqlite/swarm_a_analysis_2023_2026_p1_5_iter5000.sqlite` |
 | P6.4 output | `phases/phase6/data/sqlite/swarm_a_phase6_4_decay_comparison_v1.sqlite` |
 | P6.4 orbit score | `phases/phase6/data/sqlite/swarm_a_phase6_4_orbit_scores_v1.sqlite` |
@@ -106,7 +107,9 @@ prep_phase6_4_figures.py -> run()
 每場以 storm_id 解析 t0，橫軸是相對 t0 小時。
 下降圖以 Phase 1 的 mean argument of latitude 切分完整 orbit，POD 每圈畫一個 phase-weighted mean；M0 與 P5 V2 Ridge 保留 minute 積分線。
 整場 POD 以窗口開始前、相同初始 chunk 的最後一個完整 orbit 為零點。POD 直接讀完整 Phase 1 orbit means，不繼承 density pairing 的 block；只有 POD orbit 不連續或 `chunk_id` 改變才斷黑線。
-M0 與 Ridge 仍依 P6.4 block 分開畫，不跨 density 缺口連線。
+下降圖的 M0 與 Ridge 仍依 P6.4 block 分開畫，不跨 density 缺口連線。
+密度圖另以 {storm_id, time_us} 精確連接 Phase 5 V2 的 orbit-phase-average L2；214,907 個 P6.4 minutes 都必須有 L2，否則停止繪圖。
+Density 圖的 6 個真實資料缺口以兩端值做線性內差，並以同色實線連續顯示，不另外標示缺口。內差只存在於 PNG，不寫回 SQLite，也不進下降積分或磁暴評分。
 orbit mean 只用於圖；event endpoint、B_eff 與誤差仍使用 P6.4 原始 minute 結果。
 ```
 
@@ -121,6 +124,18 @@ phase6_4_decay_comparison_minute_v1 (derived；欄位節錄)
     observed_covered_delta_a_m: 0.000e0 (m),
     predicted_m0_covered_delta_a_m: 0.000e0 (m),
     predicted_ridge_covered_delta_a_m: 0.000e0 (m)
+  },
+  ...,
+]
+
+density_comparison (derived；欄位節錄)
+[
+  {
+    storm_id: S20230805T0546,
+    time_us: 1691041800000000 (us),
+    rho_l2_phase_kg_m3: 6.920e-13 (kg/m^3),
+    rho_ridge_phase_kg_m3: 6.103e-13 (kg/m^3),
+    algorithm_version: storm_r_ridge_density_v1
   },
   ...,
 ]
@@ -149,10 +164,10 @@ swarm_a_phase_orbit_mean_v2 (derived；欄位節錄)
 
 ```text
 phase6_4_decay_time_25_storms.png (PNG；POD/M0/Ridge 下降；25 panels)
-phase6_4_density_time_25_storms.png (PNG；M0/Ridge density；25 panels)
+phase6_4_density_time_25_storms.png (PNG；L2/M0/Ridge density；25 panels)
 ```
 
-下降圖的 POD 是 complete-orbit trend，不是 event endpoint estimator。density 圖與兩條模型下降線仍使用原始 minute values。
+下降圖的 POD 是 complete-orbit trend，不是 event endpoint estimator。density 圖的 L2 只作觀測參考；P6.4 下降與磁暴分數仍只比較 M0 和 Ridge。
 
 #### [P6.4.3] complete POD orbits + minute predictions -> storm score [done]
 

@@ -6,7 +6,7 @@ P6.4 不重新積分、不重新擬合模型。它精確連接 P6.2 與 P6.3，�
 
 1. 每場磁暴的 POD 總下降量。
 2. POD 隨時間的累積下降曲線。
-3. M0 與 Phase 5 V2 Ridge 的 density、累積預測下降及 POD 誤差。
+3. L2 參考密度、M0 與 Phase 5 V2 Ridge 的 density、累積預測下降及 POD 誤差。
 4. 每一個完整 orbit 的局部下降誤差，並以每場 orbit MAE 決定 25 場磁暴的 winner。
 
 ```text
@@ -15,12 +15,14 @@ P6.2 M0 minute/event result
   -> exact join by {storm_id, time_us}
   -> event endpoint table
   -> minute density/decline table
-  -> 25-storm decline and density figures
+  -> 25-storm decline figure
+  -> exact {storm_id, time_us} join to L2 reference density
+  -> L2/M0/Ridge density figure
 ```
 
 ## 時間曲線
 
-P6.2、P6.3 在每個 continuous block 內各自從零積分。P6.4 為了畫出整場累積曲線，將前一個已覆蓋 block 的 endpoint 加到下一個 block；資料缺口本身仍不補值，圖上也不跨缺口連線。
+P6.2、P6.3 在每個 continuous block 內各自從零積分。P6.4 為了畫出整場累積曲線，將前一個已覆蓋 block 的 endpoint 加到下一個 block；資料缺口本身仍不補值，下降圖也不跨缺口連線。
 
 每場最後一個 minute row 必須精確等於 P6.2、P6.3 event table 的 endpoint：
 
@@ -58,6 +60,8 @@ e_j=\Delta a_{model,j}-\Delta a_{POD,j}.
 POD 逐分鐘半長軸含明顯軌道週期振盪。下降圖沿用 Phase 1 `swarm_a_phase_orbit_mean_v2` 的 complete-orbit 定義，每圈只畫一個 phase-weighted mean；不使用任意 rolling window。整場以窗口開始前最後一個完整 orbit 為共同零點。
 
 POD 圖不繼承 density pairing 的 block。只有 POD orbit 本身不連續或 `chunk_id` 改變才斷黑線；M0 與 Ridge 仍依 P6.4 block 處理 density 缺口。
+
+Density 圖對真實缺口的兩端做線性內差，以同色實線連續顯示，不另外標示缺口。這是圖面處理，不寫回 SQLite，也不參與積分或評分。
 
 逐圈線同時提供磁暴 score 的 POD orbit means。圖使用相對事件起點的曲線；每場 score 使用相鄰兩圈的局部差計算 orbit MAE，不重複累積前面各圈的誤差。`B_eff` 不重新擬合。
 

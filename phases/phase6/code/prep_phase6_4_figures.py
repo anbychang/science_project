@@ -16,13 +16,21 @@ import matplotlib.pyplot as plt
 
 
 MICROSECONDS_PER_HOUR = 3_600_000_000
+MICROSECONDS_PER_MINUTE = 60_000_000
 MAXIMUM_POD_GAP_US = 10_000_000
 FIGURE_DPI = 180
+DENSITY_PLOT_SCALE_KG_M3 = 1.0e-12
 MODEL_COLORS = {
     "POD orbit mean": "#111827",
+    "L2": "#111827",
     "M0": "#64748b",
     "P5 V2 Ridge": "#ea580c",
 }
+DENSITY_LINES = (
+    ("rho_l2_kg_m3", "L2", 1.2),
+    ("rho_m0_kg_m3", "M0", 1.0),
+    ("rho_ridge_kg_m3", "P5 V2 Ridge", 1.0),
+)
 
 
 @dataclass(frozen=True)
@@ -34,6 +42,9 @@ class FigurePaths:
     )
     phase1: Path = Path(
         "phases/phase1/data/sqlite/swarm_a_analysis_2023_2026_p1_5_iter5000.sqlite",
+    )
+    ridge_density: Path = Path(
+        "phases/phase5-v2/data/sqlite/storm_r_ridge_density_v1.sqlite",
     )
     decay_figure: Path = Path(
         "phases/phase6/figures/phase6_4_decay_time_25_storms.png",
@@ -61,26 +72,48 @@ class DecayPanel:
     pod_orbit_points: list[OrbitMeanPoint]
 
 
+def database_uri(path: Path) -> str:
+    """Input: SQLite path. Output: read-only SQLite URI."""
+    return f"file:{path.resolve().as_posix()}?mode=ro"
+
+
 def read_only(path: Path) -> sqlite3.Connection:
     """Input: SQLite path. Output: read-only connection with named rows."""
-    connection = sqlite3.connect(f"file:{path.resolve().as_posix()}?mode=ro", uri=True)
+    connection = sqlite3.connect(database_uri(path), uri=True)
     connection.row_factory = sqlite3.Row
     return connection
 
 
-def load_event_series(connection: sqlite3.Connection) -> dict[str, list[sqlite3.Row]]:
-    """Input: P6.4 SQLite. Output: {storm_id: [time-ordered minute rows]}."""
+def load_event_series(
+    connection: sqlite3.Connection,
+    l2_density_path: Path,
+) -> dict[str, list[sqlite3.Row]]:
+    """Input: P6.4/L2 SQLite. Output: {storm_id: [joined density rows]}."""
+    connection.execute(
+        "ATTACH DATABASE ? AS l2",
+        (database_uri(l2_density_path),),
+    )
+    expected_minute_count = connection.execute(
+        "SELECT COUNT(*) FROM phase6_4_decay_comparison_minute_v1",
+    ).fetchone()[0]
     events: dict[str, list[sqlite3.Row]] = {}
     rows = connection.execute("""
-        SELECT storm_id,time_us,block_index,chunk_id,observed_covered_delta_a_m,
-               predicted_m0_covered_delta_a_m,
-               predicted_ridge_covered_delta_a_m,rho_m0_kg_m3,
-               rho_ridge_kg_m3
-        FROM phase6_4_decay_comparison_minute_v1
-        ORDER BY storm_id,time_us
+        SELECT c.storm_id,c.time_us,c.block_index,c.chunk_id,
+               c.observed_covered_delta_a_m,c.predicted_m0_covered_delta_a_m,
+               c.predicted_ridge_covered_delta_a_m,c.rho_m0_kg_m3,
+               c.rho_ridge_kg_m3,d.rho_l2_phase_kg_m3 AS rho_l2_kg_m3
+        FROM phase6_4_decay_comparison_minute_v1 AS c
+        JOIN l2.density_comparison AS d USING (storm_id,time_us)
+        ORDER BY c.storm_id,c.time_us
     """)
     for row in rows:
         events.setdefault(str(row["storm_id"]), []).append(row)
+    joined_minute_count = sum(len(event_rows) for event_rows in events.values())
+    if joined_minute_count != expected_minute_count:
+        raise ValueError(
+            "P6.4 L2 density join mismatch: "
+            f"{joined_minute_count}/{expected_minute_count} minutes.",
+        )
     if len(events) != 25:
         raise ValueError(f"P6.4 figures require 25 storms, found {len(events)}.")
     return events
@@ -168,6 +201,18 @@ def relative_hours(rows: list[sqlite3.Row], t0_time_us: int) -> list[float]:
     ]
 
 
+def density_gap_pairs(
+    rows: list[sqlite3.Row],
+) -> list[tuple[sqlite3.Row, sqlite3.Row]]:
+    """Input: ordered minute rows. Output: endpoint pairs around each data gap."""
+    return [
+        (previous, current)
+        for previous, current in zip(rows, rows[1:])
+        if int(current["time_us"]) - int(previous["time_us"])
+        > MICROSECONDS_PER_MINUTE
+    ]
+
+
 def draw_decay_panel(ax, panel: DecayPanel) -> None:
     """Input: {axes, one storm's minute and orbit rows}. Output: decline panel."""
     t0_time_us = storm_epoch_us(panel.storm_id)
@@ -218,23 +263,24 @@ def draw_decay_panel(ax, panel: DecayPanel) -> None:
 def draw_density_panel(ax, storm_id: str, rows: list[sqlite3.Row]) -> None:
     """Input: {axes, storm minute rows}. Output: one density panel."""
     t0_time_us = storm_epoch_us(storm_id)
-    for block_number, block_rows_iter in groupby(rows, key=lambda row: row["block_index"]):
-        block_rows = list(block_rows_iter)
-        hours = relative_hours(block_rows, t0_time_us)
-        labels = block_number == rows[0]["block_index"]
+    for density_field, model_name, line_width in DENSITY_LINES:
+        times = []
+        densities = []
+        for previous, current in zip(rows, rows[1:]):
+            start = int(previous["time_us"])
+            stop = int(current["time_us"])
+            for time_us in range(start, stop, MICROSECONDS_PER_MINUTE):
+                fraction = (time_us - start) / (stop - start)
+                density = previous[density_field] + fraction * (
+                    current[density_field] - previous[density_field]
+                )
+                times.append((time_us - t0_time_us) / MICROSECONDS_PER_HOUR)
+                densities.append(density / DENSITY_PLOT_SCALE_KG_M3)
+        times.append((int(rows[-1]["time_us"]) - t0_time_us) / MICROSECONDS_PER_HOUR)
+        densities.append(rows[-1][density_field] / DENSITY_PLOT_SCALE_KG_M3)
         ax.plot(
-            hours,
-            [row["rho_m0_kg_m3"] / 1.0e-12 for row in block_rows],
-            color=MODEL_COLORS["M0"],
-            linewidth=1.0,
-            label="M0" if labels else None,
-        )
-        ax.plot(
-            hours,
-            [row["rho_ridge_kg_m3"] / 1.0e-12 for row in block_rows],
-            color=MODEL_COLORS["P5 V2 Ridge"],
-            linewidth=1.0,
-            label="P5 V2 Ridge" if labels else None,
+            times, densities, color=MODEL_COLORS[model_name],
+            linewidth=line_width, label=model_name,
         )
     ax.axvline(0.0, color="#9ca3af", linewidth=0.7, linestyle="--")
     ax.set_title(storm_id[1:9], fontsize=9)
@@ -265,7 +311,7 @@ def save_density_figure(
     events: dict[str, list[sqlite3.Row]],
     output_path: Path,
 ) -> None:
-    """Input: {25 event series, PNG path}. Output: M0/Ridge density figure."""
+    """Input: {25 event series, PNG path}. Output: L2/M0/Ridge density figure."""
     figure, axes = plt.subplots(5, 5, figsize=(19, 15), sharex=True)
     for index, (storm_id, rows) in enumerate(events.items()):
         ax = axes.flat[index]
@@ -275,8 +321,8 @@ def save_density_figure(
         if index % 5 == 0:
             ax.set_ylabel("Density (1e-12 kg/m³)")
     handles, labels = axes.flat[0].get_legend_handles_labels()
-    figure.legend(handles, labels, loc="upper center", ncol=2, frameon=False)
-    figure.suptitle("P6.4 atmospheric-model and P5 V2 density")
+    figure.legend(handles, labels, loc="upper center", ncol=3, frameon=False)
+    figure.suptitle("P6.4 observed L2 and model density")
     figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
     write_figure(figure, output_path)
 
@@ -299,7 +345,7 @@ def write_figure(figure, output_path: Path) -> None:
 def run(paths: FigurePaths = FigurePaths()) -> dict[str, str]:
     """Input: default P6.4 paths. Output: two verified figure paths."""
     with closing(read_only(paths.comparison)) as connection:
-        events = load_event_series(connection)
+        events = load_event_series(connection, paths.ridge_density)
     with closing(read_only(paths.phase1)) as connection:
         orbit_means = load_pod_orbit_mean_declines(connection, events)
     panels = [

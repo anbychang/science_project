@@ -1,5 +1,7 @@
 # Phase 6：density-to-decay prediction
 
+共用符號與單位：[VARIABLES.md](../../VARIABLES.md)。
+
 狀態：[done: descriptive]。P6.1 至 P6.4 已完成：
 
 ```text
@@ -24,7 +26,7 @@ P6.2 M0 + P6.3 Ridge
   -> POD 總量、時間曲線、density 與 endpoint 輔助比較
 ```
 
-完整方法、25 場逐場結果、時間圖與限制全部收錄於[Phase 6 最終報告](reports/phase_6_final_report.md)。
+完整方法、25 場逐場結果、每場誤差圖與限制全部收錄於[Phase 6 最終報告](reports/phase_6_final_report.md)。
 
 ## 正式結果
 
@@ -35,9 +37,8 @@ P6.2 M0 + P6.3 Ridge
 - 每場磁暴各自歸零，25 場不接成連續軌道。
 - 正式磁暴分數為 Ridge 15 勝、M0 10 勝、0 平手；每場磁暴等權。
 - 25 場等權平均 orbit MAE：M0 `5.460 m/orbit`，Ridge `5.425 m/orbit`。
-- 底層共有 2,262 圈；pooled 結果為 Ridge 較準 1,169 圈、M0 較準 1,093 圈，只作輔助。
-- 六天 endpoint 是輔助結果：M0 MAE `72.22 m`，Ridge MAE `53.08 m`。
-- endpoint 顯示 Ridge 累積量較好，不代表單圈能力有相同比例的改善。
+- 底層共有 2,262 個有效圈間區間；誤差分析使用各場逐圈 MAE。
+- 磁暴強度比較使用每場最低 SYM-H，以及該場逐圈誤差的 MAE。
 - 所有結果都是探索性描述，不是獨立 forecast skill。
 
 ## 正式資料
